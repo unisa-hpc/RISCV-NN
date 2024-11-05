@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
+#include <map>
 
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
@@ -25,9 +26,7 @@ class timer_stats {
 private:
     const std::string name;
     std::vector<float> samples;
-
-    const std::string pair_key; // a key value pair to be reported, like unrolfactor, etc.
-    int pair_val;
+    const std::map <std::string, int> pairs;
 
     std::string legalize_filename(const std::string &name) const {
         std::string result = name;
@@ -36,13 +35,29 @@ private:
         std::replace(result.begin(), result.end(), '\\', '_');
         return result;
     }
+
+    std::string pairs_to_string() const {
+        std::string result = ".";
+        for (auto &pair : pairs) {
+            result += legalize_filename(pair.first) + "_" + std::to_string(pair.second) + ".";
+        }
+        return result;
+    }
+
+    std::string pairs_to_json() const {
+        std::string result = "{";
+        for (auto &pair : pairs) {
+            result += "\"" + pair.first + "\": " + std::to_string(pair.second) + ", ";
+        }
+        result += "}";
+        return result;
+    }
 public:
-    timer_stats(const std::string& name) : name(name), pair_key("undef"), pair_val(0) {
+    timer_stats(const std::string& name) : name(name) {
 
     }
 
-    timer_stats(const std::string& name, const std::string &key, int value) :
-        name(name), pair_key(key), pair_val(value) {
+    timer_stats(const std::string& name, const std::map<std::string, int>& pairs) : name(name), pairs(pairs) {
 
     }
 
@@ -105,7 +120,7 @@ public:
 
     void print() const {
         std::cout << "============================================" << std::endl;
-        std::cout << "Stats for " << name << " with " << pair_key << "=" << pair_val << " :" << std::endl;
+        std::cout << "Stats for " << name << " with " << pairs_to_json() << " :" << std::endl;
         std::cout << ">>Median:  \t" << median() << std::endl;
         std::cout << "> Average: \t" << ave() << std::endl;
         std::cout << "> Samples: \t" << count() << std::endl;
@@ -115,13 +130,13 @@ public:
         std::cout << "============================================" << std::endl;
     }
 
-    void save(const std::string &key, int value) const {
+    void save() const {
         std::ofstream file;
-        file.open("stats_" + legalize_filename(name) + std::to_string(pair_val) + ".json", std::ios::app);
+        file.open("stats_" + legalize_filename(name) + pairs_to_string() + ".json", std::ios::app);
         // save it in json format
         file << "{\n";
         file << "\"name\": \"" << name << "\",\n";
-        file << "\""+key+"\": " << value << ",\n";
+        file << "\"pairs\": " << pairs_to_json() << ",\n";
         file << "\"samples\": " << count() << ",\n";
         file << "\"average\": " << ave() << ",\n";
         file << "\"median\": " << median() << ",\n";
@@ -134,7 +149,7 @@ public:
 
     ~timer_stats() {
         print();
-        save(pair_key, pair_val);
+        save();
     }
 };
 

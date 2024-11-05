@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     init(b_ptr, N * N, true);
 
     {
-        timer_stats tp("Scalar Matmul With Mul", "unroll_factor", UNROLL_FACTOR0);
+        timer_stats tp("Scalar Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}});
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
         }
     }
     {
-        timer_stats tp("RVV Matmul With Mul", "unroll_factor", UNROLL_FACTOR0);
+        timer_stats tp("RVV Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}});
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
@@ -192,7 +192,7 @@ int main(int argc, char **argv)
     auto new_b_ptr = reinterpret_cast<uint32_t *>(b_ptr);
 
     {
-        timer_stats tp("RVV Matmul With Shift", "unroll_factor", UNROLL_FACTOR0);
+        timer_stats tp("RVV Matmul With Shift", {{"unroll_factor", UNROLL_FACTOR0}});
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
