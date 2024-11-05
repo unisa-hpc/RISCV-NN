@@ -27,7 +27,7 @@ private:
     std::vector<float> samples;
 
     const std::string pair_key; // a key value pair to be reported, like unrolfactor, etc.
-    float pair_val;
+    int pair_val;
 
     std::string legalize_filename(const std::string &name) const {
         std::string result = name;
@@ -41,7 +41,7 @@ public:
 
     }
 
-    timer_stats(const std::string& name, const std::string &key, const float value) :
+    timer_stats(const std::string& name, const std::string &key, int value) :
         name(name), pair_key(key), pair_val(value) {
 
     }
@@ -115,9 +115,9 @@ public:
         std::cout << "============================================" << std::endl;
     }
 
-    void save(const std::string &key, float value) const {
+    void save(const std::string &key, int value) const {
         std::ofstream file;
-        file.open("stats_" + legalize_filename(name) + ".json", std::ios::app);
+        file.open("stats_" + legalize_filename(name) + std::to_string(pair_val) + ".json", std::ios::app);
         // save it in json format
         file << "{\n";
         file << "\"name\": \"" << name << "\",\n";
@@ -135,7 +135,6 @@ public:
     ~timer_stats() {
         print();
         save(pair_key, pair_val);
-        
     }
 };
 

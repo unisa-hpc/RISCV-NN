@@ -6,10 +6,15 @@
 #include <cmath>
 #include "common01.h"
 
-constexpr size_t RUNS = 256;
-constexpr size_t N = 64;
+constexpr size_t RUNS = 32;
+constexpr size_t N = 1024;
 constexpr int VECTOR_SIZE = 256;
 constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
+
+// fallback to 1 if not defined
+#ifndef UNROLL_FACTOR0
+#define UNROLL_FACTOR0 1
+#endif
 
 int32_t reduce_avx2(const __m256i& vec) {
     // Horizontal addition
@@ -38,6 +43,8 @@ void vector_matmul_scalar(
     }
 }
 
+// Use template params for pragmas. Using defined variables in pragmas does not work.
+template <int FACTOR>
 void vector_matmul_avx(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
@@ -46,7 +53,7 @@ void vector_matmul_avx(
     for (int j = 0; j < N; ++j) {
         for (int i = 0; i < N; ++i) {
             __m256i vec_s = _mm256_setzero_si256();
-            #pragma GCC unroll 64
+            #pragma GCC unroll FACTOR
             for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
                 auto* ptr_a = a + j * N + k; // `a` is row major
                 auto* ptr_b = b + i * N + k; // `b` is col major
@@ -61,6 +68,8 @@ void vector_matmul_avx(
     }
 }
 
+// Use template params for pragmas. Using defined variables in pragmas does not work.
+template <int FACTOR>
 void vector_matmul_shift(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
@@ -69,7 +78,7 @@ void vector_matmul_shift(
     for (int j = 0; j < N; ++j) {
         for (int i = 0; i < N; ++i) {
             __m256i vec_s = _mm256_setzero_si256();
-            #pragma GCC unroll 64
+            #pragma GCC unroll FACTOR
             for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
                 auto* ptr_a = a + j * N + k; // `a` is row major
                 auto* ptr_b = b + i * N + k; // `b` is col major
@@ -83,41 +92,6 @@ void vector_matmul_shift(
         }
     }
 }
-
-void vector_matmul_shift2(
-    const int32_t* __restrict__ a,
-    const int32_t* __restrict__ b,
-    int32_t* __restrict__ c
-) {
-    for (int j = 0; j < N; j++) {
-        for (int i = 0; i < N; i++) {
-            __m256i acc = _mm256_setzero_si256(); // Initialize accumulator to zero
-            for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
-                __m256i vecA;
-                auto *matA_ptr = a + j*N+k;
-                auto *matB_ptr = b + i*N+k;
-                __asm__ volatile (
-                    "vmovdqa (%[matA_ptr]), %[vecA]         \n\t" // Load vecA from matA[i][k]
-                    "vmovdqa (%[matB_ptr]), %%ymm1          \n\t" // Load shift amounts into ymm1
-                    "vpsllvd %%ymm1, %[vecA], %[vecA]       \n\t" // Shift vecA by values in ymm1
-                    "vpaddd %[vecA], %[acc], %[acc]         \n\t" // Accumulate vecA into acc
-                    : [vecA] "+x"(vecA), [acc] "+x"(acc) // Outputs
-                    : [matA_ptr] "r"(matA_ptr + k), [matB_ptr] "r"(matB_ptr + k) // Inputs
-                    : "ymm1" // Clobbered register
-                );
-            }
-
-            // Horizontal sum within acc to get a single value
-            __m128i sum = _mm_add_epi32(_mm256_castsi256_si128(acc), _mm256_extracti128_si256(acc, 1));
-            sum = _mm_hadd_epi32(sum, sum);
-            sum = _mm_hadd_epi32(sum, sum);
-
-            // Store the result in the result matrix
-            c[j*N+i] = _mm_cvtsi128_si32(sum);
-        }
-    }
-}
-
 
 // Function to verify the results of scalar and RVV methods
 void verify_results(const int32_t* c1, const int32_t* c2) {
@@ -143,6 +117,8 @@ void wipe(int32_t* p, size_t len) {
 int main(int argc, char** argv) {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
 
+    std::cout << "UNROLLING FACTOR: " << UNROLL_FACTOR0 << std::endl;
+
     auto* a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
     auto* b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
     auto* c_scalar_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
@@ -161,17 +137,17 @@ int main(int argc, char** argv) {
     }
 
     {
-        timer_stats tp("Scalar Matmul With Mul");
+        timer_stats tp("Scalar Matmul With Mul", "unroll_factor", UNROLL_FACTOR0);
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_scalar(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
-        timer_stats tp("AVX Matmul With Mul");
+        timer_stats tp("AVX Matmul With Mul", "unroll_factor", UNROLL_FACTOR0);
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
-            vector_matmul_avx(a_ptr, b_ptr, c_avx_mul_ptr);
+            vector_matmul_avx<UNROLL_FACTOR0>(a_ptr, b_ptr, c_avx_mul_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_avx_mul_ptr);
@@ -186,10 +162,10 @@ int main(int argc, char** argv) {
         b_ptr[i] = v;
     }
     {
-        timer_stats tp("AVX Matmul With Shift");
+        timer_stats tp("AVX Matmul With Shift", "unroll_factor", UNROLL_FACTOR0);
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
-            vector_matmul_shift(a_ptr, b_ptr, c_avx_shift_ptr);
+            vector_matmul_shift<UNROLL_FACTOR0>(a_ptr, b_ptr, c_avx_shift_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_avx_shift_ptr);

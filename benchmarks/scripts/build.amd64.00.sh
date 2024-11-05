@@ -2,19 +2,25 @@
 
 compiler=g++
 
-function sepertor() {
+function print_line() {
+  echo "############################################"
+}
+
+function print_line_long() {
   echo "*"
   echo "*"
   echo "*"
-  echo "========================================"
+  echo "############################################"
 }
 
 script_dir=$(dirname "$(readlink -f "$0")")
-if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 <path_to_foo.cpp>"
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  echo "Usage: $0 <path_to_foo.cpp> [extra_flags]"
   exit 1
 fi
+
 source_file=$1
+extra_flags=${2:-}  # Second argument is optional; if not provided, it defaults to an empty string
 filename=$(basename "$source_file" .cpp)
 dump_dir="$script_dir/../dumps"
 if [ ! -d "$dump_dir" ]; then
@@ -28,7 +34,7 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
 {
   compiler_version=$($compiler --version | head -n 1)
   # Dont use -mavx2, our results are always CPU model and vendor dependent anyways. Use native.
-  flags="-O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common"
+  flags="-O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
   echo "Arch: AMD64"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"
@@ -36,15 +42,24 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
   echo "Benchmark ID: $filename"
   echo "Source file: $source_file"
   echo "Flags: $flags"
-  sepertor
+  print_line
 
-  $compiler $flags -o "$new_dump_dir/$filename" "$source_file" 2>&1
-  sepertor
-  if [ $? -eq 0 ]; then
+  # Compile and capture compiler output
+  compile_output=$($compiler $flags -o "$new_dump_dir/$filename" "$source_file" 2>&1)
+  compile_status=$?
+
+  if [ $compile_status -eq 0 ]; then
+    # Run the binary and capture its output
     (cd "$new_dump_dir" && taskset -c 0 "./$filename") 2>&1
+    print_line
+    # Print and save compiler output after the binary output
+    echo "Compilation succeeded. Log:"
+    echo "$compile_output"
+    echo "$compile_output" >> "$log_file"
   else
-    sepertor
-    echo "Compilation failed."
+    echo "Compilation failed. Log:"
+    echo "$compile_output"
+    echo "$compile_output" >> "$log_file"
     exit 1
   fi
-} | tee "$log_file"
+} | tee -a "$log_file"

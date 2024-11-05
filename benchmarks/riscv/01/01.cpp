@@ -9,6 +9,10 @@
 constexpr size_t RUNS = 16;
 constexpr size_t N = 512;
 
+// fallback to 1 if not defined
+#ifndef UNROLL_FACTOR0
+#define UNROLL_FACTOR0 1
+#endif
 
 void vector_matmul_scalar(
     const int32_t *__restrict__ a,
@@ -28,6 +32,7 @@ void vector_matmul_scalar(
     }
 }
 
+template <int FACTOR>
 void vector_matmul_rvv(
     const int32_t *__restrict__ a,
     const int32_t *__restrict__ b,
@@ -41,6 +46,7 @@ void vector_matmul_rvv(
             vint32m1_t vec_s = __riscv_vmv_v_x_i32m1(0, vlmax);
             vint32m1_t vec_zero = __riscv_vmv_v_x_i32m1(0, vlmax);
             size_t vl = 0;
+            #pragma GCC unroll FACTOR
             for (int k = 0; k < N; k += vl)
             {
                 vl = __riscv_vsetvl_e32m1(N - k);
@@ -56,6 +62,7 @@ void vector_matmul_rvv(
     }
 }
 
+template <int FACTOR>
 void vector_matmul_shift(
     const int32_t *__restrict__ a,
     const uint32_t *__restrict__ b,
@@ -69,6 +76,7 @@ void vector_matmul_shift(
             vint32m1_t vec_s = __riscv_vmv_v_x_i32m1(0, vlmax);
             vint32m1_t vec_zero = __riscv_vmv_v_x_i32m1(0, vlmax);
             size_t vl = 0;
+            #pragma GCC unroll FACTOR
             for (int k = 0; k < N; k += vl)
             {
                 vl = __riscv_vsetvl_e32m1(N - k);
@@ -151,7 +159,7 @@ int main(int argc, char **argv)
     init(b_ptr, N * N, true);
 
     {
-        timer_stats tp("Scalar Matmul With Mul");
+        timer_stats tp("Scalar Matmul With Mul", "unroll_factor", UNROLL_FACTOR0);
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
@@ -159,11 +167,11 @@ int main(int argc, char **argv)
         }
     }
     {
-        timer_stats tp("RVV Matmul With Mul");
+        timer_stats tp("RVV Matmul With Mul", "unroll_factor", UNROLL_FACTOR0);
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
-            vector_matmul_rvv(a_ptr, b_ptr, c_rvv_mul_ptr);
+            vector_matmul_rvv<UNROLL_FACTOR0>(a_ptr, b_ptr, c_rvv_mul_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_rvv_mul_ptr);
@@ -184,11 +192,11 @@ int main(int argc, char **argv)
     auto new_b_ptr = reinterpret_cast<uint32_t *>(b_ptr);
 
     {
-        timer_stats tp("RVV Matmul With Shift");
+        timer_stats tp("RVV Matmul With Shift", "unroll_factor", UNROLL_FACTOR0);
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
-            vector_matmul_shift(a_ptr, new_b_ptr, c_avx_shift_ptr);
+            vector_matmul_shift<UNROLL_FACTOR0>(a_ptr, new_b_ptr, c_avx_shift_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_avx_shift_ptr);
