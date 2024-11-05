@@ -40,7 +40,7 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
   $compiler $flags -o "$new_dump_dir/$filename" "$source_file" 2>&1
   sepertor
   if [ $? -eq 0 ]; then
-    "taskset -c 0 $new_dump_dir/$filename" 2>&1
+    (cd "$new_dump_dir" && taskset -c 0 "./$filename") 2>&1
   else
     sepertor
     echo "Compilation failed."
