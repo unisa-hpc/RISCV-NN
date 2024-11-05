@@ -151,18 +151,18 @@ int main(int argc, char **argv)
     init(b_ptr, N * N, true);
 
     {
-        TimerStats tp("Scalar Matmul With Mul");
+        timer_stats tp("Scalar Matmul With Mul");
         for (volatile size_t i = 0; i < RUNS; i++)
         {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_matmul_scalar(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
-        TimerStats tp("RVV Matmul With Mul");
+        timer_stats tp("RVV Matmul With Mul");
         for (volatile size_t i = 0; i < RUNS; i++)
         {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_matmul_rvv(a_ptr, b_ptr, c_rvv_mul_ptr);
         }
     }
@@ -184,10 +184,10 @@ int main(int argc, char **argv)
     auto new_b_ptr = reinterpret_cast<uint32_t *>(b_ptr);
 
     {
-        TimerStats tp("RVV Matmul With Shift");
+        timer_stats tp("RVV Matmul With Shift");
         for (volatile size_t i = 0; i < RUNS; i++)
         {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_matmul_shift(a_ptr, new_b_ptr, c_avx_shift_ptr);
         }
     }

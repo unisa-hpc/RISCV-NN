@@ -363,23 +363,23 @@ int main() {
     for (size_t i = 0; i < N; i++) { c_scalar_ptr[i] = c_avx_ptr[i] = 0; }
     for (size_t i = 0; i < N; i++) {
         a_ptr[i] = 1;
-        b_ptr[i] = 1;
+        b_ptr[i] = 10;
     }
 
     // Measure time for scalar vector addition
     {
-        TimerStats tp("Scalar Vector Multiplication");
+        timer_stats tp("Scalar Vector Multiplication");
         for (volatile size_t i = 0; i < RUNS; i++) {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_mul_scalar(a_ptr, b_ptr, c_scalar_ptr, N);
         }
     }
 
     // Measure time for RVV vector multiplication
     {
-        TimerStats tp("AVX Vector Multiplication");
+        timer_stats tp("AVX Vector Multiplication");
         for (volatile size_t i = 0; i < RUNS; i++) {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_mul_avx(a_ptr, b_ptr, c_avx_ptr, N);
         }
     }
@@ -389,18 +389,18 @@ int main() {
 
     // Measure time for scalar vector addition
     {
-        TimerStats tp("Scalar Vector Shift");
+        timer_stats tp("Scalar Vector Shift");
         for (volatile size_t i = 0; i < RUNS; i++) {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_shift_scalar(a_ptr, b_ptr, c_scalar_ptr, N);
         }
     }
 
     // Measure time for scalar vector addition
     {
-        TimerStats tp("AVX Vector Shift");
+        timer_stats tp("AVX Vector Shift");
         for (volatile size_t i = 0; i < RUNS; i++) {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_shift_avx(a_ptr, b_ptr, c_avx_ptr, N);
         }
     }

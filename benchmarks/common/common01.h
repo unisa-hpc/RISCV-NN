@@ -12,62 +12,79 @@
 #include <memory>
 #include <algorithm>
 #include <cstdlib>
+#include <fstream>
 
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
 using std::chrono::duration;
 using std::chrono::milliseconds;
 
-class TimerScope; // Forward declaration
-class TimerStats {
-    friend class TimerScope;
+class timer_scope; // Forward declaration
+class timer_stats {
+    friend class timer_scope;
 private:
-    const std::string m_strName;
-    std::vector<float> m_vTimes;
+    const std::string name;
+    std::vector<float> samples;
+
+    const std::string pair_key; // a key value pair to be reported, like unrolfactor, etc.
+    float pair_val;
+
+    std::string legalize_filename(const std::string &name) const {
+        std::string result = name;
+        std::replace(result.begin(), result.end(), ' ', '_');
+        std::replace(result.begin(), result.end(), '/', '_');
+        std::replace(result.begin(), result.end(), '\\', '_');
+        return result;
+    }
 public:
-    TimerStats(const std::string& name) : m_strName(name) {
+    timer_stats(const std::string& name) : name(name), pair_key("undef"), pair_val(0) {
 
     }
 
-    void AddSample(float time) {
-        m_vTimes.push_back(time);
+    timer_stats(const std::string& name, const std::string &key, const float value) :
+        name(name), pair_key(key), pair_val(value) {
+
     }
 
-    size_t GetSampleCount() const {
-        return m_vTimes.size();
+    void add_sample(float time) {
+        samples.push_back(time);
     }
 
-    float GetAverage() const {
+    size_t count() const {
+        return samples.size();
+    }
+
+    float ave() const {
         // Calculate the average with vector
         float sum = 0;
-        for (auto t : m_vTimes) {
+        for (auto t : samples) {
             sum += t;
         }
-        return sum / m_vTimes.size();
+        return sum / samples.size();
     }
 
-    float GetMax() const {
-        float max = m_vTimes[0];
-        for (size_t i = 1; i < m_vTimes.size(); i++) {
-            if (m_vTimes[i] > max) {
-                max = m_vTimes[i];
+    float max() const {
+        float max = samples[0];
+        for (size_t i = 1; i < samples.size(); i++) {
+            if (samples[i] > max) {
+                max = samples[i];
             }
         }
         return max;
     }
 
-    float GetMin() const {
-        float min = m_vTimes[0];
-        for (size_t i = 1; i < m_vTimes.size(); i++) {
-            if (m_vTimes[i] < min) {
-                min = m_vTimes[i];
+    float min() const {
+        float min = samples[0];
+        for (size_t i = 1; i < samples.size(); i++) {
+            if (samples[i] < min) {
+                min = samples[i];
             }
         }
         return min;
     }
 
-    float GetMedian() const {
-        std::vector<float> v = m_vTimes;
+    float median() const {
+        std::vector<float> v = samples;
         std::sort(v.begin(), v.end());
         size_t n = v.size();
         if (n % 2 == 0) {
@@ -77,60 +94,79 @@ public:
         }
     }
 
-    float GetVariance() const {
-        float avg = GetAverage();
+    float variance() const {
+        float avg = ave();
         float sum = 0;
-        for (auto t : m_vTimes) {
+        for (auto t : samples) {
             sum += (t - avg) * (t - avg);
         }
-        return sum / m_vTimes.size();
+        return sum / samples.size();
     }
 
-    void PrintStats() const {
+    void print() const {
         std::cout << "============================================" << std::endl;
-        std::cout << "Stats for " << m_strName << ":" << std::endl;
-        std::cout << ">>Median:  \t" << GetMedian() << std::endl;
-        std::cout << "> Average: \t" << GetAverage() << std::endl;
-        std::cout << "> Samples: \t" << GetSampleCount() << std::endl;
-        std::cout << "> Variance:\t" << GetVariance() << std::endl;
-        std::cout << "> Max:     \t" << GetMax() << std::endl;
-        std::cout << "> Min:     \t" << GetMin() << std::endl;
+        std::cout << "Stats for " << name << " with " << pair_key << "=" << pair_val << " :" << std::endl;
+        std::cout << ">>Median:  \t" << median() << std::endl;
+        std::cout << "> Average: \t" << ave() << std::endl;
+        std::cout << "> Samples: \t" << count() << std::endl;
+        std::cout << "> Variance:\t" << variance() << std::endl;
+        std::cout << "> Max:     \t" << max() << std::endl;
+        std::cout << "> Min:     \t" << min() << std::endl;
         std::cout << "============================================" << std::endl;
     }
 
-    ~TimerStats() {
-        PrintStats();
+    void save(const std::string &key, float value) const {
+        std::ofstream file;
+        file.open("stats_" + legalize_filename(name) + ".json", std::ios::app);
+        // save it in json format
+        file << "{\n";
+        file << "\"name\": \"" << name << "\",\n";
+        file << "\""+key+"\": " << value << ",\n";
+        file << "\"samples\": " << count() << ",\n";
+        file << "\"average\": " << ave() << ",\n";
+        file << "\"median\": " << median() << ",\n";
+        file << "\"variance\": " << variance() << ",\n";
+        file << "\"max\": " << max() << ",\n";
+        file << "\"min\": " << min() << "\n";
+        file << "}\n";
+        file.close();
+    }
+
+    ~timer_stats() {
+        print();
+        save(pair_key, pair_val);
+        
     }
 };
 
-class TimerScope {
+class timer_scope {
 private:
     std::chrono::system_clock::time_point m_oTimerLast;
-    const std::string m_strName;
+    const std::string name;
     const bool m_bIsRoot;
-    TimerStats *m_pStats; // to keep things simple, we are not using smart pointers.
+    timer_stats *m_pStats; // to keep things simple, we are not using smart pointers.
 
 public:
-    TimerScope(const std::string& name) : m_strName(name), m_bIsRoot(true) {
+    timer_scope(const std::string& name) : name(name), m_bIsRoot(true) {
         m_oTimerLast = high_resolution_clock::now();
         m_pStats = nullptr;
     }
 
-    TimerScope(TimerStats &parent) : m_strName(""), m_bIsRoot(false) {
+    timer_scope(timer_stats &parent) : name(""), m_bIsRoot(false) {
         m_oTimerLast = high_resolution_clock::now();
         m_pStats = &parent;
     }
 
-    ~TimerScope() {
+    ~timer_scope() {
         if(m_bIsRoot) {
-          ReportFromLast(m_strName);
+          report_from_last(name);
         } else {
-          m_pStats->AddSample(FromLast());
+          m_pStats->add_sample(from_last());
         }
     }
 
     template <class StdTimeResolution = std::milli>
-    float FromLast() {
+    float from_last() {
         auto now = high_resolution_clock::now();
         duration<float, StdTimeResolution> ms = now - m_oTimerLast;
         m_oTimerLast = now;
@@ -138,14 +174,14 @@ public:
     }
 
     template <class StdTimeResolution = std::milli>
-    float ReportFromLast(const std::string& msg = "") {
-        auto t = FromLast<StdTimeResolution>();
+    float report_from_last(const std::string& msg = "") {
+        auto t = from_last<StdTimeResolution>();
         std::cout << "Elapsed " << msg << ": " << t << " ." << std::endl;
         return t;
     }
 
     template <class StdTimeResolution = std::milli>
-    static inline float ForLambda(const std::function<void()>& operation) {
+    static inline float for_lambda(const std::function<void()>& operation) {
         auto t1 = high_resolution_clock::now();
         operation();
         auto t2 = high_resolution_clock::now();
@@ -154,8 +190,8 @@ public:
     }
 
     template <class StdTimeResolution = std::milli>
-    static inline float ReportForLambda(const std::function<void()>& operation) {
-        auto t = ForLambda<StdTimeResolution>(operation);
+    static inline float report_for_lambda(const std::function<void()>& operation) {
+        auto t = for_lambda<StdTimeResolution>(operation);
         std::cout << "Elapsed: " << t << " ." << std::endl;
         return t;
     }

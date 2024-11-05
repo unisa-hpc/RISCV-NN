@@ -6,8 +6,8 @@
 #include <cmath>
 #include "common01.h"
 
-constexpr size_t RUNS = 512;
-constexpr size_t N = 512;
+constexpr size_t RUNS = 256;
+constexpr size_t N = 64;
 constexpr int VECTOR_SIZE = 256;
 constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
 
@@ -46,6 +46,7 @@ void vector_matmul_avx(
     for (int j = 0; j < N; ++j) {
         for (int i = 0; i < N; ++i) {
             __m256i vec_s = _mm256_setzero_si256();
+            #pragma GCC unroll 64
             for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
                 auto* ptr_a = a + j * N + k; // `a` is row major
                 auto* ptr_b = b + i * N + k; // `b` is col major
@@ -68,6 +69,7 @@ void vector_matmul_shift(
     for (int j = 0; j < N; ++j) {
         for (int i = 0; i < N; ++i) {
             __m256i vec_s = _mm256_setzero_si256();
+            #pragma GCC unroll 64
             for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
                 auto* ptr_a = a + j * N + k; // `a` is row major
                 auto* ptr_b = b + i * N + k; // `b` is col major
@@ -153,22 +155,22 @@ int main(int argc, char** argv) {
 
     for (size_t j = 0; j < N; j++) {
         for (size_t i = 0; i < N; i++) {
-            a_ptr[j * N + i] = static_cast<int32_t>(1); // `a` is row major
-            b_ptr[i * N + j] = static_cast<int32_t>(8); // `b` is col major
+            a_ptr[j * N + i] = static_cast<int32_t>(19); // `a` is row major
+            b_ptr[i * N + j] = static_cast<int32_t>(std::pow(2, 14)); // `b` is col major
         }
     }
 
     {
-        TimerStats tp("Scalar Matmul With Mul");
+        timer_stats tp("Scalar Matmul With Mul");
         for (volatile size_t i = 0; i < RUNS; i++) {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_matmul_scalar(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
-        TimerStats tp("AVX Matmul With Mul");
+        timer_stats tp("AVX Matmul With Mul");
         for (volatile size_t i = 0; i < RUNS; i++) {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_matmul_avx(a_ptr, b_ptr, c_avx_mul_ptr);
         }
     }
@@ -184,9 +186,9 @@ int main(int argc, char** argv) {
         b_ptr[i] = v;
     }
     {
-        TimerStats tp("AVX Matmul With Shift");
+        timer_stats tp("AVX Matmul With Shift");
         for (volatile size_t i = 0; i < RUNS; i++) {
-            TimerScope ts(tp);
+            timer_scope ts(tp);
             vector_matmul_shift(a_ptr, b_ptr, c_avx_shift_ptr);
         }
     }
