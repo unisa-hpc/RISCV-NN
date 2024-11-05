@@ -1,5 +1,5 @@
 //
-// Created by saleh on 11/1/24.
+// Created by saleh on 11/4/24.
 //
 
 #include <iostream>
@@ -7,61 +7,14 @@
 #include <immintrin.h>
 #include <functional>
 #include <string>
+#include <memory>
+#include <algorithm>
+#include <cstdlib>
+#include "common01.h"
 
-constexpr size_t N = 1024 * 1024 * 16; // 16M elements
+constexpr size_t RUNS = 1000;
+constexpr size_t N = 1024 * 1024; // 16M elements
 constexpr size_t VECTOR_ELEMENTS = 8; // 8 elements in a vector (int32)
-
-
-using std::chrono::high_resolution_clock;
-using std::chrono::duration_cast;
-using std::chrono::duration;
-using std::chrono::milliseconds;
-
-class TimerScope {
-private:
-    std::chrono::system_clock::time_point m_oTimerLast;
-    const std::string m_strName;
-
-public:
-    TimerScope(const std::string& name) : m_strName(name) {
-        m_oTimerLast = high_resolution_clock::now();
-    }
-
-    ~TimerScope() {
-        ReportFromLast(m_strName);
-    }
-
-    template <class StdTimeResolution = std::milli>
-    float FromLast() {
-        auto now = high_resolution_clock::now();
-        duration<float, StdTimeResolution> ms = now - m_oTimerLast;
-        m_oTimerLast = now;
-        return ms.count();
-    }
-
-    template <class StdTimeResolution = std::milli>
-    float ReportFromLast(const std::string& msg = "") {
-        auto t = FromLast<StdTimeResolution>();
-        std::cout << "Elapsed " << msg << ": " << t << " ." << std::endl;
-        return t;
-    }
-
-    template <class StdTimeResolution = std::milli>
-    static inline float ForLambda(const std::function<void()>& operation) {
-        auto t1 = high_resolution_clock::now();
-        operation();
-        auto t2 = high_resolution_clock::now();
-        duration<float, StdTimeResolution> ms = t2 - t1;
-        return ms.count();
-    }
-
-    template <class StdTimeResolution = std::milli>
-    static inline float ReportForLambda(const std::function<void()>& operation) {
-        auto t = ForLambda<StdTimeResolution>(operation);
-        std::cout << "Elapsed: " << t << " ." << std::endl;
-        return t;
-    }
-};
 
 void vector_mul_scalar(const int32_t* __restrict__ ptr_a, const int32_t* __restrict__ ptr_b,
                        int32_t* __restrict__ ptr_c, size_t n) {
@@ -376,9 +329,13 @@ void verify_results(const int32_t* scalar_result, const int32_t* rvv_result, siz
 }
 
 int main() {
-    constexpr size_t ALIGNMENT = 32; // 32-byte alignment
+    size_t ALIGNMENT = 32; // 32-byte alignment
     if (N % VECTOR_ELEMENTS != 0) {
         std::cerr << "Size of the vectors should be a multiple of 256 bytes" << std::endl;
+        std::exit(1);
+    }
+    if (N % ALIGNMENT != 0) {
+        std::cerr << "Size of the vectors should be a multiple of 32 bytes" << std::endl;
         std::exit(1);
     }
 
@@ -389,10 +346,15 @@ int main() {
         }
     };
 
-    auto* a_ptr = static_cast<int32_t*>(aligned_alloc(ALIGNMENT, N * sizeof(int32_t)));
-    auto* b_ptr = static_cast<int32_t*>(aligned_alloc(ALIGNMENT, N * sizeof(int32_t)));
-    auto* c_scalar_ptr = static_cast<int32_t*>(aligned_alloc(ALIGNMENT, N * sizeof(int32_t)));
-    auto* c_avx_ptr = static_cast<int32_t*>(aligned_alloc(ALIGNMENT, N * sizeof(int32_t)));
+    int32_t *a_ptr, *b_ptr, *c_scalar_ptr, *c_avx_ptr;
+    a_ptr = nullptr; b_ptr = nullptr; c_scalar_ptr = nullptr; c_avx_ptr = nullptr;
+    a_ptr = aligned_alloc_array<int32_t>(N, ALIGNMENT);
+    b_ptr = aligned_alloc_array<int32_t>(N, ALIGNMENT);
+    c_scalar_ptr = aligned_alloc_array<int32_t>(N, ALIGNMENT);
+    c_avx_ptr = aligned_alloc_array<int32_t>(N, ALIGNMENT);
+
+
+
     CheckAlloc(a_ptr);
     CheckAlloc(b_ptr);
     CheckAlloc(c_scalar_ptr);
@@ -401,36 +363,46 @@ int main() {
     for (size_t i = 0; i < N; i++) { c_scalar_ptr[i] = c_avx_ptr[i] = 0; }
     for (size_t i = 0; i < N; i++) {
         a_ptr[i] = 1;
-        b_ptr[i] = 5;
+        b_ptr[i] = 1;
     }
 
     // Measure time for scalar vector addition
     {
-        TimerScope ts("Scalar Vector Multiplication");
-        vector_mul_scalar(a_ptr, b_ptr, c_scalar_ptr, N);
+        TimerStats tp("Scalar Vector Multiplication");
+        for (volatile size_t i = 0; i < RUNS; i++) {
+            TimerScope ts(tp);
+            vector_mul_scalar(a_ptr, b_ptr, c_scalar_ptr, N);
+        }
     }
 
     // Measure time for RVV vector multiplication
     {
-        TimerScope ts("AVX Vector Multiplication");
-        vector_mul_avx(a_ptr, b_ptr, c_avx_ptr, N);
+        TimerStats tp("AVX Vector Multiplication");
+        for (volatile size_t i = 0; i < RUNS; i++) {
+            TimerScope ts(tp);
+            vector_mul_avx(a_ptr, b_ptr, c_avx_ptr, N);
+        }
     }
 
     // Verify results
     verify_results(c_scalar_ptr, c_avx_ptr, N);
 
     // Measure time for scalar vector addition
-
     {
-        TimerScope ts("Scalar Vector Shift");
-        vector_shift_scalar(a_ptr, b_ptr, c_scalar_ptr, N);
+        TimerStats tp("Scalar Vector Shift");
+        for (volatile size_t i = 0; i < RUNS; i++) {
+            TimerScope ts(tp);
+            vector_shift_scalar(a_ptr, b_ptr, c_scalar_ptr, N);
+        }
     }
 
     // Measure time for scalar vector addition
-
     {
-        TimerScope ts("AVX Vector Shift");
-        vector_shift_avx(a_ptr, b_ptr, c_avx_ptr, N);
+        TimerStats tp("AVX Vector Shift");
+        for (volatile size_t i = 0; i < RUNS; i++) {
+            TimerScope ts(tp);
+            vector_shift_avx(a_ptr, b_ptr, c_avx_ptr, N);
+        }
     }
 
     // Verify results

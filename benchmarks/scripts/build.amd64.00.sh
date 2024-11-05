@@ -27,7 +27,7 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
 
 {
   compiler_version=$($compiler --version | head -n 1)
-  flags="-O3 -mavx2 -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v"
+  flags="-O3 -mavx2 -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common"
   echo "Arch: AMD64"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"
