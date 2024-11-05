@@ -19,6 +19,6 @@ This is done to ensure that the SHIFT instructions will still generate a valid r
 ### Unrolling Factor
 When nothing set, the unrolling factor of 1 is used. To change the unrolling factor, compile like this:  
 ```bash
-bash build.amd64.00.sh 02.cpp "-DUNROLL_FACTOR=4"
+bash build.amd64.00.sh 02.cpp "-DUNROLL_FACTOR0=4"
 ```
 The json files will be created in the dump directory containing the profiled stats.

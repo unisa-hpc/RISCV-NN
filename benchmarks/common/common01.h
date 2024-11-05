@@ -41,6 +41,9 @@ private:
         for (auto &pair : pairs) {
             result += legalize_filename(pair.first) + "_" + std::to_string(pair.second) + ".";
         }
+        if (pairs.size() > 0) {
+            result.pop_back();
+        }
         return result;
     }
 
@@ -48,6 +51,11 @@ private:
         std::string result = "{";
         for (auto &pair : pairs) {
             result += "\"" + pair.first + "\": " + std::to_string(pair.second) + ", ";
+        }
+        // remove the last comma and space if its not empty
+        if (pairs.size() > 0) {
+            result.pop_back();
+            result.pop_back();
         }
         result += "}";
         return result;

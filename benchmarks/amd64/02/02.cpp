@@ -7,7 +7,7 @@
 #include "common01.h"
 
 constexpr size_t RUNS = 32;
-constexpr size_t N = 1024;
+constexpr size_t N = 256;
 constexpr int VECTOR_SIZE = 256;
 constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
 

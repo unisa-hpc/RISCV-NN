@@ -14,18 +14,39 @@ function print_line_long() {
 }
 
 script_dir=$(dirname "$(readlink -f "$0")")
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <path_to_foo.cpp> [extra_flags]"
+dump_dir="$script_dir/../dumps"
+delete_dumps=false
+
+# Process all arguments and handle -d flag
+args=()
+for arg in "$@"; do
+  if [ "$arg" == "-d" ]; then
+    delete_dumps=true
+  else
+    args+=("$arg")  # Collect non-`-d` arguments
+  fi
+done
+
+# Delete dump directory if -d flag was provided
+if [ "$delete_dumps" = true ] && [ -d "$dump_dir" ]; then
+  echo "Deleting all contents of $dump_dir"
+  rm -rf "$dump_dir"
+fi
+
+# Check the number of remaining arguments
+if [ "${#args[@]}" -lt 1 ] || [ "${#args[@]}" -gt 2 ]; then
+  echo "Usage: $0 [-d] <path_to_foo.cpp> [extra_flags]"
   exit 1
 fi
 
-source_file=$1
-extra_flags=${2:-}  # Second argument is optional; if not provided, it defaults to an empty string
+source_file=${args[0]}
+extra_flags=${args[1]:-}  # Second argument is optional; if not provided, it defaults to an empty string
 filename=$(basename "$source_file" .cpp)
-dump_dir="$script_dir/../dumps"
+
 if [ ! -d "$dump_dir" ]; then
   mkdir "$dump_dir"
 fi
+
 timestamp=$(date +"%Y%m%d_%H%M%S")
 new_dump_dir="$dump_dir/$timestamp"
 mkdir "$new_dump_dir"
@@ -33,7 +54,7 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
 
 {
   compiler_version=$($compiler --version | head -n 1)
-  # Dont use -mavx2, our results are always CPU model and vendor dependent anyways. Use native.
+  # Don't use -mavx2; use native for CPU-dependent results.
   flags="-O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
   echo "Arch: AMD64"
   echo "Compiler: $compiler"
