@@ -130,11 +130,11 @@ int main(int argc, char **argv)
 {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
 
-    auto *a_ptr = static_cast<int32_t *>(aligned_alloc(ALIGNMENT, N * N * sizeof(int32_t)));
-    auto *b_ptr = static_cast<int32_t *>(aligned_alloc(ALIGNMENT, N * N * sizeof(int32_t)));
-    auto *c_scalar_ptr = static_cast<int32_t *>(aligned_alloc(ALIGNMENT, N * N * sizeof(int32_t)));
-    auto *c_rvv_mul_ptr = static_cast<int32_t *>(aligned_alloc(ALIGNMENT, N * N * sizeof(int32_t)));
-    auto *c_avx_shift_ptr = static_cast<int32_t *>(aligned_alloc(ALIGNMENT, N * N * sizeof(int32_t)));
+    auto *a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
+    auto *b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
+    auto *c_scalar_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
+    auto *c_rvv_mul_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
+    auto *c_avx_shift_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
 
     wipe(c_scalar_ptr, N * N);
     wipe(c_rvv_mul_ptr, N * N);
