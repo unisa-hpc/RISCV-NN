@@ -2,7 +2,7 @@
 
 **ARCH**: `AMD64`
 
-Multiplication vs. Shift with scalar and AVX2 instructions using inline assembly.
+Inline assembly for compare the latency of MUL and SHIFT instructions in scalar and AVX2 relatively.
 
 ## Sub Benchmarks
 
