@@ -6,14 +6,17 @@ import pandas as pd
 import seaborn as sns
 import sys
 from matplotlib.lines import Line2D
+
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common')))
 from timer_stats import TimerStatsParser
+
 
 def get_all_json_files(dump_dir) -> [str]:
     """
     Get the abs path of all the json files in the dump directory, recursively.
     """
     return list(pathlib.Path(dump_dir).rglob('*.json'))
+
 
 if __name__ == '__main__':
     # add -d argument for dumps dir
@@ -41,15 +44,21 @@ if __name__ == '__main__':
     if num_subplots == 1:
         axes = [axes]  # Ensure axes is always a list for consistent indexing
 
-    # Create a base color palette for each subplot (based on unique 'name_N')
-    color_palettes = {N: sns.color_palette("hsv", len(parsed_union[parsed_union['N'] == N].drop_duplicates('name_N'))) for N in unique_N_values}
+    # Sort names for each N group and create a color palette
+    color_palettes = {}
+    for N in unique_N_values:
+        sorted_names = sorted(parsed_union[parsed_union['N'] == N]['name_N'].unique())
+        color_palettes[N] = sns.color_palette("hsv", len(sorted_names))
 
     for idx, N in enumerate(unique_N_values):
         ax = axes[idx]
         data_N = parsed_union[parsed_union['N'] == N]
 
-        # Plot each line in the subplot for this specific N, using custom color, marker, and dashes
-        for i, name_N in enumerate(data_N['name_N'].unique()):
+        # Sort the unique names for color consistency
+        sorted_name_N = sorted(data_N['name_N'].unique())
+
+        # Plot each line in the subplot for this specific N, using sorted colors, custom marker, and dashes
+        for i, name_N in enumerate(sorted_name_N):
             line_data = data_N[data_N['name_N'] == name_N]
             sns.lineplot(
                 data=line_data,
@@ -58,22 +67,22 @@ if __name__ == '__main__':
                 marker=marker_dict[N],
                 dashes=dash_dict[N],
                 ax=ax,
-                color=color_palettes[N][i],  # Assign color from the specific N palette
+                color=color_palettes[N][i],  # Assign sorted color
                 legend=False
             )
 
-        #ax.set_yscale('log')
+        # ax.set_yscale('log')
         ax.set_title(f"Runtimes vs. Unrolling Factors for N={N}")
         ax.set_xlabel("Unroll Factor")
         ax.set_ylabel("Runtime (ms)")
 
         # Manually create the legend with only relevant entries for this subplot (N)
         legend_elements = [
-            Line2D([0], [0], color=color_palettes[N][i],  # Use the specific color for this N
+            Line2D([0], [0], color=color_palettes[N][i],  # Use sorted color for this N
                    marker=marker_dict[N],
                    dashes=dash_dict[N],
                    label=name_N)
-            for i, name_N in enumerate(data_N['name_N'].unique())
+            for i, name_N in enumerate(sorted_name_N)
         ]
         ax.legend(handles=legend_elements, title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
 

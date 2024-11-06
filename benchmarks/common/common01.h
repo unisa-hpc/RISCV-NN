@@ -6,7 +6,6 @@
 
 #include <iostream>
 #include <chrono>
-#include <immintrin.h>
 #include <functional>
 #include <string>
 #include <memory>
