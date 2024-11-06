@@ -60,6 +60,21 @@ private:
         result += "}";
         return result;
     }
+
+    std::string data_to_json() const {
+        std::string result = "[";
+        for (auto &s : samples) {
+            result += std::to_string(s) + ", ";
+        }
+        // remove the last comma and space if its not empty
+        if (pairs.size() > 0) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += "]";
+        return result;
+    }
+    
 public:
     timer_stats(const std::string& name) : name(name) {
 
@@ -146,6 +161,7 @@ public:
         file << "\"name\": \"" << name << "\",\n";
         file << "\"pairs\": " << pairs_to_json() << ",\n";
         file << "\"samples\": " << count() << ",\n";
+        file << "\"data\": " << data_to_json() << ", \n";
         file << "\"average\": " << ave() << ",\n";
         file << "\"median\": " << median() << ",\n";
         file << "\"variance\": " << variance() << ",\n";

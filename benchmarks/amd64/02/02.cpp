@@ -6,14 +6,18 @@
 #include <cmath>
 #include "common01.h"
 
-constexpr size_t RUNS = 32;
-constexpr size_t N = 256;
+constexpr size_t RUNS = 256;
 constexpr int VECTOR_SIZE = 256;
 constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
 
 // fallback to 1 if not defined
 #ifndef UNROLL_FACTOR0
 #define UNROLL_FACTOR0 1
+#endif
+
+// fallback to 256 if not defined
+#ifndef N
+#define N 256
 #endif
 
 int32_t reduce_avx2(const __m256i& vec) {
@@ -137,14 +141,14 @@ int main(int argc, char** argv) {
     }
 
     {
-        timer_stats tp("Scalar Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}});
+        timer_stats tp("Scalar Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_scalar(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
-        timer_stats tp("AVX Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}});
+        timer_stats tp("AVX Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_avx<UNROLL_FACTOR0>(a_ptr, b_ptr, c_avx_mul_ptr);
@@ -162,7 +166,7 @@ int main(int argc, char** argv) {
         b_ptr[i] = v;
     }
     {
-        timer_stats tp("AVX Matmul With Shift", {{"unroll_factor", UNROLL_FACTOR0}});
+        timer_stats tp("AVX Matmul With Shift", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_shift<UNROLL_FACTOR0>(a_ptr, b_ptr, c_avx_shift_ptr);
