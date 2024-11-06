@@ -35,7 +35,8 @@ inline void vector_matmul_scalar_core(
 }
 
 __attribute__((optimize("tree-vectorize")))
-inline void vector_matmul_scalar_autovec(
+__attribute__((optimize("vectorize")))
+void vector_matmul_scalar_autovec(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c
@@ -44,7 +45,8 @@ inline void vector_matmul_scalar_autovec(
 }
 
 __attribute__((optimize("no-tree-vectorize")))
-inline void vector_matmul_scalar_noautovec(
+__attribute__((optimize("no-vectorize")))
+void vector_matmul_scalar_noautovec(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c

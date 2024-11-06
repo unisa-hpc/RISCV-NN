@@ -2,6 +2,10 @@
 
 compiler=g++
 
+# Define compiler-specific flags
+gpp_flags="-O3 -march=rv64imafdcv1p0 -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v"
+clangpp_flags="-O3 -march=rv64imafdcv1p0 -fno-vectorize -fno-slp-vectorize -Wall -Wextra -v"
+
 function print_line() {
   echo "############################################"
 }
@@ -54,8 +58,17 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
 
 {
   compiler_version=$($compiler --version | head -n 1)
-  # native arch is not supported in RISC-V
-  flags="-O3 -march=rv64imafdcv1p0 -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
+
+  # Select flags based on the compiler string containing "g++" or "clang++"
+  if [[ "$compiler" == *g++* ]]; then
+    flags="$gpp_flags $extra_flags -I$script_dir/../common"
+  elif [[ "$compiler" == *clang++* ]]; then
+    flags="$clangpp_flags $extra_flags -I$script_dir/../common"
+  else
+    echo "Unsupported compiler: $compiler"
+    exit 1
+  fi
+
   echo "Arch: RISCV"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"
