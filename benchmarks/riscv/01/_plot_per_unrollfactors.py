@@ -1,0 +1,82 @@
+from matplotlib import pyplot as plt
+import argparse
+import json
+import pathlib
+import pandas as pd
+import seaborn as sns
+import sys
+from matplotlib.lines import Line2D
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common')))
+from timer_stats import TimerStatsParser
+
+def get_all_json_files(dump_dir) -> [str]:
+    """
+    Get the abs path of all the json files in the dump directory, recursively.
+    """
+    return list(pathlib.Path(dump_dir).rglob('*.json'))
+
+if __name__ == '__main__':
+    # add -d argument for dumps dir
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dumps-dir', type=str, required=True)
+    parser.add_argument('--out', type=str, required=True)
+    args = parser.parse_args()
+
+    all_jsons = get_all_json_files(args.dumps_dir)
+    parsed_runs = [TimerStatsParser(j) for j in all_jsons]
+    parsed_union = pd.concat([run.get_df() for run in parsed_runs], ignore_index=True)
+    parsed_union['name_N'] = parsed_union['name'] + ' (N=' + parsed_union['N'].astype(str) + ')'
+
+    # Define unique markers and dash patterns for each unique "N"
+    markers = ['o', 's', 'D', '^', 'v', '<', '>', 'p', '*', 'h']
+    dash_styles = [(2, 1), (4, 1), (6, 2), (8, 2), (3, 1, 1, 1), (5, 2, 1, 2)]
+    unique_N_values = parsed_union['N'].unique()
+
+    marker_dict = {N: markers[i % len(markers)] for i, N in enumerate(unique_N_values)}
+    dash_dict = {N: dash_styles[i % len(dash_styles)] for i, N in enumerate(unique_N_values)}
+
+    # Calculate subplot layout
+    num_subplots = len(unique_N_values)
+    fig, axes = plt.subplots(num_subplots, 1, figsize=(10, 6 * num_subplots), sharex=True)
+    if num_subplots == 1:
+        axes = [axes]  # Ensure axes is always a list for consistent indexing
+
+    # Create a base color palette for each subplot (based on unique 'name_N')
+    color_palettes = {N: sns.color_palette("hsv", len(parsed_union[parsed_union['N'] == N].drop_duplicates('name_N'))) for N in unique_N_values}
+
+    for idx, N in enumerate(unique_N_values):
+        ax = axes[idx]
+        data_N = parsed_union[parsed_union['N'] == N]
+
+        # Plot each line in the subplot for this specific N, using custom color, marker, and dashes
+        for i, name_N in enumerate(data_N['name_N'].unique()):
+            line_data = data_N[data_N['name_N'] == name_N]
+            sns.lineplot(
+                data=line_data,
+                x='unroll_factor',
+                y='data_point',
+                marker=marker_dict[N],
+                dashes=dash_dict[N],
+                ax=ax,
+                color=color_palettes[N][i],  # Assign color from the specific N palette
+                legend=False
+            )
+
+        #ax.set_yscale('log')
+        ax.set_title(f"Runtimes vs. Unrolling Factors for N={N}")
+        ax.set_xlabel("Unroll Factor")
+        ax.set_ylabel("Runtime (ms)")
+
+        # Manually create the legend with only relevant entries for this subplot (N)
+        legend_elements = [
+            Line2D([0], [0], color=color_palettes[N][i],  # Use the specific color for this N
+                   marker=marker_dict[N],
+                   dashes=dash_dict[N],
+                   label=name_N)
+            for i, name_N in enumerate(data_N['name_N'].unique())
+        ]
+        ax.legend(handles=legend_elements, title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Adjust layout
+    plt.subplots_adjust(right=0.65, hspace=0.2)
+    plt.savefig(pathlib.Path(args.dumps_dir).joinpath(args.out))
