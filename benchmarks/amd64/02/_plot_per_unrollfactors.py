@@ -5,6 +5,7 @@ import pathlib
 import pandas as pd
 import seaborn as sns
 import sys
+from matplotlib.lines import Line2D
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common')))
 from timer_stats import TimerStatsParser
 
@@ -34,46 +35,48 @@ if __name__ == '__main__':
     marker_dict = {N: markers[i % len(markers)] for i, N in enumerate(unique_N_values)}
     dash_dict = {N: dash_styles[i % len(dash_styles)] for i, N in enumerate(unique_N_values)}
 
-    # Map markers and dash styles based on "N" values
-    parsed_union['marker'] = parsed_union['N'].map(marker_dict)
-    parsed_union['dashing'] = parsed_union['N'].map(dash_dict)
+    # Calculate subplot layout
+    num_subplots = len(unique_N_values)
+    fig, axes = plt.subplots(num_subplots, 1, figsize=(10, 6 * num_subplots), sharex=True)
+    if num_subplots == 1:
+        axes = [axes]  # Ensure axes is always a list for consistent indexing
 
-    # Plot with sns.lineplot, grouping colors by 'name_N' and styles by 'N', but suppressing the default legend
-    plt.figure(figsize=(10, 6))
-    ax = sns.lineplot(
-        data=parsed_union,
-        x='unroll_factor',
-        y='data_point',
-        hue='name_N',       # Use `name_N` for colors
-        style='N',          # Use `N` for consistent markers and dashes across groups
-        markers=marker_dict,
-        dashes=dash_dict,
-        legend=False        # Suppress default legend to avoid extra entries
-    )
-    ax.set_yscale('log')
+    # Create a base color palette for each subplot (based on unique 'name_N')
+    color_palettes = {N: sns.color_palette("hsv", len(parsed_union[parsed_union['N'] == N].drop_duplicates('name_N'))) for N in unique_N_values}
 
-    # Manually create the legend with the unique `name_N` entries
-    from matplotlib.lines import Line2D
-    legend_elements = []
-    for name_N in parsed_union['name_N'].unique():
-        N_value = parsed_union.loc[parsed_union['name_N'] == name_N, 'N'].iloc[0]
-        legend_elements.append(Line2D(
-            [0], [0],
-            color=ax.get_lines()[len(legend_elements)].get_color(),
-            marker=marker_dict[N_value],
-            dashes=dash_dict[N_value],
-            label=name_N
-        ))
+    for idx, N in enumerate(unique_N_values):
+        ax = axes[idx]
+        data_N = parsed_union[parsed_union['N'] == N]
 
-    # Add the custom legend
-    ax.legend(handles=legend_elements, title="Name", bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+        # Plot each line in the subplot for this specific N, using custom color, marker, and dashes
+        for i, name_N in enumerate(data_N['name_N'].unique()):
+            line_data = data_N[data_N['name_N'] == name_N]
+            sns.lineplot(
+                data=line_data,
+                x='unroll_factor',
+                y='data_point',
+                marker=marker_dict[N],
+                dashes=dash_dict[N],
+                ax=ax,
+                color=color_palettes[N][i],  # Assign color from the specific N palette
+                legend=False
+            )
 
-    # Add title and labels
-    plt.title("Runtimes vs. Unrolling Factors")
-    plt.xlabel("Unroll Factor")
-    plt.ylabel("Runtime (ms)")
+        #ax.set_yscale('log')
+        ax.set_title(f"Runtimes vs. Unrolling Factors for N={N}")
+        ax.set_xlabel("Unroll Factor")
+        ax.set_ylabel("Runtime (ms)")
 
-    # Adjust the right margin to make room for the legend
-    plt.subplots_adjust(right=0.7)
+        # Manually create the legend with only relevant entries for this subplot (N)
+        legend_elements = [
+            Line2D([0], [0], color=color_palettes[N][i],  # Use the specific color for this N
+                   marker=marker_dict[N],
+                   dashes=dash_dict[N],
+                   label=name_N)
+            for i, name_N in enumerate(data_N['name_N'].unique())
+        ]
+        ax.legend(handles=legend_elements, title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
 
+    # Adjust layout
+    plt.subplots_adjust(right=0.65, hspace=0.2)
     plt.savefig(pathlib.Path(args.dumps_dir).joinpath(args.out))
