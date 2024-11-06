@@ -32,7 +32,8 @@ int32_t reduce_avx2(const __m256i& vec) {
     return result;
 }
 
-void vector_matmul_scalar(
+__attribute__((always_inline))
+inline void vector_matmul_scalar_core(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c
@@ -45,6 +46,24 @@ void vector_matmul_scalar(
             }
         }
     }
+}
+
+__attribute__((optimize("tree-vectorize")))
+inline void vector_matmul_scalar_autovec(
+    const int32_t* __restrict__ a,
+    const int32_t* __restrict__ b,
+    int32_t* __restrict__ c
+) {
+    vector_matmul_scalar_core(a, b, c);
+}
+
+__attribute__((optimize("no-tree-vectorize")))
+inline void vector_matmul_scalar_noautovec(
+    const int32_t* __restrict__ a,
+    const int32_t* __restrict__ b,
+    int32_t* __restrict__ c
+) {
+    vector_matmul_scalar_core(a, b, c);
 }
 
 // Use template params for pragmas. Using defined variables in pragmas does not work.
@@ -141,10 +160,17 @@ int main(int argc, char** argv) {
     }
 
     {
-        timer_stats tp("Scalar Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp("Scalar Matmul With Mul NoAutovec", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
-            vector_matmul_scalar(a_ptr, b_ptr, c_scalar_ptr);
+            vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
+        }
+    }
+    {
+        timer_stats tp("Scalar Matmul With Mul Autovec", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
+        for (volatile size_t i = 0; i < RUNS; i++) {
+            timer_scope ts(tp);
+            vector_matmul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {

@@ -7,7 +7,6 @@
 #include "common01.h"
 
 constexpr size_t RUNS = 16;
-constexpr size_t N = 512;
 
 // fallback to 1 if not defined
 #ifndef UNROLL_FACTOR0
@@ -19,22 +18,38 @@ constexpr size_t N = 512;
 #define N 256
 #endif
 
-void vector_matmul_scalar(
-    const int32_t *__restrict__ a,
-    const int32_t *__restrict__ b,
-    int32_t *__restrict__ c)
-{
-    for (int j = 0; j < N; ++j)
-    {
-        for (int i = 0; i < N; ++i)
-        {
+__attribute__((always_inline))
+inline void vector_matmul_scalar_core(
+    const int32_t* __restrict__ a,
+    const int32_t* __restrict__ b,
+    int32_t* __restrict__ c
+) {
+    for (int j = 0; j < N; ++j) {
+        for (int i = 0; i < N; ++i) {
             c[j * N + i] = 0;
-            for (int k = 0; k < N; ++k)
-            {
+            for (int k = 0; k < N; ++k) {
                 c[j * N + i] += a[j * N + k] * b[i * N + k]; // b is col major
             }
         }
     }
+}
+
+__attribute__((optimize("tree-vectorize")))
+inline void vector_matmul_scalar_autovec(
+    const int32_t* __restrict__ a,
+    const int32_t* __restrict__ b,
+    int32_t* __restrict__ c
+) {
+    vector_matmul_scalar_core(a, b, c);
+}
+
+__attribute__((optimize("no-tree-vectorize")))
+inline void vector_matmul_scalar_noautovec(
+    const int32_t* __restrict__ a,
+    const int32_t* __restrict__ b,
+    int32_t* __restrict__ c
+) {
+    vector_matmul_scalar_core(a, b, c);
 }
 
 template <int FACTOR>
@@ -143,6 +158,8 @@ int main(int argc, char **argv)
 {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
 
+    std::cout << "UNROLLING FACTOR: " << UNROLL_FACTOR0 << std::endl;
+
     auto *a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
     auto *b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
     auto *c_scalar_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
@@ -164,11 +181,19 @@ int main(int argc, char **argv)
     init(b_ptr, N * N, true);
 
     {
-        timer_stats tp("Scalar Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp("Scalar Matmul With Mul NoAutovec", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
-            vector_matmul_scalar(a_ptr, b_ptr, c_scalar_ptr);
+            vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
+        }
+    }
+    {
+        timer_stats tp("Scalar Matmul With Mul Autovec", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
+        for (volatile size_t i = 0; i < RUNS; i++)
+        {
+            timer_scope ts(tp);
+            vector_matmul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
