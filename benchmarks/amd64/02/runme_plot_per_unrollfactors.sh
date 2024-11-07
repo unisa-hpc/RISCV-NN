@@ -6,4 +6,4 @@ for ((n=64; n<=1024; n*=2)); do
     bash build.amd64.00.sh 02.cpp "-DUNROLL_FACTOR0=$i -DN=$n"
   done
 done
-python _plot_per_unrollfactors.py --dumps-dir ../../dumps --out "N$n_$i.png"
+python ../../common/plot.bench_01_02.py --dumps-dir ../../dumps --out "BenchId02.png"

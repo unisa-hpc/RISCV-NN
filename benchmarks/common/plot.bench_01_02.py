@@ -87,5 +87,5 @@ if __name__ == '__main__':
         ax.legend(handles=legend_elements, title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
 
     # Adjust layout
-    plt.subplots_adjust(right=0.65, hspace=0.2)
+    plt.subplots_adjust(right=0.6, hspace=0.2)
     plt.savefig(pathlib.Path(args.dumps_dir).joinpath(args.out))
