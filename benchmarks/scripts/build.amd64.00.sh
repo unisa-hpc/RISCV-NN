@@ -2,10 +2,6 @@
 
 compiler=g++-13
 
-# Define compiler-specific flags
-gpp_flags="-O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v"
-clangpp_flags="-O3 -march=native -fno-vectorize -fno-slp-vectorize -Wall -Wextra -v"
-
 function print_line() {
   echo "############################################"
 }
@@ -58,17 +54,8 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
 
 {
   compiler_version=$($compiler --version | head -n 1)
-
-  # Select flags based on the compiler string containing "g++" or "clang++"
-  if [[ "$compiler" == *g++* ]]; then
-    flags="$gpp_flags $extra_flags -I$script_dir/../common"
-  elif [[ "$compiler" == *clang++* ]]; then
-    flags="$clangpp_flags $extra_flags -I$script_dir/../common"
-  else
-    echo "Unsupported compiler: $compiler"
-    exit 1
-  fi
-
+  # Don't use -mavx2; use native for CPU-dependent results.
+  flags="-O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
   echo "Arch: AMD64"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"

@@ -6,9 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+benchmarks.tar.gz
+benchmarks.zip
+
 # Distribution / packaging
 .Python
 .idea/
+private_data/
 iree/
 dump/
 data/
