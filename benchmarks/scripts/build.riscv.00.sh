@@ -1,6 +1,6 @@
 #!/bin/bash
 
-compiler=g++
+compiler=g++-13
 
 # Define compiler-specific flags
 gpp_flags="-O3 -march=rv64imafdcv1p0 -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v"
