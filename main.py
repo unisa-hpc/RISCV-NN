@@ -19,7 +19,7 @@ def verify_dirs(dump_dir, data_dir):
 if __name__ == '__main__':
     # add args for dump and data dir
     parser = argparse.ArgumentParser()
-    parser.add_argument('--recipe', type=str, required=False, default='resnet18_cifar10_s38bit',
+    parser.add_argument('--recipe', type=str, required=False, default='resnet18_cifar10_denseshift_8bits',
                         help='The name of the chosen recipe file without the extension.')
     parser.add_argument('--dump', type=str, required=False, default='dump')
     parser.add_argument('--data', type=str, required=False, default='data')

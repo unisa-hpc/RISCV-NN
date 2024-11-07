@@ -33,8 +33,10 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
 
 {
   compiler_version=$($compiler --version | head -n 1)
-  # Dont use -mavx2, our results are always CPU model and vendor dependent anyways. Use native.
-  flags="-O3 -march=rv64imafdcv1p0 -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
+  # Using `rv64imafdcv1p0`
+  # Using `rv64imacv`
+  # Autovec works from g++-14.1 and onwards!
+  flags="-O3 -march=rv64imacv -fno-tree-vectorize -fno-tree-slp-vectorize -fopt-info-vec -Wall -Wextra -v -I$script_dir/../common $extra_flags"
   echo "Arch: RISC-V"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"

@@ -55,7 +55,7 @@ class S8Conv2dShift8bit(nn.Conv2d):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.weight_sign = self.weight
         self.weight_val = Parameter(torch.Tensor(out_channels, in_channels // groups, kernel_size, kernel_size))
-        self.weight_shifts = self.weight_shifts = nn.ParameterList([Parameter(torch.Tensor(out_channels, in_channels // groups, kernel_size, kernel_size).to(device)) for _ in range(8)])
+        self.weight_shifts = nn.ParameterList([Parameter(torch.Tensor(out_channels, in_channels // groups, kernel_size, kernel_size).to(device)) for _ in range(8)])
         self.register_buffer('qweight', None)
 
     def _conv_forward(self, input, weight):
