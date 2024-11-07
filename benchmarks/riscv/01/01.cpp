@@ -54,12 +54,12 @@ void vector_matmul_scalar_noautovec(
     vector_matmul_scalar_core(a, b, c);
 }
 
-template <int FACTOR>
 void vector_matmul_rvv(
     const int32_t *__restrict__ a,
     const int32_t *__restrict__ b,
     int32_t *__restrict__ c)
 {
+    constexpr int FACTOR = UNROLL_FACTOR0;
     size_t vlmax = __riscv_vsetvlmax_e32m1();
     for (int j = 0; j < N; ++j)
     {
@@ -84,12 +84,12 @@ void vector_matmul_rvv(
     }
 }
 
-template <int FACTOR>
 void vector_matmul_shift(
     const int32_t *__restrict__ a,
     const uint32_t *__restrict__ b,
     int32_t *__restrict__ c)
 {
+    constexpr int FACTOR = UNROLL_FACTOR0;
     size_t vlmax = __riscv_vsetvlmax_e32m1();
     for (int j = 0; j < N; ++j)
     {
@@ -203,7 +203,7 @@ int main(int argc, char **argv)
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
-            vector_matmul_rvv<UNROLL_FACTOR0>(a_ptr, b_ptr, c_rvv_mul_ptr);
+            vector_matmul_rvv(a_ptr, b_ptr, c_rvv_mul_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_rvv_mul_ptr);
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
-            vector_matmul_shift<UNROLL_FACTOR0>(a_ptr, new_b_ptr, c_avx_shift_ptr);
+            vector_matmul_shift(a_ptr, new_b_ptr, c_avx_shift_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_avx_shift_ptr);

@@ -49,7 +49,6 @@ inline void vector_matmul_scalar_core(
 }
 
 __attribute__((optimize("tree-vectorize")))
-__attribute__((optimize("vectorize")))
 void vector_matmul_scalar_autovec(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
@@ -59,7 +58,6 @@ void vector_matmul_scalar_autovec(
 }
 
 __attribute__((optimize("no-tree-vectorize")))
-__attribute__((optimize("no-vectorize")))
 void vector_matmul_scalar_noautovec(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
@@ -69,12 +67,12 @@ void vector_matmul_scalar_noautovec(
 }
 
 // Use template params for pragmas. Using defined variables in pragmas does not work.
-template <int FACTOR>
 void vector_matmul_avx(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c
 ) {
+    constexpr int FACTOR = UNROLL_FACTOR0;
     for (int j = 0; j < N; ++j) {
         for (int i = 0; i < N; ++i) {
             __m256i vec_s = _mm256_setzero_si256();
@@ -94,12 +92,12 @@ void vector_matmul_avx(
 }
 
 // Use template params for pragmas. Using defined variables in pragmas does not work.
-template <int FACTOR>
 void vector_matmul_shift(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c
 ) {
+    constexpr int FACTOR = UNROLL_FACTOR0;
     for (int j = 0; j < N; ++j) {
         for (int i = 0; i < N; ++i) {
             __m256i vec_s = _mm256_setzero_si256();
@@ -179,7 +177,7 @@ int main(int argc, char** argv) {
         timer_stats tp("AVX Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
-            vector_matmul_avx<UNROLL_FACTOR0>(a_ptr, b_ptr, c_avx_mul_ptr);
+            vector_matmul_avx(a_ptr, b_ptr, c_avx_mul_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_avx_mul_ptr);
@@ -197,7 +195,7 @@ int main(int argc, char** argv) {
         timer_stats tp("AVX Matmul With Shift", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
-            vector_matmul_shift<UNROLL_FACTOR0>(a_ptr, b_ptr, c_avx_shift_ptr);
+            vector_matmul_shift(a_ptr, b_ptr, c_avx_shift_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_avx_shift_ptr);
