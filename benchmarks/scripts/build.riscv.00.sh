@@ -36,7 +36,7 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
   # Using `rv64imafdcv1p0`
   # Using `rv64imacv`
   # Autovec works from g++-14.1 and onwards!
-  flags="-O3 -march=rv64imacv -fno-tree-vectorize -fno-tree-slp-vectorize -fopt-info-vec -Wall -Wextra -v -I$script_dir/../common $extra_flags"
+  flags="-O3 -march=rv64imacv -fno-unroll-loops -fno-tree-vectorize -fno-tree-slp-vectorize -fopt-info-vec -Wall -Wextra -v -I$script_dir/../common $extra_flags"
   echo "Arch: RISC-V"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"

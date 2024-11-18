@@ -1,6 +1,6 @@
 #!/bin/bash
 
-compiler=g++-13
+compiler=g++
 
 function print_line() {
   echo "############################################"
@@ -55,7 +55,7 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
 {
   compiler_version=$($compiler --version | head -n 1)
   # Don't use -mavx2; use native for CPU-dependent results.
-  flags="-O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
+  flags="-O3 -march=native -fno-unroll-loops -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
   echo "Arch: AMD64"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"
