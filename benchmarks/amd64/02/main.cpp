@@ -1,120 +1,32 @@
-#include <iostream>
-#include <chrono>
-#include <immintrin.h>
-#include <functional>
-#include <string>
-#include <cmath>
-#include "common01.h"
+//
+// Created by saleh on 11/19/24.
+//
 
-constexpr size_t RUNS = 256;
-constexpr int VECTOR_SIZE = 256;
-constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
+#include "defs.h"
 
-// fallback to 1 if not defined
-#ifndef UNROLL_FACTOR0
-#define UNROLL_FACTOR0 1
-#endif
-
-// fallback to 256 if not defined
-#ifndef N
-#define N 256
-#endif
-
-int32_t reduce_avx2(const __m256i& vec) {
-    // Horizontal addition
-    // Step 1: Add adjacent pairs
-    __m256i v1 = _mm256_hadd_epi32(vec, vec); // 0, 2, 4, 6, 1, 3, 5, 7
-    __m256i v2 = _mm256_hadd_epi32(v1, v1); // 0, 4, 1, 5, 2, 6, 3, 7
-
-    // Step 2: Extract the final result
-    int result = _mm256_extract_epi32(v2, 0) + _mm256_extract_epi32(v2, 4);
-
-    return result;
-}
-
-__attribute__((always_inline))
-inline void vector_matmul_scalar_core(
+extern void vector_matmul_scalar_autovec (
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c
-) {
-    for (int j = 0; j < N; ++j) {
-        for (int i = 0; i < N; ++i) {
-            c[j * N + i] = 0;
-            for (int k = 0; k < N; ++k) {
-                c[j * N + i] += a[j * N + k] * b[i * N + k]; // b is col major
-            }
-        }
-    }
-}
+);
 
-__attribute__((optimize("tree-vectorize")))
-void vector_matmul_scalar_autovec(
+extern void vector_matmul_scalar_noautovec (
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c
-) {
-    vector_matmul_scalar_core(a, b, c);
-}
+);
 
-__attribute__((optimize("no-tree-vectorize")))
-void vector_matmul_scalar_noautovec(
+extern void vector_matmul_shift(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c
-) {
-    vector_matmul_scalar_core(a, b, c);
-}
+);
 
-// Use template params for pragmas. Using defined variables in pragmas does not work.
-void vector_matmul_avx(
+extern void vector_matmul_avx(
     const int32_t* __restrict__ a,
     const int32_t* __restrict__ b,
     int32_t* __restrict__ c
-) {
-    constexpr int FACTOR = UNROLL_FACTOR0;
-    for (int j = 0; j < N; ++j) {
-        for (int i = 0; i < N; ++i) {
-            __m256i vec_s = _mm256_setzero_si256();
-            #pragma GCC unroll FACTOR
-            for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
-                auto* ptr_a = a + j * N + k; // `a` is row major
-                auto* ptr_b = b + i * N + k; // `b` is col major
-                __m256i vec_a = _mm256_load_si256((__m256i*)ptr_a);
-                __m256i vec_b = _mm256_load_si256((__m256i*)ptr_b);
-                __m256i vec_mul = _mm256_mullo_epi32(vec_a, vec_b);
-                vec_s = _mm256_add_epi32(vec_s, vec_mul);
-            }
-            const int32_t sum = reduce_avx2(vec_s);
-            c[j * N + i] = sum;
-        }
-    }
-}
-
-// Use template params for pragmas. Using defined variables in pragmas does not work.
-void vector_matmul_shift(
-    const int32_t* __restrict__ a,
-    const int32_t* __restrict__ b,
-    int32_t* __restrict__ c
-) {
-    constexpr int FACTOR = UNROLL_FACTOR0;
-    for (int j = 0; j < N; ++j) {
-        for (int i = 0; i < N; ++i) {
-            __m256i vec_s = _mm256_setzero_si256();
-            #pragma GCC unroll FACTOR
-            for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
-                auto* ptr_a = a + j * N + k; // `a` is row major
-                auto* ptr_b = b + i * N + k; // `b` is col major
-                __m256i vec_a = _mm256_load_si256((__m256i*)ptr_a);
-                __m256i vec_b = _mm256_load_si256((__m256i*)ptr_b);
-                __m256i vec_mul = _mm256_sllv_epi32(vec_a, vec_b);
-                vec_s = _mm256_add_epi32(vec_s, vec_mul);
-            }
-            const int32_t sum = reduce_avx2(vec_s);
-            c[j * N + i] = sum;
-        }
-    }
-}
+);
 
 // Function to verify the results of scalar and RVV methods
 void verify_results(const int32_t* c1, const int32_t* c2) {

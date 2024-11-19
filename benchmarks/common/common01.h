@@ -19,6 +19,16 @@ using std::chrono::duration_cast;
 using std::chrono::duration;
 using std::chrono::milliseconds;
 
+#ifdef AUTOVEC
+#define SUFFIX _autovec
+#else
+#define SUFFIX _noautovec
+#endif
+
+#define CONCATENATE_DETAIL(x, y) x##y
+#define CONCATENATE(x, y) CONCATENATE_DETAIL(x, y)
+#define FUNCTION_NAME(name) CONCATENATE(name, SUFFIX)
+
 class timer_scope; // Forward declaration
 class timer_stats {
     friend class timer_scope;

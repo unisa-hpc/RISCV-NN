@@ -16,6 +16,7 @@ private_data/
 iree/
 dump/
 data/
+dace/
 build/
 develop-eggs/
 dist/
