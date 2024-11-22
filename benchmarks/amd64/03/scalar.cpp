@@ -19,6 +19,12 @@ void FUNCTION_NAME(conv2d_direct_padding_ochw_scalar)(
     int stride_y,
     bool padding_valid,
     bool padding_same) {
+
+    constexpr int FACTOR0 = UNROLL_FACTOR0;
+    constexpr int FACTOR1 = UNROLL_FACTOR1;
+    constexpr int FACTOR2 = UNROLL_FACTOR2;
+    constexpr int FACTOR3 = UNROLL_FACTOR3;
+
     if (padding_valid && !padding_same) {
         const size_t heightOut = GetOutHeight(input_height, kernel_size_y, stride_y);
         const size_t widthOut = GetOutWidth(input_width, kernel_size_x, stride_x);
@@ -27,11 +33,15 @@ void FUNCTION_NAME(conv2d_direct_padding_ochw_scalar)(
         for (int h = 0; h < input_height; h += stride_y) {
             for (int w = 0; w < input_width; w += stride_x) {
                 if (h + kernel_size_y - 1 < input_height && w + kernel_size_x - 1 < input_width) {
+#pragma GCC unroll (FACTOR0)
                     for (int o = 0; o < channels_out; o++) {
                         int32_t _sum = 0;
+#pragma GCC unroll (FACTOR1)
                         for (int c = 0; c < channels_in; c++) {
                             // h and w are zero-based, so it's correct.
+#pragma GCC unroll (FACTOR2)
                             for (int j = 0; j < kernel_size_y; j++) {
+#pragma GCC unroll (FACTOR3)
                                 for (int i = 0; i < kernel_size_x; i++) {
                                     size_t idxI =
                                         /*b * height * width * chIn +*/
