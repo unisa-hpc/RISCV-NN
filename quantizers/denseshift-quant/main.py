@@ -199,6 +199,16 @@ def main():
             filename_wo_ext=os.path.join(args.dump, 'checkpoint')
         )
 
+        if is_best:
+            # Check if the model is wrapped in DataParallel
+            if isinstance(model, torch.nn.DataParallel):
+                model_to_export = model.module
+            else:
+                model_to_export = model
+            onnx_input = next(iter(val_loader))[0]
+            onnx_input = onnx_input.to(next(model_to_export.parameters()).device)
+            torch.onnx.export(model_to_export, onnx_input, os.path.join(args.dump, 'checkpoint.onnx'))
+
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
