@@ -220,7 +220,7 @@ class PlotRuntimeVsKernelSlideOps:
         parsed_union['slide_ops'] = parsed_union['K_H'] * parsed_union['K_W'] * parsed_union['C_I']
         unique_configs = parsed_union['config_id'].unique()
 
-        for cfg in unique_configs:
+        for cfg in tqdm(unique_configs):
             # plot each case
             self.__plot(
                 parsed_union,
@@ -256,5 +256,5 @@ if __name__ == '__main__':
     }
     parsed_runs = [TimerStatsParser(j, parse_pairs) for j in all_jsons]
     parsed_union = pd.concat([run.get_df() for run in parsed_runs], ignore_index=True)
-    #PlotRuntimeVsOnlyOneUnrollFactor(parsed_union).plot()
+    PlotRuntimeVsOnlyOneUnrollFactor(parsed_union).plot()
     PlotRuntimeVsKernelSlideOps(parsed_union).plot()
