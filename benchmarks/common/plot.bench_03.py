@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 import sys
 from matplotlib.lines import Line2D
+from tqdm.auto import tqdm
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common')))
 from timer_stats import TimerStatsParser
@@ -31,36 +32,204 @@ def get_all_json_files(dump_dir: str, bench_id: str) -> [str]:
     return json_files
 
 
-def _plot(data_constant_config: pd.DataFrame, idx, col_name, col_value, sweep_col_name, desc_dict: dict):
-    plt.clf()  # Clear the current figure
-    f = data_constant_config[col_name] == col_value
-    masked_data = data_constant_config[f]
-    sorted_unique_names = sorted(masked_data['name'].unique())
+class PlotRuntimeVsOnlyOneUnrollFactor:
+    """
+    This class is used to plot the runtime of a benchmark for different unroll factors. keeping 3 out of 4 constant,
+    while sweeping the other one.
+    """
 
-    legend_handles = []
-    ax = plt.gca()  # Get the current Axes instance
-    for i, current_name in enumerate(sorted_unique_names):
-        line_data = masked_data[masked_data['name'] == current_name]
-        sns.lineplot(
-            data=line_data,
-            x=sweep_col_name,
-            y='data_point',
-            ax=ax,
-            legend=False
-        )
+    def __init__(self, data: pd.DataFrame):
+        self.data = data.copy()
 
-    for line, current_name in zip(ax.get_lines(), sorted_unique_names):
-        legend_handles.append(Line2D([0], [0], color=line.get_color(), label=current_name))
+    def plot(self):
+        self.__prepare_and_plot()
 
-    plt.title(f'Config for {desc_dict[col_name]} =\n{col_name}={col_value}, sweep={sweep_col_name}', fontsize=8)
-    plt.xlabel(sweep_col_name)
-    plt.ylabel('Time (ms)')
-    plt.legend(handles=legend_handles, title='Config', fontsize=8, title_fontsize=8, loc='upper left', bbox_to_anchor=(1, 1))
+    def __plot(
+            self,
+            data_constant_config: pd.DataFrame,
+            idx,
+            col_name,
+            col_value,
+            sweep_col_name,
+            desc_dict: dict
+    ):
+        """
+            This script is used to plot the runtime of a benchmark for different unroll factors.
+            Takes the whole data frame and the col_name and col_value to filter the data.
+            In simple words, we try to find unique config_id_sweep_factor<x> and plot all the available `name` lines in
+            the same figure.
+        """
 
-    # Adjust layout
-    plt.subplots_adjust(right=0.6, hspace=0.2)
-    plt.gcf().set_size_inches(10, 6)  # Adjust the canvas size
-    plt.savefig(pathlib.Path(args.dumps_dir).joinpath(args.out).joinpath(f'{col_name}_{col_value}_{sweep_col_name}.png'))
+        plt.clf()  # Clear the current figure
+        f = data_constant_config[col_name] == col_value
+        masked_data = data_constant_config[f]
+        sorted_unique_names = sorted(masked_data['name'].unique())
+
+        legend_handles = []
+        ax = plt.gca()  # Get the current Axes instance
+        for i, current_name in enumerate(sorted_unique_names):
+            line_data = masked_data[masked_data['name'] == current_name]
+            sns.lineplot(
+                data=line_data,
+                x=sweep_col_name,
+                y='data_point',
+                ax=ax,
+                legend=False
+            )
+
+        for line, current_name in zip(ax.get_lines(), sorted_unique_names):
+            legend_handles.append(Line2D([0], [0], color=line.get_color(), label=current_name))
+
+        plt.title(
+            f'Config for {desc_dict[col_name]} =\n{col_name}={col_value}, sweep={sweep_col_name}',
+            fontsize=8)
+        plt.xlabel(sweep_col_name)
+        plt.ylabel('Time (ms)')
+        plt.legend(handles=legend_handles,
+                   title='Config',
+                   fontsize=8,
+                   title_fontsize=8,
+                   loc='upper left',
+                   bbox_to_anchor=(1, 1))
+
+        # Adjust layout
+        plt.subplots_adjust(right=0.6, hspace=0.2)
+        plt.gcf().set_size_inches(10, 6)  # Adjust the canvas size
+        plt.savefig(
+            pathlib.Path(args.dumps_dir).joinpath(args.out).joinpath(f'{col_name}_{col_value}_{sweep_col_name}.png'))
+
+    def __prepare_and_plot(self):
+        legend_desc = {}
+        # combine all pairs to form a unique config identifier # parsed_union['name'] + '-' + \
+        parsed_union['config_id'] = \
+            parsed_union['I_H'].astype(str) + '-' + parsed_union['I_W'].astype(str) + '-' + \
+            parsed_union['K_H'].astype(str) + '-' + parsed_union['K_W'].astype(str) + '-' + \
+            parsed_union['C_I'].astype(str) + '-' + parsed_union['C_O'].astype(str) + '-' + \
+            parsed_union['S_X'].astype(str) + '-' + parsed_union['S_Y'].astype(str)
+
+        legend_desc['config_id'] = 'I_H, I_W, K_H, K_W, C_I, C_O, S_X, S_Y'
+
+        parsed_union['unique_factors123'] = parsed_union['UNROLL_FACTOR1'].astype(str) + '-' + \
+                                            parsed_union['UNROLL_FACTOR2'].astype(str) + '-' + \
+                                            parsed_union['UNROLL_FACTOR3'].astype(str)
+        parsed_union['unique_factors023'] = parsed_union['UNROLL_FACTOR0'].astype(str) + '-' + \
+                                            parsed_union['UNROLL_FACTOR2'].astype(str) + '-' + \
+                                            parsed_union['UNROLL_FACTOR3'].astype(str)
+        parsed_union['unique_factors013'] = parsed_union['UNROLL_FACTOR0'].astype(str) + '-' + \
+                                            parsed_union['UNROLL_FACTOR1'].astype(str) + '-' + \
+                                            parsed_union['UNROLL_FACTOR3'].astype(str)
+        parsed_union['unique_factors012'] = parsed_union['UNROLL_FACTOR0'].astype(str) + '-' + \
+                                            parsed_union['UNROLL_FACTOR1'].astype(str) + '-' + \
+                                            parsed_union['UNROLL_FACTOR2'].astype(str)
+
+        unique_configs = parsed_union['config_id'].unique()
+
+        # Add a new column for each sweep factor
+        sweep_index_to_unique_factors = {0: 'unique_factors123', 1: 'unique_factors023', 2: 'unique_factors013',
+                                         3: 'unique_factors012'}
+        for cfg in unique_configs:
+            for sweep_factor in range(4):
+                # create a new column by combining config_id and sweep_index_to_unique_factors[sweep_factor]
+                parsed_union[f'config_id_sweep_factor{sweep_factor}'] = parsed_union['config_id'] + ' (' + parsed_union[
+                    sweep_index_to_unique_factors[sweep_factor]] + ')'
+                legend_desc[
+                    f'config_id_sweep_factor{sweep_factor}'] = f'{legend_desc["config_id"]} ({sweep_index_to_unique_factors[sweep_factor]})'
+
+        for sweep_factor in range(4):
+            unique_configs_for_current_sweep_factor = parsed_union[f'config_id_sweep_factor{sweep_factor}'].unique()
+            for idx, col_value_unique in tqdm(enumerate(unique_configs_for_current_sweep_factor),
+                                              total=len(unique_configs_for_current_sweep_factor) * 4,
+                                              initial=sweep_factor * len(unique_configs_for_current_sweep_factor)):
+                # plot each case
+                self.__plot(
+                    parsed_union,
+                    idx,
+                    f'config_id_sweep_factor{sweep_factor}',
+                    col_value_unique,
+                    f'UNROLL_FACTOR{sweep_factor}',
+                    legend_desc
+                )
+
+
+class PlotRuntimeVsKernelSlideOps:
+    def __init__(self, data: pd.DataFrame):
+        # deep clone the data
+        self.data = data.copy()
+
+    def plot(self):
+        self.__prepare_and_plot()
+
+    def __plot(
+            self,
+            data_augmented: pd.DataFrame,
+            col_name,
+            col_value,
+            sweep_col_name,
+            desc_dict: dict
+    ):
+        plt.clf()  # Clear the current figure
+        f = data_augmented[col_name] == col_value
+        masked_data = data_augmented[f]
+        sorted_unique_names = sorted(masked_data['name'].unique())
+
+        legend_handles = []
+        ax = plt.gca()  # Get the current Axes instance
+        for i, current_name in enumerate(sorted_unique_names):
+            line_data = masked_data[masked_data['name'] == current_name]
+            sns.lineplot(
+                data=line_data,
+                x=sweep_col_name,
+                y='data_point',
+                ax=ax,
+                legend=False
+            )
+
+        for line, current_name in zip(ax.get_lines(), sorted_unique_names):
+            legend_handles.append(Line2D([0], [0], color=line.get_color(), label=current_name))
+
+        desc_str = desc_dict['config_id']
+        plt.title(
+            f'Config for {desc_str} =\n{col_name}={col_value}, sweep={sweep_col_name}',
+            fontsize=8)
+        plt.xlabel(sweep_col_name + ' (K_H * K_W * C_I)')
+        plt.ylabel('Time (ms)')
+        plt.legend(handles=legend_handles,
+                   title='Config',
+                   fontsize=8,
+                   title_fontsize=8,
+                   loc='upper left',
+                   bbox_to_anchor=(1, 1))
+
+        # Adjust layout
+        plt.subplots_adjust(right=0.6, hspace=0.2)
+        plt.gcf().set_size_inches(10, 6)  # Adjust the canvas size
+        plt.savefig(
+            pathlib.Path(args.dumps_dir).joinpath(args.out).joinpath(f'{col_name}_{col_value}_{sweep_col_name}.png'))
+
+    def __prepare_and_plot(self):
+        legend_desc = {}
+        # combine all pairs to form a unique config identifier # parsed_union['name'] + '-' + \
+        parsed_union['config_id'] = \
+            parsed_union['I_H'].astype(str) + '-' + parsed_union['I_W'].astype(str) + '-' + \
+            parsed_union['C_O'].astype(str) + '-' + \
+            parsed_union['S_X'].astype(str) + '-' + parsed_union['S_Y'].astype(str) + '-' + \
+            parsed_union['UNROLL_FACTOR0'].astype(str) + '-' + parsed_union['UNROLL_FACTOR1'].astype(str) + '-' + \
+            parsed_union['UNROLL_FACTOR2'].astype(str) + '-' + parsed_union['UNROLL_FACTOR3'].astype(str)
+
+        legend_desc['config_id'] = 'I_H, I_W, C_O, S_X, S_Y, UF0, UF1, UF2, UF3'
+        parsed_union['slide_ops'] = parsed_union['K_H'] * parsed_union['K_W'] * parsed_union['C_I']
+        unique_configs = parsed_union['config_id'].unique()
+
+        for cfg in unique_configs:
+            # plot each case
+            self.__plot(
+                parsed_union,
+                'config_id',
+                cfg,
+                'slide_ops',
+                legend_desc
+            )
+
 
 if __name__ == '__main__':
     # add -d argument for dumps dir
@@ -87,45 +256,5 @@ if __name__ == '__main__':
     }
     parsed_runs = [TimerStatsParser(j, parse_pairs) for j in all_jsons]
     parsed_union = pd.concat([run.get_df() for run in parsed_runs], ignore_index=True)
-    legend_desc = {}
-    # combine all pairs to form a unique config identifier # parsed_union['name'] + '-' + \
-    parsed_union['config_id'] = \
-        parsed_union['I_H'].astype(str) + '-' + parsed_union['I_W'].astype(str) + '-' + \
-        parsed_union['K_H'].astype(str) + '-' + parsed_union['K_W'].astype(str) + '-' + \
-        parsed_union['C_I'].astype(str) + '-' + parsed_union['C_O'].astype(str) + '-' + \
-        parsed_union['S_X'].astype(str) + '-' + parsed_union['S_Y'].astype(str)
-
-    legend_desc['config_id'] = 'I_H, I_W, K_H, K_W, C_I, C_O, S_X, S_Y'
-
-    parsed_union['unique_factors123'] = parsed_union['UNROLL_FACTOR1'].astype(str) + '-' + \
-                                        parsed_union['UNROLL_FACTOR2'].astype(str) + '-' + \
-                                        parsed_union['UNROLL_FACTOR3'].astype(str)
-    parsed_union['unique_factors023'] = parsed_union['UNROLL_FACTOR0'].astype(str) + '-' + \
-                                        parsed_union['UNROLL_FACTOR2'].astype(str) + '-' + \
-                                        parsed_union['UNROLL_FACTOR3'].astype(str)
-    parsed_union['unique_factors013'] = parsed_union['UNROLL_FACTOR0'].astype(str) + '-' + \
-                                        parsed_union['UNROLL_FACTOR1'].astype(str) + '-' + \
-                                        parsed_union['UNROLL_FACTOR3'].astype(str)
-    parsed_union['unique_factors012'] = parsed_union['UNROLL_FACTOR0'].astype(str) + '-' + \
-                                        parsed_union['UNROLL_FACTOR1'].astype(str) + '-' + \
-                                        parsed_union['UNROLL_FACTOR2'].astype(str)
-
-    unique_configs = parsed_union['config_id'].unique()
-
-    # Add a new column for each sweep factor
-    sweep_index_to_unique_factors = {0: 'unique_factors123', 1: 'unique_factors023', 2: 'unique_factors013', 3: 'unique_factors012'}
-    for cfg in unique_configs:
-        for sweep_factor in range(4):
-            # create a new column by combining config_id and sweep_index_to_unique_factors[sweep_factor]
-            parsed_union[f'config_id_sweep_factor{sweep_factor}'] = parsed_union['config_id'] + ' (' + parsed_union[sweep_index_to_unique_factors[sweep_factor]] + ')'
-            legend_desc[f'config_id_sweep_factor{sweep_factor}'] = f'{legend_desc["config_id"]} ({sweep_index_to_unique_factors[sweep_factor]})'
-
-    for sweep_factor in range(4):
-        unique_configs_for_current_sweep_factor = parsed_union[f'config_id_sweep_factor{sweep_factor}'].unique()
-        for idx, col_value_unique in enumerate(unique_configs_for_current_sweep_factor):
-            # plot each case
-            _plot(parsed_union, idx, f'config_id_sweep_factor{sweep_factor}', col_value_unique, f'UNROLL_FACTOR{sweep_factor}', legend_desc)
-
-
-
-
+    #PlotRuntimeVsOnlyOneUnrollFactor(parsed_union).plot()
+    PlotRuntimeVsKernelSlideOps(parsed_union).plot()

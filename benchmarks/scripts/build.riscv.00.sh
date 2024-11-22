@@ -9,18 +9,20 @@ function set_compiler_flags() {
 
     # G++ flags
     if [[ "$compiler" =~ g\+\+ ]]; then
-        flags_main="-O3 -march=rv64imacv -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../common $extra_flags"
-        flags_vec="-c -O3 -march=rv64imacv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
-        flags_scalar_vec="-c -O3 -march=rv64imacv -DAUTOVEC -fopt-info-vec -Wall -Wextra -v -I$script_dir/../common $extra_flags"
-        flags_scalar_novec="-c -O3 -march=rv64imacv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
+        echo "Using G++ compatible flags."
+        flags_main="-O3 -march=rv64imacv -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_vec="-c -O3 -march=rv64imacv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_scalar_vec="-c -O3 -march=rv64imacv -DAUTOVEC -fopt-info-vec -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_scalar_novec="-c -O3 -march=rv64imacv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
     fi
 
     # Clang++ flags
     if [[ "$compiler" =~ clang\+\+ ]]; then
-        flags_main="-O3 -march=rv64imacv -fno-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../common $extra_flags"
-        flags_vec="-c -O3 -march=rv64imacv -fno-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
-        flags_scalar_vec="-c -O3 -march=rv64imacv -DAUTOVEC -fvectorize -Rpass=loop-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
-        flags_scalar_novec="-c -O3 -march=rv64imacv -fno-vectorize -Wall -Wextra -v -I$script_dir/../common $extra_flags"
+        echo "Using Clang++ compatible flags."
+        flags_main="-O3 -march=rv64imacv -fno-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_vec="-c -O3 -march=rv64imacv -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_scalar_vec="-c -O3 -march=rv64imacv -DAUTOVEC -fvectorize -Rpass=loop-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_scalar_novec="-c -O3 -march=rv64imacv -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
     fi
 }
 
@@ -34,9 +36,10 @@ function print_line_long() {
   echo "*"
   echo "############################################"
 }
+# get the path to the symlinked script (not the real file, the symlink's path)
 
-script_dir=$(dirname "$(readlink -f "$0")")
-dump_dir="$script_dir/../dumps"
+script_dir=$(dirname "$0")
+dump_dir="$script_dir/../../dumps"
 dump_dir=$(realpath "$dump_dir")
 delete_dumps=false
 
@@ -83,6 +86,8 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
 # Get abs path of sources_main
 abs_main=$(realpath "$script_dir/$sources_main")
 # Get the dir name of the folder containing sources_main
+echo "sources_main: $sources_main"
+echo "abs_main: $abs_main"
 benchId=$(basename "$(dirname "$abs_main")")
 
 # Set compiler flags dynamically
@@ -90,7 +95,7 @@ set_compiler_flags "$compiler" "$extra_flags"
 
 {
   compiler_version=$($compiler --version | head -n 1)
-  echo "Arch: RISC-V 64"
+  echo "Arch: RISCV 64"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"
   echo "Timestamp: $timestamp"
@@ -132,6 +137,9 @@ set_compiler_flags "$compiler" "$extra_flags"
 
   # If all statuses are 0
   compile_status=$((compile_main_status + compile_vec_status + compile_scalar_vec_status + compile_scalar_novec_status))
+
+  # Append the new dump dir to the text file dumps directory
+  echo "$new_dump_dir" >> "$dump_dir/benchId${benchId}.txt"
 
   if [ $compile_status -eq 0 ]; then
     # Run the binary and capture its output
