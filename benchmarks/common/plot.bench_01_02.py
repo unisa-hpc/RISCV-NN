@@ -11,11 +11,24 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common
 from timer_stats import TimerStatsParser
 
 
-def get_all_json_files(dump_dir) -> [str]:
+def get_all_json_files(dump_dir: str, bench_id: str) -> [str]:
     """
     Get the abs path of all the json files in the dump directory, recursively.
     """
-    return list(pathlib.Path(dump_dir).rglob('*.json'))
+    # read all the lines from the file at dump_dir/benchId.txt
+    with open(pathlib.Path(dump_dir).joinpath(f'benchId{bench_id}.txt'), 'r') as f:
+        lines = f.readlines()
+
+    json_files = []
+    for current_run_dir in lines:
+        # find all the json files in current_run_dir
+        current_run_dir = current_run_dir.strip()
+        current_run_dir_path = pathlib.Path(current_run_dir)
+        json_files.extend([str(f) for f in current_run_dir_path.rglob('*.json')])
+
+    print(f'Found {len(lines)} sub-dump directories and a '
+          f'total of {len(json_files)} json files for benchmark ID {bench_id}')
+    return json_files
 
 
 if __name__ == '__main__':
@@ -23,10 +36,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dumps-dir', type=str, required=True)
     parser.add_argument('--out', type=str, required=True)
+    parser.add_argument('--benchid', type=str, required=True)
     args = parser.parse_args()
 
-    all_jsons = get_all_json_files(args.dumps_dir)
-    parsed_runs = [TimerStatsParser(j) for j in all_jsons]
+    all_jsons = get_all_json_files(args.dumps_dir, args.benchid)
+    parse_pairs = lambda pairs: {
+        'N': pairs['N'],
+        'unroll_factor': pairs['unroll_factor']
+    }
+    parsed_runs = [TimerStatsParser(j, parse_pairs) for j in all_jsons]
     parsed_union = pd.concat([run.get_df() for run in parsed_runs], ignore_index=True)
     parsed_union['name_N'] = parsed_union['name'] + ' (N=' + parsed_union['N'].astype(str) + ')'
 

@@ -282,10 +282,10 @@ int main(int argc, char** argv) {
         timer_stats tp(
             "Scalar Direct OCHW Conv2D With Mul NoAutovec",
             {
-              {"unroll_factor0", UNROLL_FACTOR0},
-              {"unroll_factor1", UNROLL_FACTOR1},
-              {"unroll_factor2", UNROLL_FACTOR2},
-              {"unroll_factor3", UNROLL_FACTOR3},
+              {"UNROLL_FACTOR0", UNROLL_FACTOR0},
+              {"UNROLL_FACTOR1", UNROLL_FACTOR1},
+              {"UNROLL_FACTOR2", UNROLL_FACTOR2},
+              {"UNROLL_FACTOR3", UNROLL_FACTOR3},
               {"I_H", I_H},
               {"I_W", I_W},
               {"K_H", K_H},
@@ -314,10 +314,10 @@ int main(int argc, char** argv) {
         timer_stats tp(
             "Scalar Direct OCHW Conv2D With Mul Autovec",
             {
-              {"unroll_factor0", UNROLL_FACTOR0},
-              {"unroll_factor1", UNROLL_FACTOR1},
-              {"unroll_factor2", UNROLL_FACTOR2},
-              {"unroll_factor3", UNROLL_FACTOR3},
+              {"UNROLL_FACTOR0", UNROLL_FACTOR0},
+              {"UNROLL_FACTOR1", UNROLL_FACTOR1},
+              {"UNROLL_FACTOR2", UNROLL_FACTOR2},
+              {"UNROLL_FACTOR3", UNROLL_FACTOR3},
               {"I_H", I_H},
               {"I_W", I_W},
               {"K_H", K_H},
@@ -347,10 +347,10 @@ int main(int argc, char** argv) {
         timer_stats tp(
             "Vectorized Direct OCHW Conv2D With Mul AVX2",
             {
-              {"unroll_factor0", UNROLL_FACTOR0},
-              {"unroll_factor1", UNROLL_FACTOR1},
-              {"unroll_factor2", UNROLL_FACTOR2},
-              {"unroll_factor3", UNROLL_FACTOR3},
+              {"UNROLL_FACTOR0", UNROLL_FACTOR0},
+              {"UNROLL_FACTOR1", UNROLL_FACTOR1},
+              {"UNROLL_FACTOR2", UNROLL_FACTOR2},
+              {"UNROLL_FACTOR3", UNROLL_FACTOR3},
               {"I_H", I_H},
               {"I_W", I_W},
               {"K_H", K_H},
