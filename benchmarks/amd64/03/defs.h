@@ -16,6 +16,9 @@ constexpr size_t RUNS = 32;
 constexpr int padding = 0;
 
 // fallback logics
+#ifndef SKIP_SCALAR_AND_VERIFICATION
+#define SKIP_SCALAR_AND_VERIFICATION 0
+#endif
 #ifndef UNROLL_FACTOR0
 #define UNROLL_FACTOR0 1
 #endif

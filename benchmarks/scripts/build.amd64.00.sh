@@ -59,6 +59,9 @@ done
 if [ "$delete_dumps" = true ] && [ -d "$dump_dir" ]; then
   echo "Deleting all contents of $dump_dir"
   rm -rf "$dump_dir"
+  mkdir "$dump_dir"
+  echo "Deleted all contents of $dump_dir , exiting."
+  exit 0
 fi
 
 # Check the number of remaining arguments
