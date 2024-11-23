@@ -6,23 +6,24 @@ compiler=g++
 function set_compiler_flags() {
     local compiler="$1"
     local extra_flags="${2:-}"
+    echo "Compiler passed to set_compiler_flags: $compiler"
 
     # G++ flags
-    if [[ "$compiler" =~ g\+\+ ]]; then
+    if [[ "$compiler" =~ ^g\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
         echo "Using G++ compatible flags."
         flags_main="-O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_vec="-c -O3 -march=native -DAUTOVEC -fopt-info-vec -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_novec="-c -O3 -march=native -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
-    fi
-
-    # Clang++ flags
-    if [[ "$compiler" =~ clang\+\+ ]]; then
+    elif [[ "$compiler" =~ ^clang\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
         echo "Using Clang++ compatible flags."
         flags_main="-O3 -march=native -fno-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=native -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_vec="-c -O3 -march=native -DAUTOVEC -fvectorize -Rpass=loop-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_novec="-c -O3 -march=native -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+    else
+        echo "Error: Unrecognized compiler '$compiler'. Must be g++ or clang++ (with optional version number)"
+        exit 1
     fi
 }
 
