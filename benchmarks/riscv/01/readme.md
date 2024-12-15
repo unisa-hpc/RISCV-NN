@@ -2,6 +2,7 @@
 **ARCH**: `RISCV`  
 
 Matrix multiplication using scalar and vector MUL instructions and vector SHIFT instructions. **No** inline assembly is used.
+This benchmark uses int32_t for all tensors. No virtual packing.
 
 ## Sub Benchmarks
 ### `vector_matmul_scalar`
