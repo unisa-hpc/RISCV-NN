@@ -1,6 +1,6 @@
 #!/bin/bash
 
-compiler=g++
+compiler=riscv64-linux-gnu-g++
 
 # Dynamically set compiler flags based on compiler type
 function set_compiler_flags() {
@@ -9,7 +9,7 @@ function set_compiler_flags() {
     echo "Compiler passed to set_compiler_flags: $compiler"
 
     # G++ flags
-    if [[ "$compiler" =~ ^g\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
+    if [[ "$compiler" =~ ^(riscv64-linux-gnu-)?g\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
         echo "Using G++ compatible flags."
         flags_main="-O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"

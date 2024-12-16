@@ -16,12 +16,12 @@ extern void vector_matmul_scalar_autovec(
     int32_t* __restrict__ c
 );
 
-extern void vector_matmul_rvv(
+extern void rvv_matmul_mul_nopack_int32(
     const int32_t *__restrict__ a,
     const int32_t *__restrict__ b,
     int32_t *__restrict__ c);
 
-extern void vector_matmul_shift(
+extern void rvv_matmul_shift_nopack_int32(
     const int32_t *__restrict__ a,
     const uint32_t *__restrict__ b,
     int32_t *__restrict__ c);
@@ -76,9 +76,12 @@ int main(int argc, char **argv)
 
     auto *a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
     auto *b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
+    auto *bp_ptr = static_cast<uint8_t *>(aligned_alloc(ALIGNMENT, N * N * sizeof(uint8_t)));
     auto *c_scalar_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
     auto *c_rvv_mul_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
     auto *c_avx_shift_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
+
+
 
     wipe(c_scalar_ptr, N * N);
     wipe(c_rvv_mul_ptr, N * N);
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
-            vector_matmul_rvv(a_ptr, b_ptr, c_rvv_mul_ptr);
+            rvv_matmul_mul_nopack_int32(a_ptr, b_ptr, c_rvv_mul_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_rvv_mul_ptr);
@@ -140,7 +143,7 @@ int main(int argc, char **argv)
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
-            vector_matmul_shift(a_ptr, new_b_ptr, c_avx_shift_ptr);
+            rvv_matmul_shift_nopack_int32(a_ptr, new_b_ptr, c_avx_shift_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_avx_shift_ptr);

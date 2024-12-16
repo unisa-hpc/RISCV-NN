@@ -6,7 +6,7 @@
 #include "common01.h"
 
 
-void vector_matmul_rvv(
+void rvv_matmul_mul_nopack_int32(
     const int32_t *__restrict__ a,
     const int32_t *__restrict__ b,
     int32_t *__restrict__ c)
@@ -36,7 +36,7 @@ void vector_matmul_rvv(
     }
 }
 
-void vector_matmul_shift(
+void rvv_matmul_shift_nopack_int32(
     const int32_t *__restrict__ a,
     const uint32_t *__restrict__ b,
     int32_t *__restrict__ c)
