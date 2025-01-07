@@ -2,13 +2,7 @@
 
 echo "You can disable scalar kernels and verification passes by adding optional argument: -DSKIP_SCALAR_AND_VERIFICATION=1"
 
-optional_flags=""
-if [ $# -gt 0 ]; then
-  optional_flags="$1"
-  echo "Optional flags: $optional_flags"
-fi
-
-bash build.amd64.00.sh -d # wipe the dumps dir.
+#bash build.amd64.00.sh -d # wipe the dumps dir.
 
 # loop to generate values in list [3, 16, 64, 256, 1024]
 input_size_vals=(512 1024)
@@ -42,7 +36,7 @@ for input_width in "${input_size_vals[@]}"; do
                     echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
                     echo "Benchmarking for Input Width of $input_width, Input Height of $input_height, Kernel Size of $kernel_size, Channels In of $ch_in, Channels Out of $ch_out, Stride of $stride, Unroll Factors of $u0, $u1, $u2, $u3."
                     echo  "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-                    bash build.amd64.00.sh "-DI_H=$input_height -DI_W=$input_width -DK_H=$kernel_size -DK_W=$kernel_size -DC_I=$ch_in -DC_O=$ch_out -DS_X=$stride -DS_Y=$stride -DUNROLL_FACTOR0=$u0 -DUNROLL_FACTOR1=$u1 -DUNROLL_FACTOR2=$u2 -DUNROLL_FACTOR3=$u3 ${optional_flags}"
+                    bash build.amd64.00.sh "-DI_H=$input_height -DI_W=$input_width -DK_H=$kernel_size -DK_W=$kernel_size -DC_I=$ch_in -DC_O=$ch_out -DS_X=$stride -DS_Y=$stride -DUNROLL_FACTOR0=$u0 -DUNROLL_FACTOR1=$u1 -DUNROLL_FACTOR2=$u2 -DUNROLL_FACTOR3=$u3" "$@"
                     # save progress into a text file in /tmp including the percentage of completion and all the parameters with a header line
                     echo "Percent: $((index*100/total_benchmarks))%, Input Width: $input_width, Input Height: $input_height, Kernel Size: $kernel_size, Channels In: $ch_in, Channels Out: $ch_out, Stride: $stride, Unroll Factors: $u0, $u1, $u2, $u3" >> /tmp/progressBenchId03.txt
                   done

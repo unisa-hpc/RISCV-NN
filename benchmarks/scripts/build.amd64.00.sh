@@ -44,16 +44,35 @@ dump_dir="$script_dir/../../dumps"
 dump_dir=$(realpath "$dump_dir")
 delete_dumps=false
 
-# Process all arguments and handle -d and compiler flags
+# Process all arguments: handle -d, compiler, and machine arguments
 args=()
+machine=""
+
+# First pass to extract machine argument
+for i in "$@"; do
+    case $i in
+        --machine=*)
+            machine="${i#*=}"
+            ;;
+    esac
+done
+
+# Check if machine argument was provided
+if [ -z "$machine" ]; then
+    echo "Error: --machine argument is mandatory"
+    echo "Usage: $0 --machine=<string> [-d] [g++|clang++] [extra_flags]"
+    exit 1
+fi
+
+# Process remaining arguments
 for arg in "$@"; do
-  if [ "$arg" == "-d" ]; then
-    delete_dumps=true
-  elif [[ "$arg" =~ ^(g\+\+|clang\+\+) ]]; then
-    compiler="$arg"
-  else
-    args+=("$arg")
-  fi
+    if [ "$arg" == "-d" ]; then
+        delete_dumps=true
+    elif [[ "$arg" =~ ^(g\+\+|clang\+\+) ]]; then
+        compiler="$arg"
+    elif [[ "$arg" != --machine=* ]]; then  # Explicitly exclude --machine arguments
+        args+=("$arg")
+    fi
 done
 
 # Delete dump directory if -d flag was provided
@@ -63,12 +82,6 @@ if [ "$delete_dumps" = true ] && [ -d "$dump_dir" ]; then
   mkdir "$dump_dir"
   echo "Deleted all contents of $dump_dir , exiting."
   exit 0
-fi
-
-# Check the number of remaining arguments
-if [ "${#args[@]}" -gt 1 ]; then
-  echo "Usage: $0 [-d] [g++|clang++] [extra_flags]"
-  exit 1
 fi
 
 extra_flags=${args[0]:-}  # First argument is optional; if not provided, it defaults to an empty string
@@ -143,7 +156,7 @@ set_compiler_flags "$compiler" "$extra_flags"
   compile_status=$((compile_main_status + compile_vec_status + compile_scalar_vec_status + compile_scalar_novec_status))
 
   # Append the new dump dir to the text file dumps directory
-  echo "$new_dump_dir" >> "$dump_dir/benchId${benchId}.txt"
+  echo "${machine}, ${new_dump_dir}" >> "$dump_dir/benchId${benchId}.txt"
 
   if [ $compile_status -eq 0 ]; then
     # Run the binary and capture its output
