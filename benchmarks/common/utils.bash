@@ -9,13 +9,17 @@ cleanup_directories() {
         return 1
     fi
 
+    # Get the path containing the input file
+    local input_dir=$(dirname "$input_file")
+
     # Process each line
     while IFS=, read -r prefix path; do
         # Trim whitespace from path
         path=$(echo "$path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        path="$input_dir/$path"
 
         # Check if directory exists
-        if [[ -d "$path" ]]; then
+        if [[ -d "${path}" ]]; then
             echo "Deleting directory: $path"
             rm -rf "$path"
         else

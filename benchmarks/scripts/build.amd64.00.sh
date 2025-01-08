@@ -139,7 +139,7 @@ set_compiler_flags "$compiler" "$extra_flags"
   compile_status=$((compile_main_status + compile_vec_status + compile_scalar_vec_status + compile_scalar_novec_status))
 
   # Append the new dump dir to the text file dumps directory
-  echo "${machine}, ${new_dump_dir}" >> "$dump_dir/benchId${benchId}.txt"
+  echo "${machine}, ${timestamp}" >> "$dump_dir/benchId${benchId}.txt"
 
   if [ $compile_status -eq 0 ]; then
     # Run the binary and capture its output

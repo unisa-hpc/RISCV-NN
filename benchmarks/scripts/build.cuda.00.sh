@@ -65,7 +65,7 @@ delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$new_dump_dir"
   echo "sources_main: $sources_main"
   echo "abs_main: $abs_main"
   echo "benchId: $benchId"
-  echo "${machine}, ${new_dump_dir}" >> "$dump_dir/benchId${benchId}.txt"
+  echo "${machine}, ${timestamp}" >> "$dump_dir/benchId${benchId}.txt"
 
   # run cmake in the build directory for the current directory without cd into it
   # cmake -S . -B "$new_dump_dir" -DCMAKE_BUILD_TYPE=Release
