@@ -25,6 +25,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS} "-O3 -Xptxas=\"-v\" --fmad=false")
 endif()
 
+message(STATUS "supplied_host_build_args = ${supplied_host_build_args}")
+message(STATUS "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}")
 set(target_name "output_file")
 get_filename_component(DIR_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 set(KERNEL_EXAMPLE kernel_${DIR_NAME})
@@ -49,3 +51,6 @@ target_compile_options(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-
 
 # enable host compiler vectorization
 target_compile_options(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-march=native>)
+
+# feed $supplied_host_build_args as the host compiler flags
+target_compile_options(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${supplied_host_build_args}>)

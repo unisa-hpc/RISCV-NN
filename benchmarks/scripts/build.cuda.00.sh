@@ -6,18 +6,24 @@ dump_dir="$script_dir/../../dumps"
 dump_dir=$(realpath "$dump_dir")
 delete_dumps=false
 
-# Process all arguments: handle -d, compiler, and machine arguments
-args=()
+# Initialize the arguments string
+args=""
 machine=""
 
-# First pass to extract machine argument
+# First pass to extract machine argument and build args string without it
 for i in "$@"; do
     case $i in
         --machine=*)
             machine="${i#*=}"
             ;;
+        *)
+            args+="$i "
+            ;;
     esac
 done
+
+# Trim trailing whitespace from args
+args=$(echo "$args" | xargs)
 
 # Check if machine argument was provided
 if [ -z "$machine" ]; then
@@ -26,14 +32,12 @@ if [ -z "$machine" ]; then
     exit 1
 fi
 
-# Process remaining arguments
-for arg in "$@"; do
+# Process remaining arguments for -d and compiler flags
+for arg in $args; do
     if [ "$arg" == "-d" ]; then
         delete_dumps=true
     elif [[ "$arg" =~ ^(g\+\+|clang\+\+) ]]; then
         compiler="$arg"
-    elif [[ "$arg" != --machine=* ]]; then  # Explicitly exclude --machine arguments
-        args+=("$arg")
     fi
 done
 
@@ -68,7 +72,10 @@ log_file="$new_dump_dir/output_log_$timestamp.txt"
   echo "${machine}, ${new_dump_dir}" >> "$dump_dir/benchId${benchId}.txt"
 
   # run cmake in the build directory for the current directory without cd into it
-  cmake -S . -B "$new_dump_dir" -DCMAKE_BUILD_TYPE=Release
+  # cmake -S . -B "$new_dump_dir" -DCMAKE_BUILD_TYPE=Release
+
+  # same as above but define a cmake variable supplied_host_build_args
+  cmake -S . -B "$new_dump_dir" -DCMAKE_BUILD_TYPE=Release -Dsupplied_host_build_args="$args"
 
   # run make in the build directory for the current directory without cd into it
   make -C "$new_dump_dir" -j

@@ -5,12 +5,10 @@
 #include "kernel.h"
 #include <iostream>
 #include "common02.h"
+#include "defs.h"
 
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
-
-constexpr size_t N = 1024;
-constexpr unsigned RUNS = 32;
 
 #define INCLUDE_2BIT_POT
 
@@ -50,7 +48,7 @@ void matmul_gpu_cublas_gold(
 
     assert(tnA.GetShape()[1] == tnB.GetShape()[0]);
     assert(tnA.GetShape()[0] == tnB.GetShape()[1]);
-    const size_t N = tnA.GetShape()[0];
+    const size_t size_N = tnA.GetShape()[0];
 
     const float alpha = 1.0f;
     const float beta = 0.0f;
@@ -61,33 +59,21 @@ void matmul_gpu_cublas_gold(
         cublasSgemm(
             handle,
             CUBLAS_OP_N, CUBLAS_OP_N,
-            N, N, N,
+            size_N, size_N, size_N,
             &alpha,
-            tnA.GetPtrDevice(), N,
-            tnB.GetPtrDevice(), N,
+            tnA.GetPtrDevice(), size_N,
+            tnB.GetPtrDevice(), size_N,
             &beta,
-            outTnC.GetPtrDevice(), N
+            outTnC.GetPtrDevice(), size_N
         ),
         "cublasSgemm"
     );
 
 }
 
-void temp_tests() {
-    float *a = new float[2];
-    a[0] = 4.0;
-    a[1] = 2.0;
-    uint32_t *aa = reinterpret_cast<uint32_t *>(a);
-    std::cout << "a[0]: " << a[0] << std::endl;
-    std::cout << "a[1]: " << a[1] << std::endl;
-    std::cout << "aa[0]: " << aa[0] << std::endl;
-    std::cout << "aa[1]: " << aa[1] << std::endl;
-
-}
-
 int main(int argc, char *argv[]) {
-    temp_tests();
-
+    std::cout << "RUNS: " << RUNS << std::endl;
+    std::cout << "N: " << N << std::endl;
 
     CTensor<float> tnA({N, N});
     CTensor<float> tnB({N, N});
