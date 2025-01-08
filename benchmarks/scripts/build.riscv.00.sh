@@ -43,6 +43,7 @@ script_dir=$(dirname "$0")
 dump_dir="$script_dir/../../dumps"
 dump_dir=$(realpath "$dump_dir")
 delete_dumps=false
+source "$script_dir/../../common/utils.bash"
 
 # Process all arguments: handle -d, compiler, and machine arguments
 args=()
@@ -75,15 +76,6 @@ for arg in "$@"; do
     fi
 done
 
-# Delete dump directory if -d flag was provided
-if [ "$delete_dumps" = true ] && [ -d "$dump_dir" ]; then
-  echo "Deleting all contents of $dump_dir"
-  rm -rf "$dump_dir"
-  mkdir "$dump_dir"
-  echo "Deleted all contents of $dump_dir , exiting."
-  exit 0
-fi
-
 extra_flags=${args[0]:-}  # First argument is optional; if not provided, it defaults to an empty string
 
 sources_main="main.cpp"
@@ -106,6 +98,7 @@ abs_main=$(realpath "$script_dir/$sources_main")
 echo "sources_main: $sources_main"
 echo "abs_main: $abs_main"
 benchId=$(basename "$(dirname "$abs_main")")
+delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$new_dump_dir"
 
 # Set compiler flags dynamically
 set_compiler_flags "$compiler" "$extra_flags"
