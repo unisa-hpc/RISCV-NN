@@ -187,11 +187,12 @@ public:
 };
 
 class timer_scope {
-private:
+protected:
     std::chrono::system_clock::time_point m_oTimerLast;
     const std::string name;
     const bool m_bIsRoot;
     timer_stats *m_pStats; // to keep things simple, we are not using smart pointers.
+    bool report = true;
 
 public:
     timer_scope(const std::string& name) : name(name), m_bIsRoot(true) {
@@ -205,10 +206,12 @@ public:
     }
 
     ~timer_scope() {
-        if(m_bIsRoot) {
-          report_from_last(name);
-        } else {
-          m_pStats->add_sample(from_last());
+        if (report) {
+            if(m_bIsRoot) {
+              report_from_last(name);
+            } else {
+              m_pStats->add_sample(from_last());
+            }
         }
     }
 
