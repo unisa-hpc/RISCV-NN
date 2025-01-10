@@ -88,7 +88,11 @@ echo "sources_main: $sources_main"
 echo "abs_main: $abs_main"
 benchId=$(basename "$(dirname "$abs_main")")
 
-delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$new_dump_dir"
+if [ "$delete_dumps" = true ]; then
+  echo "Deleting..."
+  rm -rf "$new_dump_dir"
+  delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$dump_dir" "$machine"
+fi
 
 # Set compiler flags dynamically
 set_compiler_flags "$compiler" "$extra_flags"
