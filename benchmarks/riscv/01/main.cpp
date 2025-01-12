@@ -62,6 +62,7 @@ void init(int32_t *p, size_t len, bool PoT) {
 int main(int argc, char **argv) {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
 
+    std::cout << "N: " << N << std::endl;
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
     std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
@@ -86,21 +87,21 @@ int main(int argc, char **argv) {
     init(b_ptr, N * N, true);
 
     {
-        timer_stats tp("Scalar Matmul With Mul NoAutovec", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp("Scalar Matmul With Mul NoAutovec", {{"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
-        timer_stats tp("Scalar Matmul With Mul Autovec", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp("Scalar Matmul With Mul Autovec", {{"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
-        timer_stats tp("RVV Matmul With Mul", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp("RVV Matmul With Mul", {{"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             rvv_matmul_mul_nopack_int32(a_ptr, b_ptr, c_rvv_mul_ptr);
@@ -122,13 +123,23 @@ int main(int argc, char **argv) {
     auto new_b_ptr = reinterpret_cast<uint32_t *>(b_ptr);
 
     {
-        timer_stats tp("RVV Matmul With Shift", {{"unroll_factor", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp(
+            "RVV Matmul With Shift",
+            {
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2},
+                {"N", N}
+            }
+        );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             rvv_matmul_shift_nopack_int32(a_ptr, new_b_ptr, c_avx_shift_ptr);
         }
     }
     verify_results(c_scalar_ptr, c_avx_shift_ptr);
+
+    //TODO: fix the mem leak.
 
     return 0;
 }

@@ -52,6 +52,7 @@ void wipe(int32_t* p, size_t len) {
 int main(int argc, char** argv) {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
 
+    std::cout << "N: " << N << std::endl;
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
     std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
@@ -74,21 +75,21 @@ int main(int argc, char** argv) {
     }
 
     {
-        timer_stats tp("Scalar Matmul With Mul NoAutovec", {{"UNROLL_FACTOR0", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp("Scalar Matmul With Mul NoAutovec", {{"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
-        timer_stats tp("Scalar Matmul With Mul Autovec", {{"UNROLL_FACTOR0", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp("Scalar Matmul With Mul Autovec", {{"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
     {
-        timer_stats tp("AVX Matmul With Mul", {{"UNROLL_FACTOR0", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp("AVX Matmul With Mul", {{"N", N}});
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_avx(a_ptr, b_ptr, c_avx_mul_ptr);
@@ -106,7 +107,15 @@ int main(int argc, char** argv) {
         b_ptr[i] = v;
     }
     {
-        timer_stats tp("AVX Matmul With Shift", {{"UNROLL_FACTOR0", UNROLL_FACTOR0}, {"N", N}});
+        timer_stats tp(
+            "AVX Matmul With Shift",
+            {
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2},
+                {"N", N}
+            }
+        );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_matmul_shift(a_ptr, b_ptr, c_avx_shift_ptr);

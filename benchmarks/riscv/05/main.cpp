@@ -32,6 +32,7 @@ extern void rvv_matmul_floatbitmanipu_nopack_float_uint8(
 int main(int argc, char **argv) {
     constexpr int ALIGNMENT = 32;
 
+    std::cout << "N: " << N << std::endl;
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
     std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
@@ -104,7 +105,15 @@ int main(int argc, char **argv) {
     }
 
     {
-        timer_stats tp("RVV Matmul BitManipu float:uint8 nopack", {{"N", N}}); ///TODO: add unroll factors
+        timer_stats tp(
+            "RVV Matmul BitManipu float:uint8 nopack",
+            {
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2},
+                {"N", N}
+            }
+        );
         for (volatile size_t i = 0; i < RUNS; i++)
         {
             timer_scope ts(tp);
