@@ -18,3 +18,7 @@
 ## Dumps Directory
 The build scripts will create a text file at the dumps directory, named `bechId*.txt`. All the sub dump directories of
 all the runs of the current bench ID will be appended into this text file. 
+
+# How to replicate the results
+1. For each benchmark, run the run-me bash script.
+2. TODO

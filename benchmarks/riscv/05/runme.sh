@@ -16,7 +16,7 @@
 # The last command will run the autotuner and show the best configuration in terms of median runtime for
 # any unique (N, Machine) pair.
 
-current_benchId="02"
+current_benchId="05"
 
 script_dir=$(dirname "$0")
 source "$script_dir/../../common/utils.bash"
@@ -28,7 +28,7 @@ echo "" >> "../../dumps/benchId${current_benchId}.txt"
 # Delete any sub-dumps directories of this benchId inside the dumps directory if the flag is set
 if [ "$flag_delete_dumps" = true ]; then
   echo "Deleting the dumps directory."
-  bash build.amd64.00.sh -d --machine=$machine
+  bash build.riscv.00.sh -d --machine=$machine
   exit 0
 fi
 
@@ -38,7 +38,7 @@ if [ "$flag_auto_tune" = true ]; then
       for ((i1=1; i1<=16; i1*=2)); do
         for ((i2=1; i2<=16; i2*=2)); do
           echo "Benchmarking for Unroll Factor of $i and N of $n."
-          bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
+          bash build.riscv.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done
       done
     done
@@ -53,7 +53,7 @@ else
     parse_autotuner_best_conf_json ../../dumps/autotuner.json $current_benchId $machine $n
     echo "Building for N of $n with the auto tuned best config: UNROLL_FACTOR0=$UNROLL_FACTOR0 UNROLL_FACTOR1=$UNROLL_FACTOR1 UNROLL_FACTOR2=$UNROLL_FACTOR2"
 
-    bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$UNROLL_FACTOR0 -DUNROLL_FACTOR1=$UNROLL_FACTOR1 -DUNROLL_FACTOR2=$UNROLL_FACTOR2 -DN=$n $args"
+    bash build.riscv.00.sh --machine=$machine "-DUNROLL_FACTOR0=$UNROLL_FACTOR0 -DUNROLL_FACTOR1=$UNROLL_FACTOR1 -DUNROLL_FACTOR2=$UNROLL_FACTOR2 -DN=$n $args"
   done
 fi
 

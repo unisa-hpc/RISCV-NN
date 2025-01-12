@@ -53,6 +53,8 @@ int main(int argc, char** argv) {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
 
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
+    std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
+    std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
 
     auto* a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
     auto* b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;

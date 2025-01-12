@@ -32,7 +32,9 @@ extern void rvv_matmul_floatbitmanipu_nopack_float_uint8(
 int main(int argc, char **argv) {
     constexpr int ALIGNMENT = 32;
 
-    std::cout << "UNROLLING FACTOR: " << UNROLL_FACTOR0 << std::endl;
+    std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
+    std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
+    std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
 
     aligned_tensor<float> a_tensor({N, N}, ALIGNMENT);
     aligned_tensor<float> b_tensor({N, N}, ALIGNMENT);

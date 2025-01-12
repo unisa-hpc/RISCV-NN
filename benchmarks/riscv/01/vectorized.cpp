@@ -10,20 +10,14 @@
 void rvv_matmul_mul_nopack_int32(
     const int32_t *__restrict__ a,
     const int32_t *__restrict__ b,
-    int32_t *__restrict__ c)
-{
-    constexpr int FACTOR = UNROLL_FACTOR0;
+    int32_t *__restrict__ c) {
     size_t vlmax = __riscv_vsetvlmax_e32m1();
-    for (int j = 0; j < N; ++j)
-    {
-        for (int i = 0; i < N; ++i)
-        {
+    for (int j = 0; j < N; ++j) {
+        for (int i = 0; i < N; ++i) {
             vint32m1_t vec_s = __riscv_vmv_v_x_i32m1(0, vlmax);
             vint32m1_t vec_zero = __riscv_vmv_v_x_i32m1(0, vlmax);
             size_t vl = 0;
-            #pragma GCC unroll FACTOR
-            for (int k = 0; k < N; k += vl)
-            {
+            for (int k = 0; k < N; k += vl) {
                 vl = __riscv_vsetvl_e32m1(N - k);
                 auto *ptr_a = a + j * N + k; // `a` is row major
                 auto *ptr_b = b + i * N + k; // `b` is col major
@@ -40,20 +34,20 @@ void rvv_matmul_mul_nopack_int32(
 void rvv_matmul_shift_nopack_int32(
     const int32_t *__restrict__ a,
     const uint32_t *__restrict__ b,
-    int32_t *__restrict__ c)
-{
-    constexpr int FACTOR = UNROLL_FACTOR0;
+    int32_t *__restrict__ c) {
+    constexpr int FACTOR0 = UNROLL_FACTOR0;
+    constexpr int FACTOR1 = UNROLL_FACTOR1;
+    constexpr int FACTOR2 = UNROLL_FACTOR2;
     size_t vlmax = __riscv_vsetvlmax_e32m1();
-    for (int j = 0; j < N; ++j)
-    {
-        for (int i = 0; i < N; ++i)
-        {
+    #pragma GCC unroll FACTOR0
+    for (int j = 0; j < N; ++j) {
+        #pragma GCC unroll FACTOR1
+        for (int i = 0; i < N; ++i) {
             vint32m1_t vec_s = __riscv_vmv_v_x_i32m1(0, vlmax);
             vint32m1_t vec_zero = __riscv_vmv_v_x_i32m1(0, vlmax);
             size_t vl = 0;
-            #pragma GCC unroll FACTOR
-            for (int k = 0; k < N; k += vl)
-            {
+            #pragma GCC unroll FACTOR2
+            for (int k = 0; k < N; k += vl) {
                 vl = __riscv_vsetvl_e32m1(N - k);
                 auto *ptr_a = a + j * N + k; // `a` is row major
                 auto *ptr_b = b + i * N + k; // `b` is col major

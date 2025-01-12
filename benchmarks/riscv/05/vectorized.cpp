@@ -39,12 +39,18 @@ void rvv_matmul_floatbitmanipu_nopack_float_uint8(
     const float *__restrict__ a,
     const uint8_t *__restrict__ b,
     float *__restrict__ c) {
+    constexpr int FACTOR0 = UNROLL_FACTOR0;
+    constexpr int FACTOR1 = UNROLL_FACTOR1;
+    constexpr int FACTOR2 = UNROLL_FACTOR2;
     size_t vlmax = __riscv_vsetvlmax_e32m4();
+    #pragma GCC unroll FACTOR0
     for (int j = 0; j < N; ++j) {
+      	#pragma GCC unroll FACTOR1
         for (int i = 0; i < N; ++i) {
             vfloat32m4_t vec_s = __riscv_vfmv_v_f_f32m4(0, vlmax);
             vfloat32m1_t vec_zero = __riscv_vfmv_v_f_f32m1(0, vlmax);
             // iterate over vec_a
+            #pragma GCC unroll FACTOR2
             for (int k = 0; k < N; k += __riscv_vsetvl_e32m4(N - k)) {
                 auto vl = __riscv_vsetvl_e32m4(N - k);
                 auto *ptr_a = a + j * N + k;
