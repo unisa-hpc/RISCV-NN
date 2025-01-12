@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     for (size_t j = 0; j < N; ++j) {
         for (size_t i = 0; i < N; ++i) {
             size_t idx = j * N + i;
-            b_ptr[i * N + j] = static_cast<float>(std::pow(2, rand() % 8));
+            b_ptr[i * N + j] = static_cast<float>(std::pow(2, rand() % 3)); ///TODO: Check the range
             if (rand() % 2) {
                 b_ptr[i * N + j] *= -1;
             }

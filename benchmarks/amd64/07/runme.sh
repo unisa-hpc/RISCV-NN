@@ -1,0 +1,70 @@
+# This script runs the benchmark for the current benchId.
+# It runs the benchmark for different values of N and Unroll Factor.
+# It also runs the autotuner if the flag is set.
+# It runs the plotting script if the auto-tuner flag is not set.
+# It deletes the sub-dumps directories of this benchId inside the dumps directory if the flag is set.
+# Arguments:
+#   -d: Delete the sub-dumps directories of this benchId inside the dumps directory.
+#   --auto-tune: Run the autotuner.
+#   --machine: The machine name.
+#   Rest of the arguments are passed to the build script.
+#
+# Example usage:
+#   ./runme.sh --machine=aws_c5 -d
+#   ./runme.sh --machine=aws_c5 --auto-tune
+#
+# The last command will run the autotuner and show the best configuration in terms of median runtime for
+# any unique (N, Machine) pair.
+
+current_benchId="07"
+
+script_dir=$(dirname "$0")
+source "$script_dir/../../common/utils.bash"
+setup_autotuner_args "$@"
+
+# Add new line to the end of the file benchIdXX.txt
+echo "" >> "../../dumps/benchId${current_benchId}.txt"
+
+# Delete any sub-dumps directories of this benchId inside the dumps directory if the flag is set
+if [ "$flag_delete_dumps" = true ]; then
+  echo "Deleting the dumps directory."
+  bash build.amd64.00.sh -d --machine=$machine
+  exit 0
+fi
+
+if [ "$flag_auto_tune" = true ]; then
+  for ((n=64; n<=1024; n*=2)); do
+    for ((i0=1; i0<=16; i0*=2)); do
+      for ((i1=1; i1<=16; i1*=2)); do
+        for ((i2=1; i2<=16; i2*=2)); do
+          echo "Benchmarking for Unroll Factor of $i and N of $n."
+          bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
+        done
+      done
+    done
+  done
+else
+  # Rename the old benchIdXX.txt file to benchIdXX_autotune.txt
+  # We keep `autotuner.json` created by the python script as is; We need it
+  mv "../../dumps/benchId${current_benchId}.txt" "../../dumps/benchId${current_benchId}_autotune.txt"
+
+  for ((n=64; n<=1024; n*=2)); do
+    # parse the autotuner json file and get the best configuration for this N
+    parse_autotuner_best_conf_json ../../dumps/autotuner.json $current_benchId $machine $n
+    echo "Building for N of $n with the auto tuned best config: UNROLL_FACTOR0=$UNROLL_FACTOR0 UNROLL_FACTOR1=$UNROLL_FACTOR1 UNROLL_FACTOR2=$UNROLL_FACTOR2"
+
+    bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$UNROLL_FACTOR0 -DUNROLL_FACTOR1=$UNROLL_FACTOR1 -DUNROLL_FACTOR2=$UNROLL_FACTOR2 -DN=$n $args"
+  done
+fi
+
+# Run the autotuner if the flag is set
+if [ "$flag_auto_tune" = true ]; then
+  echo "Running the autotuner."
+  python autotune.py --dumps-dir ../../dumps --benchid $current_benchId
+fi
+
+# Run the plotting script if the auto-tuner flag is not set
+if [ "$flag_auto_tune" = false ]; then
+  echo "Running the plotting script."
+  python ../../common/plot.runtimes.per.benchId.py --dumps-dir "../../dumps" --benchid "$current_benchId" --out "../../dumps/BenchId${current_benchId}.png"
+fi
