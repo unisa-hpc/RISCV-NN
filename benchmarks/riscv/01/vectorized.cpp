@@ -1,5 +1,6 @@
 //
 // Created by saleh on 11/19/24.
+// The RVV kernels are written by G. Pagano
 //
 
 #include "defs.h"
