@@ -1,0 +1,1 @@
+../../scripts/build.riscv.00.sh
