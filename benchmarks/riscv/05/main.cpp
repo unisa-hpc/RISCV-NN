@@ -31,6 +31,7 @@ extern void rvv_matmul_floatbitmanipu_nopack_float_uint8(
 
 int main(int argc, char **argv) {
     constexpr int ALIGNMENT = 32;
+    const int RUNS_SCALAR = RUNS<=10 ? RUNS : 10;
 
     std::cout << "N: " << N << std::endl;
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
@@ -63,7 +64,7 @@ int main(int argc, char **argv) {
 
     {
         timer_stats tp("Scalar Matmul With Mul NoAutovec", {{"N", N}});
-        for (volatile size_t i = 0; i < RUNS; ++i) {
+        for (volatile size_t i = 0; i < RUNS_SCALAR; ++i) {
             timer_scope ts(tp);
             vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
         }
@@ -71,7 +72,7 @@ int main(int argc, char **argv) {
 
     {
         timer_stats tp("Scalar Matmul With Mul Autovec", {{"N", N}});
-        for (volatile size_t i = 0; i < RUNS; ++i) {
+        for (volatile size_t i = 0; i < RUNS_SCALAR; ++i) {
             timer_scope ts(tp);
             vector_matmul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr);
         }

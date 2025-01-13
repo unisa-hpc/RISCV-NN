@@ -375,6 +375,8 @@ void init(int32_t* p, size_t len, bool PoT) {
 
 int main(int argc, char** argv) {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
+    const int RUNS_SCALAR = RUNS<=10 ? RUNS : 10;
+
     std::cout << "UNROLLING FACTOR 0: " << UNROLL_FACTOR0 << std::endl;
     std::cout << "UNROLLING FACTOR 1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLLING FACTOR 2: " << UNROLL_FACTOR2 << std::endl;
@@ -445,7 +447,7 @@ int main(int argc, char** argv) {
                   {"S_Y", S_Y}
                 }
             );
-            for (volatile size_t i = 0; i < RUNS; i++) {
+            for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
                 timer_scope ts(tp);
                 conv2d_direct_padding_ochw_scalar_noautovec(
                     input_ptr, kernel_ptr, c_scalar_noautovec_ptr,
@@ -477,7 +479,7 @@ int main(int argc, char** argv) {
                   {"S_Y", S_Y}
                 }
             );
-            for (volatile size_t i = 0; i < RUNS; i++) {
+            for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
                 timer_scope ts(tp);
                 conv2d_direct_padding_ochw_scalar_autovec(
                     input_ptr, kernel_ptr, c_scalar_autovec_ptr,
