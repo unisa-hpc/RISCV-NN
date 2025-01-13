@@ -12,7 +12,42 @@
 | 07      | AVX512       | Y       | Float32                    | Uint8                 | 1              | Y          | MagicNum  | -                              |
 | 08      | AVX512       | Y       | Float32                    | Uint8                 | 1              | Y          | Directly  | -                              |
 
+## Naming Convention
 
+> **Example**: avx512_matmul_floatbitmanipu_nopack_float_uint8_no_magic
+- **ISA**: avx512
+- **Workload**: matmul
+- **Approach**: Float Bit Manipulation
+- **Is B Packed**: No
+- **Type A**: Float
+- **Type B**: Uint8
+- **Can Handle Negatives**: Yes
+- **Negatives Handling Method**: Directly (no magic number)
+---
+> **Example**: PoT4
+- **Exponent Bits**: 3
+- **Sign Bit**: 1
+---
+> **Example**: Uint16, NoPack, PoT9
+This means that we have enough bits to have full 8 bit exponent.
+- **Exponent Bits**: 8
+- **Sign Bit**: 1
+---
+> **Example**: Uint8, NoPack, PoT8
+Since we have 1 sign bit, we can only have a maximum of 7 exponent bits.
+- **Exponent Bits**: 7
+- **Sign Bit**: 1
+---
+> **Example**: Uint8, Packed2, PoT4
+Two words of 4 bits (3 exponent bits and 1 sign bit) that are packed into a single 8 bit word.
+- **Exponent Bits**: 3 * 2
+- **Sign Bit**: 1 * 2
+---
+> **Example**: Uint8, Packed4, PoT2
+Four words of 2 bits (1 exponent bit and 1 sign bit) that are packed into a single 8 bit word.
+- **Exponent Bits**: 1 * 4
+- **Sign Bit**: 1 * 4
+---
 # Rules
 
 1. Each benchmark should:
