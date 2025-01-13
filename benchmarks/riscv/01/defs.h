@@ -12,7 +12,7 @@
 #include <riscv_vector.h>
 #include "common01.h"
 
-constexpr size_t RUNS = 16;
+constexpr size_t RUNS = 64;
 
 // fallback to 1 if not defined
 #ifndef UNROLL_FACTOR0

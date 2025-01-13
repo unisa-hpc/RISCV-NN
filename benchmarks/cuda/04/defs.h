@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-constexpr size_t RUNS = 64;
+constexpr size_t RUNS = 128;
 
 // fallback to 1 if not defined
 #ifndef UNROLL_FACTOR0
