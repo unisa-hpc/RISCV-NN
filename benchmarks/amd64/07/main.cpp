@@ -16,6 +16,12 @@ extern void vector_matmul_scalar_noautovec (
     float* __restrict__ c
 );
 
+extern void avx2_matmul_mul_nopack_float(
+    const float *__restrict__ a,
+    const float *__restrict__ b,
+    float *__restrict__ c
+);
+
 extern void avx512_matmul_mul_nopack_float(
     const float* __restrict__ a,
     const float* __restrict__ b,
@@ -47,7 +53,7 @@ int main(int argc, char** argv) {
     auto *a_ptr = a_tensor.data_t();
     auto *b_ptr = b_tensor.data_t();
     auto *c_scalar_ptr = c_tensor_scalar.data_t();
-    auto *c_avx5_mul_ptr = c_tensor_avx5_mul.data_t();
+    auto *c_avx_mul_ptr = c_tensor_avx5_mul.data_t();
     
     for (size_t j = 0; j < N; ++j) {
         for (size_t i = 0; i < N; ++i) {
@@ -76,10 +82,20 @@ int main(int argc, char** argv) {
     }
 
     {
+        timer_stats tp("AVX2 Matmul With Mul Float", {{"N", N}});
+        for (volatile size_t i = 0; i < RUNS; ++i) {
+            timer_scope ts(tp);
+            avx2_matmul_mul_nopack_float(a_ptr, b_ptr, c_avx_mul_ptr);
+        }
+    }
+    c_tensor_scalar.compare(c_tensor_avx5_mul);
+    c_tensor_avx5_mul.wipe();
+
+    {
         timer_stats tp("AVX512 Matmul With Mul Float", {{"N", N}});
         for (volatile size_t i = 0; i < RUNS; ++i) {
             timer_scope ts(tp);
-            avx512_matmul_mul_nopack_float(a_ptr, b_ptr, c_avx5_mul_ptr);
+            avx512_matmul_mul_nopack_float(a_ptr, b_ptr, c_avx_mul_ptr);
         }
     }
     c_tensor_scalar.compare(c_tensor_avx5_mul);
@@ -114,7 +130,7 @@ int main(int argc, char** argv) {
         );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
-            avx512_matmul_floatbitmanipu_nopack_float_uint8(a_ptr, bp_ptr, c_avx5_mul_ptr);
+            avx512_matmul_floatbitmanipu_nopack_float_uint8(a_ptr, bp_ptr, c_avx_mul_ptr);
         }
     }
     c_tensor_scalar.compare(c_tensor_avx5_mul);

@@ -1,5 +1,43 @@
 #include "defs.h"
 
+// Helper function: Horizontal reduction of __m256 vector to a single float
+float reduce_avx2_float32(__m256 vec) {
+    // Perform horizontal addition
+    __m128 lo = _mm256_castps256_ps128(vec);   // Lower 128 bits
+    __m128 hi = _mm256_extractf128_ps(vec, 1); // Upper 128 bits
+    __m128 sum128 = _mm_add_ps(lo, hi);        // Add lower and upper parts
+    sum128 = _mm_hadd_ps(sum128, sum128);      // Horizontal add
+    sum128 = _mm_hadd_ps(sum128, sum128);      // Final horizontal add
+    return _mm_cvtss_f32(sum128);              // Extract the lowest float
+}
+
+// Vectorized matrix multiplication for float32 using AVX
+void avx2_matmul_mul_nopack_float(
+    const float *__restrict__ a,
+    const float *__restrict__ b,
+    float *__restrict__ c) {
+    constexpr int VECTOR_ELEMENTS = 8; // AVX processes 8 float32 elements at once
+    for (int j = 0; j < N; ++j) {
+        for (int i = 0; i < N; ++i) {
+            __m256 vec_s = _mm256_setzero_ps(); // Initialize accumulator to zero
+
+            for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
+                const float *ptr_a = a + j * N + k; // `a` is row major
+                const float *ptr_b = b + i * N + k; // `b` is column major
+
+                __m256 vec_a = _mm256_load_ps(ptr_a); // Load 8 float32 elements from `a`
+                __m256 vec_b = _mm256_load_ps(ptr_b); // Load 8 float32 elements from `b`
+
+                __m256 vec_mul = _mm256_mul_ps(vec_a, vec_b); // Multiply 8 elements
+                vec_s = _mm256_add_ps(vec_s, vec_mul);        // Accumulate results
+            }
+
+            // Horizontal reduction of vec_s to get the final sum for this position
+            float sum = reduce_avx2_float32(vec_s);
+            c[j * N + i] = sum;
+        }
+    }
+}
 
 void avx512_matmul_mul_nopack_float(
     const float *__restrict__ a,
@@ -32,6 +70,7 @@ void avx512_matmul_mul_nopack_float(
     }
 }
 
+// Handling negative numbers using the magic number
 void avx512_matmul_floatbitmanipu_nopack_float_uint8(
     const float *__restrict__ a,
     const uint8_t *__restrict__ b,

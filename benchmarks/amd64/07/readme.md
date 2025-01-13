@@ -2,10 +2,11 @@
 
 **ARCH**: `AMD64`
 
-Matrix multiplication using scalar and vector MUL instructions and vector SHIFT instructions. **No** inline assembly is
-used.
-This benchmark uses int32_t for all tensors. No virtual packing.
-All the kernels in this benchmark **cannot** handle negative values.
+AVX512 matrix multiplication using floating point bit manipulation approach. No packing, float32:uint8.
+Float:float matrix multiplication with AVX512 as baseline.
+This kernel uses the same approach as the RVV kernels to handle negative numbers (using a magic num).
+
+> **Note**: This kernel uses the same approach as the RVV kernels to handle negative numbers (using a magic num).
 
 ## Sub Benchmarks
 
