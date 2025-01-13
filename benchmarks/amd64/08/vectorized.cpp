@@ -99,7 +99,7 @@ void avx512_matmul_floatbitmanipu_nopack_float_uint8_no_magic(
         0xFF, 12, 0xFF, 13, 0xFF, 14, 0xFF, 15};
 
     // Load permutation indexes
-    __m512i idx = _mm512_load_si512(indexes);
+    __m512i idx = _mm512_load_si512(indexes); // little-endian, so (0xff, 0) will be at the beginning
 
     #pragma GCC unroll FACTOR0
     for (int j = 0; j < N; ++j) {
