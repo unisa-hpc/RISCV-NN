@@ -30,7 +30,7 @@ extern void avx512_matmul_mul_nopack_float(
 
 extern void avx512_matmul_floatbitmanipu_nopack_float_uint8_no_magic(
     const float *__restrict__ a,
-    const uint8_t *__restrict__ b,
+    const uint16_t *__restrict__ b,
     float *__restrict__ c);
 
 int main(int argc, char** argv) {
