@@ -35,7 +35,7 @@ extern void avx512_matmul_floatbitmanipu_nopack_float_uint8(
 
 int main(int argc, char** argv) {
     constexpr int ALIGNMENT = 32;
-    const int RUNS_SCALAR = RUNS<=10 ? RUNS : 10;
+    const int RUNS_SCALAR = RUNS<=3 ? RUNS : 3;
 
     std::cout << "N: " << N << std::endl;
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;

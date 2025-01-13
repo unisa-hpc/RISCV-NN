@@ -51,7 +51,7 @@ void wipe(int32_t* p, size_t len) {
 
 int main(int argc, char** argv) {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
-    const int RUNS_SCALAR = RUNS<=10 ? RUNS : 10;
+    const int RUNS_SCALAR = RUNS<=3 ? RUNS : 3;
 
     std::cout << "N: " << N << std::endl;
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
