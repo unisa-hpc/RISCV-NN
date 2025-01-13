@@ -46,7 +46,9 @@ if [ "$flag_auto_tune" = true ]; then
       for i1 in "${range_i1[@]}"; do
         for i2 in "${range_i2[@]}"; do
           index=$((index+1))
+          # echo this line also append it to the txt file
           echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
+          echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
           echo "Benchmarking for Unroll Factor of $i and N of $n."
           bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done
