@@ -33,10 +33,19 @@ if [ "$flag_delete_dumps" = true ]; then
 fi
 
 if [ "$flag_auto_tune" = true ]; then
-  for ((n=64; n<=1024; n*=2)); do
-    for ((i0=1; i0<=16; i0*=2)); do
-      for ((i1=1; i1<=16; i1*=2)); do
-        for ((i2=1; i2<=16; i2*=2)); do
+  range_n=(64 128 256 512 1024)
+  range_i0=(1 2 4 8 16)
+  range_i1=(1 2 4 8 16)
+  range_i2=(1 2 4 8 16)
+  index=0
+  total_benchmarks=$(( ${#range_n[@]} * ${#range_i0[@]} * ${#range_i1[@]} * ${#range_i2[@]} ))
+
+  for n in "${range_n[@]}"; do
+    for i0 in "${range_i0[@]}"; do
+      for i1 in "${range_i1[@]}"; do
+        for i2 in "${range_i2[@]}"; do
+          index=$((index+1))
+          echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
           echo "Benchmarking for Unroll Factor of $i and N of $n."
           bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done
