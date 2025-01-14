@@ -391,10 +391,10 @@ int main(int argc, char** argv) {
     std::cout << "STRIDE Y: " << S_Y << std::endl;
     std::cout << "PADDING: " << padding << std::endl;
 
-    std::cout << "RUNS" << RUNS << std::endl;
-    std::cout << "RUNS_SCALAR" << RUNS_SCALAR << std::endl;
+    std::cout << "RUNS: " << RUNS << std::endl;
+    std::cout << "RUNS_SCALAR: " << RUNS_SCALAR << std::endl;
     std::cout << "ALWAYS_REPORT: " << ALWAYS_REPORT_STR << std::endl;
-    std::cout << "ARE_ALL_DEFAULT" << ARE_ALL_DEFAULT << std::endl;
+    std::cout << "ARE_ALL_DEFAULT: " << ARE_ALL_DEFAULT << std::endl;
 
     const size_t _out_height = GetOutHeight(input_height, kernel_height, stride_y);
     const size_t _out_width = GetOutWidth(input_width, kernel_width, stride_x);

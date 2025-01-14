@@ -58,10 +58,10 @@ int main(int argc, char** argv) {
     std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
 
-    std::cout << "RUNS" << RUNS << std::endl;
-    std::cout << "RUNS_SCALAR" << RUNS_SCALAR << std::endl;
+    std::cout << "RUNS: " << RUNS << std::endl;
+    std::cout << "RUNS_SCALAR: " << RUNS_SCALAR << std::endl;
     std::cout << "ALWAYS_REPORT: " << ALWAYS_REPORT_STR << std::endl;
-    std::cout << "ARE_ALL_DEFAULT" << ARE_ALL_DEFAULT << std::endl;
+    std::cout << "ARE_ALL_DEFAULT: " << ARE_ALL_DEFAULT << std::endl;
 
     auto* a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
     auto* b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
