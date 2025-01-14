@@ -16,22 +16,36 @@ constexpr size_t RUNS = 128;
 constexpr int VECTOR_SIZE = 256;
 constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
 
-// fallback to 1 if not defined
+#define UNROLL_FACTOR0_DEFAULT 1
+#define UNROLL_FACTOR1_DEFAULT 1
+#define UNROLL_FACTOR2_DEFAULT 1
+
+// fallback to the default if not defined
 #ifndef UNROLL_FACTOR0
-#define UNROLL_FACTOR0 1
+#define UNROLL_FACTOR0 UNROLL_FACTOR0_DEFAULT
 #endif
 
-// fallback to 1 if not defined
+// fallback to the default if not defined
 #ifndef UNROLL_FACTOR1
-#define UNROLL_FACTOR1 1
+#define UNROLL_FACTOR1 UNROLL_FACTOR1_DEFAULT
 #endif
 
-// fallback to 1 if not defined
+// fallback to the default if not defined
 #ifndef UNROLL_FACTOR2
-#define UNROLL_FACTOR2 1
+#define UNROLL_FACTOR2 UNROLL_FACTOR2_DEFAULT
 #endif
 
 // fallback to 256 if not defined
 #ifndef N
 #define N 256
+#endif
+
+// preprocessor to check if the factors are all equal to their defaults
+// if `ALWAYS_REPORT` is defined, it will always report the stats for non-participants in auto-tuning
+#ifndef ALWAYS_REPORT
+#define ARE_ALL_DEFAULT (UNROLL_FACTOR0 == UNROLL_FACTOR0_DEFAULT && UNROLL_FACTOR1 == UNROLL_FACTOR1_DEFAULT && UNROLL_FACTOR2 == UNROLL_FACTOR2_DEFAULT)
+#define ALWAYS_REPORT_STR "false"
+#else
+#define ARE_ALL_DEFAULT false
+#define ALWAYS_REPORT_STR "true"
 #endif

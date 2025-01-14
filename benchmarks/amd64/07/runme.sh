@@ -34,10 +34,10 @@ fi
 
 if [ "$flag_auto_tune" = true ]; then
 
-  range_n=(64 128 256 512 1024)
-  range_i0=(1 2 4 8 16)
-  range_i1=(1 2 4 8 16)
-  range_i2=(1 2 4 8 16)
+  range_n=(64) # 128 256 512 1024)
+  range_i0=(1 2) # 2 4 8 16)
+  range_i1=(1 2) # 2 4 8 16)
+  range_i2=(1 2) # 4 8 16)
   index=0
   total_benchmarks=$(( ${#range_n[@]} * ${#range_i0[@]} * ${#range_i1[@]} * ${#range_i2[@]} ))
 

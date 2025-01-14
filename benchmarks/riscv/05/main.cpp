@@ -38,6 +38,11 @@ int main(int argc, char **argv) {
     std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
 
+    std::cout << "RUNS" << RUNS << std::endl;
+    std::cout << "RUNS_SCALAR" << RUNS_SCALAR << std::endl;
+    std::cout << "ALWAYS_REPORT: " << ALWAYS_REPORT_STR << std::endl;
+    std::cout << "ARE_ALL_DEFAULT" << ARE_ALL_DEFAULT << std::endl;
+
     aligned_tensor<float> a_tensor({N, N}, ALIGNMENT);
     aligned_tensor<float> b_tensor({N, N}, ALIGNMENT);
     aligned_tensor<float> c_tensor_scalar({N, N}, ALIGNMENT);
@@ -63,7 +68,16 @@ int main(int argc, char **argv) {
     }
 
     {
-        timer_stats tp("Scalar Matmul With Mul NoAutovec", {{"N", N}});
+        timer_stats tp(
+            "Scalar Matmul With Mul NoAutovec",
+            {
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+                {"N", N}
+            },
+            !ARE_ALL_DEFAULT
+        );
         for (volatile size_t i = 0; i < RUNS_SCALAR; ++i) {
             timer_scope ts(tp);
             vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
@@ -71,7 +85,16 @@ int main(int argc, char **argv) {
     }
 
     {
-        timer_stats tp("Scalar Matmul With Mul Autovec", {{"N", N}});
+        timer_stats tp(
+            "Scalar Matmul With Mul Autovec",
+            {
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+                {"N", N}
+            },
+            !ARE_ALL_DEFAULT
+        );
         for (volatile size_t i = 0; i < RUNS_SCALAR; ++i) {
             timer_scope ts(tp);
             vector_matmul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr);
@@ -79,7 +102,16 @@ int main(int argc, char **argv) {
     }
 
     {
-        timer_stats tp("RVV Matmul With Mul Float", {{"N", N}});
+        timer_stats tp(
+            "RVV Matmul With Mul Float",
+            {
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+                {"N", N}
+            },
+            !ARE_ALL_DEFAULT
+        );
         for (volatile size_t i = 0; i < RUNS; ++i) {
             timer_scope ts(tp);
             rvv_matmul_mul_nopack_float(a_ptr, b_ptr, c_rvv_mul_ptr);
@@ -113,7 +145,8 @@ int main(int argc, char **argv) {
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1},
                 {"UNROLL_FACTOR2", UNROLL_FACTOR2},
                 {"N", N}
-            }
+            },
+            false
         );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);

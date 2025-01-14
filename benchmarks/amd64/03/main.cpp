@@ -391,6 +391,11 @@ int main(int argc, char** argv) {
     std::cout << "STRIDE Y: " << S_Y << std::endl;
     std::cout << "PADDING: " << padding << std::endl;
 
+    std::cout << "RUNS" << RUNS << std::endl;
+    std::cout << "RUNS_SCALAR" << RUNS_SCALAR << std::endl;
+    std::cout << "ALWAYS_REPORT: " << ALWAYS_REPORT_STR << std::endl;
+    std::cout << "ARE_ALL_DEFAULT" << ARE_ALL_DEFAULT << std::endl;
+
     const size_t _out_height = GetOutHeight(input_height, kernel_height, stride_y);
     const size_t _out_width = GetOutWidth(input_width, kernel_width, stride_x);
 
@@ -433,19 +438,20 @@ int main(int argc, char** argv) {
             timer_stats tp(
                 "Scalar Direct OCHW Conv2D With Mul NoAutovec",
                 {
-                  {"UNROLL_FACTOR0", UNROLL_FACTOR0},
-                  {"UNROLL_FACTOR1", UNROLL_FACTOR1},
-                  {"UNROLL_FACTOR2", UNROLL_FACTOR2},
-                  {"UNROLL_FACTOR3", UNROLL_FACTOR3},
-                  {"I_H", I_H},
-                  {"I_W", I_W},
-                  {"K_H", K_H},
-                  {"K_W", K_W},
-                  {"C_I", C_I},
-                  {"C_O", C_O},
-                  {"S_X", S_X},
-                  {"S_Y", S_Y}
-                }
+                  {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
+                  {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
+                  {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+                  {"UNROLL_FACTOR3", UNROLL_FACTOR3_DEFAULT},
+                  {"I_H", I_H_DEFAULT},
+                  {"I_W", I_W_DEFAULT},
+                  {"K_H", K_H_DEFAULT},
+                  {"K_W", K_W_DEFAULT},
+                  {"C_I", C_I_DEFAULT},
+                  {"C_O", C_O_DEFAULT},
+                  {"S_X", S_X_DEFAULT},
+                  {"S_Y", S_Y_DEFAULT}
+                },
+                !ARE_ALL_DEFAULT
             );
             for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
                 timer_scope ts(tp);
@@ -465,19 +471,20 @@ int main(int argc, char** argv) {
             timer_stats tp(
                 "Scalar Direct OCHW Conv2D With Mul Autovec",
                 {
-                  {"UNROLL_FACTOR0", UNROLL_FACTOR0},
-                  {"UNROLL_FACTOR1", UNROLL_FACTOR1},
-                  {"UNROLL_FACTOR2", UNROLL_FACTOR2},
-                  {"UNROLL_FACTOR3", UNROLL_FACTOR3},
-                  {"I_H", I_H},
-                  {"I_W", I_W},
-                  {"K_H", K_H},
-                  {"K_W", K_W},
-                  {"C_I", C_I},
-                  {"C_O", C_O},
-                  {"S_X", S_X},
-                  {"S_Y", S_Y}
-                }
+                  {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
+                  {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
+                  {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+                  {"UNROLL_FACTOR3", UNROLL_FACTOR3_DEFAULT},
+                  {"I_H", I_H_DEFAULT},
+                  {"I_W", I_W_DEFAULT},
+                  {"K_H", K_H_DEFAULT},
+                  {"K_W", K_W_DEFAULT},
+                  {"C_I", C_I_DEFAULT},
+                  {"C_O", C_O_DEFAULT},
+                  {"S_X", S_X_DEFAULT},
+                  {"S_Y", S_Y_DEFAULT}
+                },
+                !ARE_ALL_DEFAULT
             );
             for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
                 timer_scope ts(tp);
@@ -500,19 +507,20 @@ int main(int argc, char** argv) {
         timer_stats tp(
             "Vectorized Direct OCHW Conv2D With MUL AVX2",
             {
-              {"UNROLL_FACTOR0", UNROLL_FACTOR0},
-              {"UNROLL_FACTOR1", UNROLL_FACTOR1},
-              {"UNROLL_FACTOR2", UNROLL_FACTOR2},
-              {"UNROLL_FACTOR3", UNROLL_FACTOR3},
-              {"I_H", I_H},
-              {"I_W", I_W},
-              {"K_H", K_H},
-              {"K_W", K_W},
-              {"C_I", C_I},
-              {"C_O", C_O},
-              {"S_X", S_X},
-              {"S_Y", S_Y}
-            }
+              {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
+              {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
+              {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+              {"UNROLL_FACTOR3", UNROLL_FACTOR3_DEFAULT},
+              {"I_H", I_H_DEFAULT},
+              {"I_W", I_W_DEFAULT},
+              {"K_H", K_H_DEFAULT},
+              {"K_W", K_W_DEFAULT},
+              {"C_I", C_I_DEFAULT},
+              {"C_O", C_O_DEFAULT},
+              {"S_X", S_X_DEFAULT},
+              {"S_Y", S_Y_DEFAULT}
+            },
+            !ARE_ALL_DEFAULT
         );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
@@ -543,7 +551,8 @@ int main(int argc, char** argv) {
               {"C_O", C_O},
               {"S_X", S_X},
               {"S_Y", S_Y}
-            }
+            },
+            false
         );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);

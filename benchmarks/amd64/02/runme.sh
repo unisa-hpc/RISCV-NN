@@ -33,10 +33,10 @@ if [ "$flag_delete_dumps" = true ]; then
 fi
 
 if [ "$flag_auto_tune" = true ]; then
-  for ((n=64; n<=1024; n*=2)); do
-    for ((i0=1; i0<=16; i0*=2)); do
-      for ((i1=1; i1<=16; i1*=2)); do
-        for ((i2=1; i2<=16; i2*=2)); do
+  for ((n=64; n<=128; n*=2)); do
+    for ((i0=1; i0<=2; i0*=2)); do
+      for ((i1=1; i1<=2; i1*=2)); do
+        for ((i2=1; i2<=2; i2*=2)); do
           echo "Benchmarking for Unroll Factor of $i and N of $n."
           bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done

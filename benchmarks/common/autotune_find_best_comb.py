@@ -30,6 +30,9 @@ def get_best_config(dumps_dir: str, benchid: str, out: str, parse_pairs_func=lam
         unique_names_func = lambda x: unique_names_two_args_func(x, hw_name)
 
         all_jsons = get_all_json_files(dumps_dir, benchid, hw_name)
+        if len(all_jsons) == 0:
+            print(f'No json files found for {benchid} on {hw_name}. Skipping...')
+            continue
         parse_unique_names = lambda name: {
             pair.split('=')[0]: pair.split('=')[1] for pair in name.split(';;')
         }

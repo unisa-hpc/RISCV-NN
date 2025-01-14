@@ -40,6 +40,7 @@ private:
     const std::string name;
     std::vector<float> samples;
     const std::map <std::string, int> pairs;
+    const bool dont_report;
 
     std::string legalize_filename(const std::string &name) const {
         std::string result = name;
@@ -89,11 +90,11 @@ private:
     }
     
 public:
-    timer_stats(const std::string& name) : name(name) {
+    timer_stats(const std::string& name, bool dont_report=false) : name(name), dont_report(dont_report) {
 
     }
 
-    timer_stats(const std::string& name, const std::map<std::string, int>& pairs) : name(name), pairs(pairs) {
+    timer_stats(const std::string& name, const std::map<std::string, int>& pairs, bool dont_report=false) : name(name), pairs(pairs), dont_report(dont_report)  {
 
     }
 
@@ -186,7 +187,7 @@ public:
 
     ~timer_stats() {
         print();
-        save();
+        if(!dont_report) save();
     }
 };
 

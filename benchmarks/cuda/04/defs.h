@@ -8,7 +8,7 @@
 
 constexpr size_t RUNS = 128;
 
-// fallback to 1 if not defined
+// fallback to the default if not defined
 #ifndef UNROLL_FACTOR0
 #define UNROLL_FACTOR0 1
 #endif
