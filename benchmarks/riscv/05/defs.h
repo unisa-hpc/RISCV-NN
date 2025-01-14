@@ -14,9 +14,9 @@
 
 constexpr size_t RUNS = 64;
 
-#define UNROLL_FACTOR0_DEFAULT 1
-#define UNROLL_FACTOR1_DEFAULT 1
-#define UNROLL_FACTOR2_DEFAULT 1
+constexpr int UNROLL_FACTOR0_DEFAULT = 1;
+constexpr int UNROLL_FACTOR1_DEFAULT = 1;
+constexpr int UNROLL_FACTOR2_DEFAULT = 1;
 
 // fallback to the default if not defined
 #ifndef UNROLL_FACTOR0

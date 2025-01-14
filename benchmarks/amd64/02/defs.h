@@ -16,9 +16,9 @@ constexpr size_t RUNS = 256;
 constexpr int VECTOR_SIZE = 256;
 constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
 
-#define UNROLL_FACTOR0_DEFAULT 1
-#define UNROLL_FACTOR1_DEFAULT 1
-#define UNROLL_FACTOR2_DEFAULT 1
+constexpr int UNROLL_FACTOR0_DEFAULT = 1;
+constexpr int UNROLL_FACTOR1_DEFAULT = 1;
+constexpr int UNROLL_FACTOR2_DEFAULT = 1;
 
 // fallback to the default if not defined
 #ifndef UNROLL_FACTOR0

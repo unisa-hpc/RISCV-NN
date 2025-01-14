@@ -15,18 +15,18 @@
 constexpr size_t RUNS = 32;
 constexpr int padding = 0;
 
-#define UNROLL_FACTOR0_DEFAULT 1
-#define UNROLL_FACTOR1_DEFAULT 1
-#define UNROLL_FACTOR2_DEFAULT 1
-#define UNROLL_FACTOR3_DEFAULT 1
-#define I_H_DEFAULT 256
-#define I_W_DEFAULT 256
-#define K_H_DEFAULT 3
-#define K_W_DEFAULT 3
-#define C_I_DEFAULT 3
-#define C_O_DEFAULT 16
-#define S_X_DEFAULT 1
-#define S_Y_DEFAULT 1
+constexpr int UNROLL_FACTOR0_DEFAULT = 1;
+constexpr int UNROLL_FACTOR1_DEFAULT = 1;
+constexpr int UNROLL_FACTOR2_DEFAULT = 1;
+constexpr int UNROLL_FACTOR3_DEFAULT = 1;
+constexpr int I_H_DEFAULT = 256;
+constexpr int I_W_DEFAULT = 256;
+constexpr int K_H_DEFAULT = 3;
+constexpr int K_W_DEFAULT = 3;
+constexpr int C_I_DEFAULT = 3;
+constexpr int C_O_DEFAULT = 16;
+constexpr int S_X_DEFAULT = 1;
+constexpr int S_Y_DEFAULT = 1;
 
 
 #ifndef SKIP_SCALAR_AND_VERIFICATION
