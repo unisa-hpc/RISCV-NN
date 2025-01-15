@@ -20,6 +20,7 @@ current_benchId="07"
 
 script_dir=$(dirname "$0")
 source "$script_dir/../../common/utils.bash"
+source "$script_dir/../../common/ranges.matmul.sh"
 setup_autotuner_args "$@"
 
 # Add new line to the end of the file benchIdXX.txt
@@ -34,10 +35,6 @@ fi
 
 if [ "$flag_auto_tune" = true ]; then
 
-  range_n=(64) # 128 256 512 1024)
-  range_i0=(1 2) # 2 4 8 16)
-  range_i1=(1 2) # 2 4 8 16)
-  range_i2=(1 2) # 4 8 16)
   index=0
   total_benchmarks=$(( ${#range_n[@]} * ${#range_i0[@]} * ${#range_i1[@]} * ${#range_i2[@]} ))
 
@@ -60,7 +57,7 @@ else
   # We keep `autotuner.json` created by the python script as is; We need it
   mv "../../dumps/benchId${current_benchId}.txt" "../../dumps/benchId${current_benchId}_autotune.txt"
 
-  for ((n=64; n<=1024; n*=2)); do
+  for n in "${range_n[@]}"; do
     # parse the autotuner json file and get the best configuration for this N
     parse_autotuner_best_conf_json ../../dumps/autotuner.json $current_benchId $machine $n
     echo "Building for N of $n with the auto tuned best config: UNROLL_FACTOR0=$UNROLL_FACTOR0 UNROLL_FACTOR1=$UNROLL_FACTOR1 UNROLL_FACTOR2=$UNROLL_FACTOR2"

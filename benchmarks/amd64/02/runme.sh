@@ -20,6 +20,7 @@ current_benchId="02"
 
 script_dir=$(dirname "$0")
 source "$script_dir/../../common/utils.bash"
+source "$script_dir/../../common/ranges.matmul.sh"
 setup_autotuner_args "$@"
 
 # Add new line to the end of the file benchIdXX.txt
@@ -33,10 +34,18 @@ if [ "$flag_delete_dumps" = true ]; then
 fi
 
 if [ "$flag_auto_tune" = true ]; then
-  for ((n=64; n<=128; n*=2)); do
-    for ((i0=1; i0<=2; i0*=2)); do
-      for ((i1=1; i1<=2; i1*=2)); do
-        for ((i2=1; i2<=2; i2*=2)); do
+
+  index=0
+  total_benchmarks=$(( ${#range_n[@]} * ${#range_i0[@]} * ${#range_i1[@]} * ${#range_i2[@]} ))
+
+  for n in "${range_n[@]}"; do
+    for i0 in "${range_i0[@]}"; do
+      for i1 in "${range_i1[@]}"; do
+        for i2 in "${range_i2[@]}"; do
+          index=$((index+1))
+          # echo this line also append it to the txt file
+          echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
+          echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
           echo "Benchmarking for Unroll Factor of $i and N of $n."
           bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done
@@ -48,7 +57,7 @@ else
   # We keep `autotuner.json` created by the python script as is; We need it
   mv "../../dumps/benchId${current_benchId}.txt" "../../dumps/benchId${current_benchId}_autotune.txt"
 
-  for ((n=64; n<=1024; n*=2)); do
+  for n in "${range_n[@]}"; do
     # parse the autotuner json file and get the best configuration for this N
     parse_autotuner_best_conf_json ../../dumps/autotuner.json $current_benchId $machine $n
     echo "Building for N of $n with the auto tuned best config: UNROLL_FACTOR0=$UNROLL_FACTOR0 UNROLL_FACTOR1=$UNROLL_FACTOR1 UNROLL_FACTOR2=$UNROLL_FACTOR2"
