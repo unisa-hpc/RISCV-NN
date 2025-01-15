@@ -5,6 +5,8 @@ if [ $# -lt 1 ]; then
 fi
 machine=$1
 
+pip install --user argparse pandas colorama pathlib matplotlib numpy seaborn
+
 cd 02
 bash runme.sh --machine=$machine --auto-tune
 bash runme.sh --machine=$machine
