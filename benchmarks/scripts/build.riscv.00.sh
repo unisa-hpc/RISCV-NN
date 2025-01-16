@@ -77,7 +77,7 @@ if [ ! -d "$dump_dir" ]; then
   mkdir "$dump_dir"
 fi
 
-timestamp=$(date +"%Y%m%d_%H%M%S")
+timestamp=$(date +"%Y%m%d_%H%M%S")-${RANDOM}
 new_dump_dir="$dump_dir/$timestamp"
 mkdir "$new_dump_dir"
 log_file="$new_dump_dir/output_log_$timestamp.txt"
