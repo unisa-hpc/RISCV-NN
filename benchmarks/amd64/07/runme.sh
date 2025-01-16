@@ -48,6 +48,8 @@ if [ "$flag_auto_tune" = true ]; then
           echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
           echo "Benchmarking for Unroll Factor of $i and N of $n."
           bash build.amd64.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
+          echo "Also building for N of $n with the default tunable parameters."
+          bash build.amd64.00.sh --machine=$machine "-DN=$n $args"
         done
       done
     done
