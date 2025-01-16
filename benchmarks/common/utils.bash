@@ -125,6 +125,11 @@ parse_autotuner_best_conf_json() {
 
     local json=""
 
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "Error: jq is not installed. Please install jq and try again." >&2
+        exit 1
+    fi
+
     # Check if the json file exists
     if [ ! -f "$json_file" ]; then
         echo "Error: JSON file '$json_file' not found"
