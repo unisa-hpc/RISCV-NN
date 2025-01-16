@@ -7,7 +7,7 @@ import seaborn as sns
 import sys
 from matplotlib.lines import Line2D
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common')))
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common/python')))
 from timer_stats import TimerStatsParser
 
 

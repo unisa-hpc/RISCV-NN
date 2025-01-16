@@ -2,9 +2,6 @@ import pathlib
 
 
 def get_all_hw_names(dump_dir: str, bench_id: str) -> [str]:
-    """
-    Get the abs path of all the json files in the dump directory, recursively.
-    """
     # check if f'benchId{bench_id}.txt' exists
     if not pathlib.Path(dump_dir).joinpath(f'benchId{bench_id}.txt').exists():
         print(f'File {dump_dir}/benchId{bench_id}.txt does not exist.')

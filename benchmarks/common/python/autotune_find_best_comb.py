@@ -5,10 +5,8 @@ import sys
 from colorama import init, Fore
 import json
 import pathlib
-
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common')))
-from timer_stats import TimerStatsParser
-from utils import *
+from parsing.timer_stats import TimerStatsParser
+from parsing.utils import *
 
 
 def get_best_config(dumps_dir: str, benchid: str, out: str, parse_pairs_func=lambda pairs: {}, unique_names_two_args_func=lambda pairs, hw: ''):

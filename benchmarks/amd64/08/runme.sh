@@ -69,7 +69,7 @@ fi
 # Run the autotuner if the flag is set
 if [ "$flag_auto_tune" = true ]; then
   echo "Running the autotuner."
-  python autotune.py --dumps-dir ../../dumps --benchid $current_benchId
+  python ../../common/python/autotune.py --dumps-dir ../../dumps --benchid $current_benchId
 fi
 
 # Run the plotting script if the auto-tuner flag is not set

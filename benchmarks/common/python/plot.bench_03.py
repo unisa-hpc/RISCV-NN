@@ -7,9 +7,7 @@ import seaborn as sns
 import sys
 from matplotlib.lines import Line2D
 from tqdm.auto import tqdm
-
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2].joinpath('common')))
-from timer_stats import TimerStatsParser
+from parsing.timer_stats import TimerStatsParser
 
 
 def get_all_json_files(dump_dir: str, bench_id: str) -> [str]:
