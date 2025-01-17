@@ -9,17 +9,20 @@ from parsing.timer_stats import TimerStatsParser
 from parsing.utils import *
 
 
-def get_best_config(dumps_dir: str, benchid: str, out: str, parse_pairs_func=lambda pairs: {}, unique_names_two_args_func=lambda pairs, hw: ''):
+def get_best_config(dumps_dir: str, benchid_str: str, out: str, parse_pairs_func=lambda pairs: {}, unique_names_two_args_func=lambda pairs, hw: ''):
     """
     Find the best unroll factor for each hardware and print it.
     It looks for benchId{benchid}.txt in the dumps_dir to extract all the relevant json files.
     """
     init()
-    all_hw_names = get_all_hw_names(dumps_dir, benchid)
+    all_hw_names = get_all_hw_names(dumps_dir, benchid_str)
 
     # json_report structure: (no lists, everything is a dict)
     # benchId -> hw_name -> N -> config -> {key: value}
     json_report_dict = {}
+
+    # for now, lets assume that benchmarkIds are always two digits `00` in the auto-tuner json files.
+    benchid = benchid_str
 
     for hw_name in all_hw_names:
         print('=================================================')
@@ -27,9 +30,9 @@ def get_best_config(dumps_dir: str, benchid: str, out: str, parse_pairs_func=lam
 
         unique_names_func = lambda x: unique_names_two_args_func(x, hw_name)
 
-        all_jsons = get_all_json_files(dumps_dir, benchid, hw_name)
+        all_jsons = get_all_json_files(dumps_dir, benchid_str, hw_name)
         if len(all_jsons) == 0:
-            print(f'No json files found for {benchid} on {hw_name}. Skipping...')
+            print(f'No json files found for {benchid_str} on {hw_name}. Skipping...')
             continue
         parse_unique_names = lambda name: {
             pair.split('=')[0]: pair.split('=')[1] for pair in name.split(';;')
