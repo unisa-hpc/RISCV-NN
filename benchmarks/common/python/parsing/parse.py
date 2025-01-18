@@ -6,6 +6,9 @@ import numpy as np
 import pandas as pd
 import copy
 
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'parsing'))
+
 from utils import *
 from timer_stats import *
 from lamda_funcs import *
@@ -114,8 +117,14 @@ class DumpsParser:
                     if hw not in parsed_dumps[bench_id]:
                         parsed_dumps[bench_id][hw] = {}
 
-                    parsed_dumps[bench_id][hw][
-                        'auto-tune' if is_autotune_runs else 'best'] = timer_stats_parser.get_df()
+                    k = 'auto-tune' if is_autotune_runs else 'best'
+
+                    if k not in parsed_dumps[bench_id][hw]:
+                        parsed_dumps[bench_id][hw][k] = []
+
+                    parsed_dumps[bench_id][hw][k].append(
+                        timer_stats_parser.get_df()
+                    )
 
         with open(pathlib.Path(self.dumps_dirs_list[dumps_dirs_index])/'autotuner.json', 'r') as f:
             parsed_json = json.load(f)
@@ -134,17 +143,16 @@ class DumpsParser:
         """
         merged_frames = []
 
-        for int_key, str_dict in data.items():
-            for str_key1, str_dict2 in str_dict.items():
-                for str_key2, df in str_dict2.items():
-                    # Add columns for the keys
-                    df = df.copy()  # Avoid modifying the original data frame
-                    df['benchId'] = int_key
-                    df['hw'] = str_key1
-                    df['run_type'] = str_key2
-
-                    # Append to the list of DataFrames
-                    merged_frames.append(df)
+        for bench_id, hw_dict in data.items():
+            for hw, runs_dict in hw_dict.items():
+                for run_type, runs in runs_dict.items():
+                    # Avoid modifying the original data frame
+                    for run in runs:
+                        cpy = run.copy()
+                        cpy['benchId'] = bench_id
+                        cpy['hw'] = hw
+                        cpy['run_type'] = run_type
+                        merged_frames.append(cpy)
 
         # Concatenate all DataFrames into one
         if merged_frames:
