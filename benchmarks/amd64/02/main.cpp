@@ -3,6 +3,7 @@
 //
 
 #include "defs.h"
+#include "codebook.h"
 
 extern void vector_matmul_scalar_autovec (
     const int32_t* __restrict__ a,
@@ -82,7 +83,7 @@ int main(int argc, char** argv) {
 
     {
         timer_stats tp(
-            "Scalar Matmul With Mul NoAutovec",
+            get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Matmul With Mul NoAutovec",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -98,7 +99,7 @@ int main(int argc, char** argv) {
     }
     {
         timer_stats tp(
-            "Scalar Matmul With Mul Autovec",
+            get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Matmul With Mul Autovec",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -114,7 +115,7 @@ int main(int argc, char** argv) {
     }
     {
         timer_stats tp(
-            "AVX Matmul With Mul",
+            get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0), //"AVX Matmul With Mul",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -141,7 +142,7 @@ int main(int argc, char** argv) {
     }
     {
         timer_stats tp(
-            "AVX Matmul With Shift",
+            get_code_name(BENCH_ID, kernel_kind::AVX2, false, 0), //"AVX Matmul With Shift",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1},

@@ -12,6 +12,7 @@
 #include <cmath>
 #include "common01.h"
 
+constexpr int BENCH_ID = 3;
 constexpr size_t RUNS = 32;
 constexpr int padding = 0;
 

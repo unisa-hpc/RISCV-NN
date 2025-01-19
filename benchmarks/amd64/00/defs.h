@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include "common01.h"
 
+constexpr int BENCH_ID = 0;
 constexpr size_t RUNS = 1000;
 constexpr size_t N = 1024 * 1024; // 16M elements
 constexpr size_t VECTOR_ELEMENTS = 8; // 8 elements in a vector (int32)

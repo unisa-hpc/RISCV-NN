@@ -3,6 +3,7 @@
 //
 
 #include "defs.h"
+#include "codebook.h"
 
 extern void vector_matmul_scalar_autovec (
     const float* __restrict__ a,
@@ -73,7 +74,7 @@ int main(int argc, char** argv) {
 
     {
         timer_stats tp(
-            "Scalar Matmul With Mul NoAutovec",
+            get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Matmul With Mul NoAutovec",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -90,7 +91,7 @@ int main(int argc, char** argv) {
 
     {
         timer_stats tp(
-            "Scalar Matmul With Mul Autovec",
+            get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Matmul With Mul Autovec",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -107,7 +108,7 @@ int main(int argc, char** argv) {
 
     {
         timer_stats tp(
-            "AVX2 Matmul With Mul Float",
+            get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0), //"AVX2 Matmul With Mul Float",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -126,7 +127,7 @@ int main(int argc, char** argv) {
 
     {
         timer_stats tp(
-            "AVX512 Matmul With Mul Float",
+            get_code_name(BENCH_ID, kernel_kind::AVX512, true, 0), //"AVX512 Matmul With Mul Float",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -162,7 +163,7 @@ int main(int argc, char** argv) {
 
     {
         timer_stats tp(
-            "AVX512 Matmul BitManipu float:uint8 nopack",
+            get_code_name(BENCH_ID, kernel_kind::AVX512, false, 0), //"AVX512 Matmul BitManipu float:uint8 nopack",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1},

@@ -6,6 +6,7 @@
 #include <iostream>
 #include "common02.h"
 #include "defs.h"
+#include "codebook.h"
 
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
@@ -188,7 +189,12 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        timer_stats stats("LaunchKernel01");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, true, 0), //"LaunchKernel01"
+            {
+                {"N", N}
+            },
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.
@@ -206,7 +212,12 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        timer_stats stats("LaunchKernel04");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, true, 1), //"LaunchKernel04",
+            {
+                {"N", N}
+            }
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.
@@ -224,7 +235,12 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        timer_stats stats("LaunchKernel08");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, true, 2), //"LaunchKernel08",
+            {
+                {"N", N}
+            }
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.
@@ -242,7 +258,12 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        timer_stats stats("LaunchKernel01_PoT");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, false, 0), //"LaunchKernel01_PoT",
+            {
+                {"N", N}
+            }
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.
@@ -260,7 +281,12 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        timer_stats stats("LaunchKernel01_PoT16");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, false, 1), //"LaunchKernel01_PoT16",
+            {
+                {"N", N}
+            }
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.
@@ -278,7 +304,12 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        timer_stats stats("LaunchKernel04_PoT");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, false, 2), //"LaunchKernel04_PoT",
+            {
+                {"N", N}
+            }
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.
@@ -296,7 +327,12 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        timer_stats stats("LaunchKernel01_PoT4bit");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, false, 3), //"LaunchKernel01_PoT4bit",
+            {
+                {"N", N}
+            }
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.
@@ -314,7 +350,12 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        timer_stats stats("LaunchKernel04_PoT4bit");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, false, 4), //"LaunchKernel04_PoT4bit",
+            {
+                {"N", N}
+            }
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.
@@ -333,7 +374,12 @@ int main(int argc, char *argv[]) {
 
 #ifdef INCLUDE_2BIT_POT
     {
-        timer_stats stats("LaunchKernel04_PoT2bit");
+        timer_stats stats(
+            get_code_name(BENCH_ID, kernel_kind::CUDA, false, 5), //"LaunchKernel04_PoT2bit",
+            {
+                {"N", N}
+            }
+        );
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
             // Each iteration will be blocked until the kernel finishes.

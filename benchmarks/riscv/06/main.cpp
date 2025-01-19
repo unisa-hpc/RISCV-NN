@@ -4,6 +4,7 @@
 
 #include "defs.h"
 #include "common01.h"
+#include "codebook.h"
 
 extern void vector_matmul_scalar_noautovec(
     const float* __restrict__ a,
@@ -69,7 +70,7 @@ int main(int argc, char **argv) {
 
     {
         timer_stats tp(
-            "Scalar Matmul With Mul NoAutovec",
+            get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Matmul With Mul NoAutovec",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -86,7 +87,7 @@ int main(int argc, char **argv) {
 
     {
         timer_stats tp(
-            "Scalar Matmul With Mul Autovec",
+            get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Matmul With Mul Autovec",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -103,7 +104,7 @@ int main(int argc, char **argv) {
 
     {
         timer_stats tp(
-            "RVV Matmul With Mul Float",
+            get_code_name(BENCH_ID, kernel_kind::RVV, true, 0), //"RVV Matmul With Mul Float",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -148,7 +149,7 @@ int main(int argc, char **argv) {
 
     {
         timer_stats tp(
-            "RVV Matmul BitManipu float:uint8 packed2",
+            get_code_name(BENCH_ID, kernel_kind::RVV, false, 0), //"RVV Matmul BitManipu float:uint8 packed2",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1},

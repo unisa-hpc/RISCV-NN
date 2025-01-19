@@ -4,6 +4,7 @@
 
 #include "defs.h"
 #include "common01.h"
+#include "codebook.h"
 
 extern void conv2d_direct_padding_ochw_scalar_noautovec(
     const int32_t* __restrict__ input,
@@ -436,7 +437,7 @@ int main(int argc, char** argv) {
         wipe(c_scalar_noautovec_ptr, channel_out * _out_height * _out_width);
         {
             timer_stats tp(
-                "Scalar Direct OCHW Conv2D With Mul NoAutovec",
+                get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Direct OCHW Conv2D With Mul NoAutovec",
                 {
                   {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                   {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -469,7 +470,7 @@ int main(int argc, char** argv) {
         wipe(c_scalar_autovec_ptr, channel_out * _out_height * _out_width);
         {
             timer_stats tp(
-                "Scalar Direct OCHW Conv2D With Mul Autovec",
+                get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Direct OCHW Conv2D With Mul Autovec",
                 {
                   {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
                   {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -505,7 +506,7 @@ int main(int argc, char** argv) {
     wipe(c_avx_mul_ptr, channel_out * _out_height * _out_width);
     {
         timer_stats tp(
-            "Vectorized Direct OCHW Conv2D With MUL AVX2",
+            get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0), //"Vectorized Direct OCHW Conv2D With MUL AVX2",
             {
               {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
               {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
@@ -537,7 +538,7 @@ int main(int argc, char** argv) {
     wipe(c_avx_shift_ptr, channel_out * _out_height * _out_width);
     {
         timer_stats tp(
-            "Vectorized Direct OCHW Conv2D With SHIFT AVX2",
+            get_code_name(BENCH_ID, kernel_kind::AVX2, false, 0), //"Vectorized Direct OCHW Conv2D With SHIFT AVX2",
             {
               {"UNROLL_FACTOR0", UNROLL_FACTOR0},
               {"UNROLL_FACTOR1", UNROLL_FACTOR1},

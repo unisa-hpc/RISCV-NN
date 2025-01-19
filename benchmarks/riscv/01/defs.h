@@ -12,6 +12,7 @@
 #include <riscv_vector.h>
 #include "common01.h"
 
+constexpr int BENCH_ID = 1;
 constexpr size_t RUNS = 64;
 
 constexpr int UNROLL_FACTOR0_DEFAULT = 1;

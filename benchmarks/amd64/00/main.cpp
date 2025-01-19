@@ -1,4 +1,5 @@
 #include "defs.h"
+#include "codebook.h"
 
 extern void vector_mul_scalar_autovec(
     const int32_t* __restrict__ ptr_a,
@@ -42,11 +43,10 @@ extern void vector_shift_avx(
     size_t n
 );
 
-// Function to verify the results of scalar and RVV methods
-void verify_results(const int32_t* scalar_result, const int32_t* rvv_result, size_t n) {
+void verify_results(const int32_t* scalar_result, const int32_t* avx_result, size_t n) {
     for (size_t i = 0; i < n; i++) {
         auto t1 = scalar_result[i];
-        auto t2 = rvv_result[i];
+        auto t2 = avx_result[i];
         if (t1 != t2) {
             std::cerr << "Results mismatch at index " << i << std::endl;
             return;
@@ -95,7 +95,7 @@ int main() {
 
     // Measure time for scalar vector addition
     {
-        timer_stats tp("Scalar Vector Multiplication (AutoVec)");
+        timer_stats tp(get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0)); // "Scalar Vector Multiplication (AutoVec)"
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_mul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr, N);
@@ -104,16 +104,16 @@ int main() {
 
     // Measure time for scalar vector addition
     {
-        timer_stats tp("Scalar Vector Multiplication (NoAutoVec)");
+        timer_stats tp(get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0)); //"Scalar Vector Multiplication (NoAutoVec)"
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_mul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr, N);
         }
     }
 
-    // Measure time for RVV vector multiplication
+    // Measure time for avx2 vector multiplication
     {
-        timer_stats tp("AVX Vector Multiplication");
+        timer_stats tp(get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0)); //"AVX Vector Multiplication"
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_mul_avx(a_ptr, b_ptr, c_avx_ptr, N);
@@ -125,7 +125,7 @@ int main() {
 
     // Measure time for scalar vector addition
     {
-        timer_stats tp("Scalar Vector Shift (AutoVec)");
+        timer_stats tp(get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 1)); //"Scalar Vector Shift (AutoVec)"
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_shift_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr, N);
@@ -134,7 +134,7 @@ int main() {
 
     // Measure time for scalar vector addition
     {
-        timer_stats tp("Scalar Vector Shift (NoAutoVec)");
+        timer_stats tp(get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 1)); //"Scalar Vector Shift (NoAutoVec)"
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_shift_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr, N);
@@ -143,7 +143,7 @@ int main() {
 
     // Measure time for scalar vector addition
     {
-        timer_stats tp("AVX Vector Shift");
+        timer_stats tp(get_code_name(BENCH_ID, kernel_kind::AVX2, false, 0)); //"AVX Vector Shift"
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
             vector_shift_avx(a_ptr, b_ptr, c_avx_ptr, N);
