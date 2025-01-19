@@ -4,6 +4,7 @@ import seaborn as sns
 import pandas as pd
 
 from parsing.parse import DumpsParser
+from parsing.codebook import *
 
 
 class PlotSpeedUps:
@@ -57,7 +58,7 @@ class PlotSpeedUps:
         self.proc_data['benchId_hw_name'] = \
             self.proc_data['benchId'].astype(str)  + ';;' + \
             self.proc_data['hw'] + ';;' + \
-            self.proc_data['name']
+            translate_codename_to(self.proc_data['name'])
 
         self.proc_data['benchId_hw'] = \
             self.proc_data['benchId'].astype(str) + ';;' + \

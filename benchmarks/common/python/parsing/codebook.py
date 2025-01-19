@@ -1,7 +1,10 @@
 # This file should be in sync with codebook.h .
 # Any modification here should be reflected in codebook.h
 
-def translate_codename_to(codename: str, to_style: str) -> str:
+import pandas as pd
+
+
+def translate_str_codename_to(codename: str, to_style: str = 'long1') -> str:
     ret_val = ""
 
     if not (to_style == 'long1' or to_style == 'brief1') :
@@ -23,76 +26,76 @@ def translate_codename_to(codename: str, to_style: str) -> str:
     if to_style=='long1':
         if bench_id == 0:
             ret_val = \
-                "Scalar Vector Multiplication (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==0 else \
-                "Scalar Vector Multiplication (AutoVec)" if is_base and kind_index == "SAV" and kind_index==0 else \
-                "Scalar Vector Shift (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==1 else \
-                "Scalar Vector Shift (AutoVec)" if is_base and kind_index == "SAV" and kind_index==1 else \
-                "AVX Vector Multiplication" if is_base and kind_index == "AVX2" and kind_index==0 else \
-                "AVX Vector Multiplication" if (not is_base) and kind_index == "AVX2" and kind_index==0 else \
+                "Scalar Vector Multiplication (NoAutoVec)" if is_base and kind == "SNA" and kind_index==0 else \
+                "Scalar Vector Multiplication (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
+                "Scalar Vector Shift (NoAutoVec)" if is_base and kind == "SNA" and kind_index==1 else \
+                "Scalar Vector Shift (AutoVec)" if is_base and kind == "SAV" and kind_index==1 else \
+                "AVX Vector Multiplication" if is_base and kind == "AVX2" and kind_index==0 else \
+                "AVX Vector Multiplication" if (not is_base) and kind == "AVX2" and kind_index==0 else \
                 None
 
         elif bench_id == 2:
             ret_val = \
-                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==0 else \
-                "Scalar Matmul With MUL (AutoVec)" if is_base and kind_index == "SAV" and kind_index==0 else \
-                "AVX2 Matmul With MUL" if is_base and kind_index == "AVX2" and kind_index==0 else \
-                "AVX2 Matmul With SHIFT" if (not is_base) and kind_index == "AVX2" and kind_index==0 else \
+                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind == "SNA" and kind_index==0 else \
+                "Scalar Matmul With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
+                "AVX2 Matmul With MUL" if is_base and kind == "AVX2" and kind_index==0 else \
+                "AVX2 Matmul With SHIFT" if (not is_base) and kind == "AVX2" and kind_index==0 else \
                 None
         elif bench_id == 3:
             ret_val = \
-                "Scalar Direct OCHW Conv2D With MUL (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==0 else \
-                "Scalar Direct OCHW Conv2D With MUL (AutoVec)" if is_base and kind_index == "SAV" and kind_index==0 else \
-                "AVX2 Direct OCHW Conv2D With MUL" if is_base and kind_index == "AVX2" and kind_index==0 else \
-                "AVX2 Direct OCHW Conv2D With SHIFT" if (not is_base) and kind_index == "AVX2" and kind_index==0 else \
+                "Scalar Direct OCHW Conv2D With MUL (NoAutoVec)" if is_base and kind == "SNA" and kind_index==0 else \
+                "Scalar Direct OCHW Conv2D With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
+                "AVX2 Direct OCHW Conv2D With MUL" if is_base and kind == "AVX2" and kind_index==0 else \
+                "AVX2 Direct OCHW Conv2D With SHIFT" if (not is_base) and kind == "AVX2" and kind_index==0 else \
                 None
         elif bench_id == 7:
             ret_val = \
-                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==0 else \
-                "Scalar Matmul With MUL (AutoVec)" if is_base and kind_index == "SAV" and kind_index==0 else \
-                "AVX2 F32:F32 Matmul With MUL" if is_base and kind_index == "AVX2" and kind_index==0 else \
-                "AVX512 F32:F32 Matmul With MUL" if is_base and kind_index == "AVX512" and kind_index==0 else \
-                "AVX512 F32:U8 NoPack Matmul With PoT - W/O permutexvar" if (not is_base) and kind_index == "AVX512" and kind_index==0 else \
+                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind == "SNA" and kind_index==0 else \
+                "Scalar Matmul With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
+                "AVX2 F32:F32 Matmul With MUL" if is_base and kind == "AVX2" and kind_index==0 else \
+                "AVX512 F32:F32 Matmul With MUL" if is_base and kind == "AVX512" and kind_index==0 else \
+                "AVX512 F32:U8 NoPack Matmul With PoT - W/O permutexvar" if (not is_base) and kind == "AVX512" and kind_index==0 else \
                 None
         elif bench_id == 8:
             ret_val = \
-                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==0 else \
-                "Scalar Matmul With MUL (AutoVec)" if is_base and kind_index == "SAV" and kind_index==0 else \
-                "AVX2 F32:F32 Matmul With MUL" if is_base and kind_index == "AVX2" and kind_index==0 else \
-                "AVX512 F32:F32 Matmul With MUL" if is_base and kind_index == "AVX512" and kind_index==0 else \
-                "AVX512 F32:U8 NoPack Matmul With PoT - permutexvar" if (not is_base) and kind_index == "AVX512" and kind_index==0 else \
+                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind == "SNA" and kind_index==0 else \
+                "Scalar Matmul With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
+                "AVX2 F32:F32 Matmul With MUL" if is_base and kind == "AVX2" and kind_index==0 else \
+                "AVX512 F32:F32 Matmul With MUL" if is_base and kind == "AVX512" and kind_index==0 else \
+                "AVX512 F32:U8 NoPack Matmul With PoT - permutexvar" if (not is_base) and kind == "AVX512" and kind_index==0 else \
                 None
         elif bench_id == 4:
             ret_val = \
-                "Naive Matmul" if is_base and kind_index == "CUDA" and kind_index==0 else \
-                "SMem 1D-Tiled Matmul" if is_base and kind_index == "CUDA" and kind_index==1 else \
-                "SMem 2D-Tiled Matmul" if is_base and kind_index == "CUDA" and kind_index==2 else \
-                "Naive F32:U8 NoPack Matmul With PoT" if (not is_base) and kind_index == "CUDA" and kind_index==0 else \
-                "Naive F32:U16 NoPack Matmul With PoT" if (not is_base) and kind_index == "CUDA" and kind_index==1 else \
-                "Naive F32:U8 NoPack Matmul With PoT" if (not is_base) and kind_index == "CUDA" and kind_index==2 else \
-                "Naive F32:U8 Pack2 Matmul With PoT" if (not is_base) and kind_index == "CUDA" and kind_index==3 else \
-                "SMem 1D-Tiled F32:U8 Pack2 Matmul With PoT" if (not is_base) and kind_index == "CUDA" and kind_index==4 else \
-                "SMem 1D-Tiled F32:U8 Pack4 Matmul With PoT" if (not is_base) and kind_index == "CUDA" and kind_index==5 else \
+                "Naive Matmul" if is_base and kind == "CUDA" and kind_index==0 else \
+                "SMem 1D-Tiled Matmul" if is_base and kind == "CUDA" and kind_index==1 else \
+                "SMem 2D-Tiled Matmul" if is_base and kind == "CUDA" and kind_index==2 else \
+                "Naive F32:U8 NoPack Matmul With PoT" if (not is_base) and kind == "CUDA" and kind_index==0 else \
+                "Naive F32:U16 NoPack Matmul With PoT" if (not is_base) and kind == "CUDA" and kind_index==1 else \
+                "Naive F32:U8 NoPack Matmul With PoT" if (not is_base) and kind == "CUDA" and kind_index==2 else \
+                "Naive F32:U8 Pack2 Matmul With PoT" if (not is_base) and kind == "CUDA" and kind_index==3 else \
+                "SMem 1D-Tiled F32:U8 Pack2 Matmul With PoT" if (not is_base) and kind == "CUDA" and kind_index==4 else \
+                "SMem 1D-Tiled F32:U8 Pack4 Matmul With PoT" if (not is_base) and kind == "CUDA" and kind_index==5 else \
                 None
         elif bench_id == 1:
             ret_val = \
-                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==0 else \
-                "Scalar Matmul With MUL (AutoVec)" if is_base and kind_index == "SAV" and kind_index==0 else \
-                "RVV Matmul With MUL" if is_base and kind_index == "RVV" and kind_index==0 else \
-                "RVV Matmul With SHIFT" if (not is_base) and kind_index == "RVV" and kind_index==0 else \
+                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind == "SNA" and kind_index==0 else \
+                "Scalar Matmul With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
+                "RVV Matmul With MUL" if is_base and kind == "RVV" and kind_index==0 else \
+                "RVV Matmul With SHIFT" if (not is_base) and kind == "RVV" and kind_index==0 else \
                 None
         elif bench_id == 5:
             ret_val = \
-                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==0 else \
-                "Scalar Matmul With MUL (AutoVec)" if is_base and kind_index == "SAV" and kind_index==0 else \
-                "RVV Matmul With MUL" if is_base and kind_index == "RVV" and kind_index==0 else \
-                "RVV F32:U8 NoPack Matmul With PoT" if (not is_base) and kind_index == "RVV" and kind_index==0 else \
+                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind == "SNA" and kind_index==0 else \
+                "Scalar Matmul With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
+                "RVV Matmul With MUL" if is_base and kind == "RVV" and kind_index==0 else \
+                "RVV F32:U8 NoPack Matmul With PoT" if (not is_base) and kind == "RVV" and kind_index==0 else \
                 None
         elif bench_id == 6:
             ret_val = \
-                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind_index == "SNA" and kind_index==0 else \
-                "Scalar Matmul With MUL (AutoVec)" if is_base and kind_index == "SAV" and kind_index==0 else \
-                "RVV Matmul With MUL" if is_base and kind_index == "RVV" and kind_index==0 else \
-                "RVV F32:U8 Pack2 Matmul With PoT" if (not is_base) and kind_index == "RVV" and kind_index==0 else \
+                "Scalar Matmul With MUL (NoAutoVec)" if is_base and kind == "SNA" and kind_index==0 else \
+                "Scalar Matmul With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
+                "RVV Matmul With MUL" if is_base and kind == "RVV" and kind_index==0 else \
+                "RVV F32:U8 Pack2 Matmul With PoT" if (not is_base) and kind == "RVV" and kind_index==0 else \
                 None
         else:
             print("Invalid bench_id: " + str(bench_id))
@@ -103,3 +106,7 @@ def translate_codename_to(codename: str, to_style: str) -> str:
         pass
 
     return ret_val
+
+
+def translate_codename_to(series: pd.Series, to_style: str = 'long1') -> pd.Series:
+    return series.apply(lambda x: translate_str_codename_to(x, to_style))
