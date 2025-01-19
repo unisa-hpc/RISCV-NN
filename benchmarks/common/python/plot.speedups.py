@@ -102,10 +102,10 @@ class PlotSpeedUps:
             capsize=0.05  # Add caps to the error bars
         )
         # Customize the plot
-        plt.title("Grouped Bar Plot with Confidence Intervals")
+        plt.title(f"Runtimes for N={n}")
         plt.xlabel("Group")
-        plt.ylabel("Value")
-        plt.legend(title="Bar Name", bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.ylabel("Runtime (ms)")
+        plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
 
         # Show the plot
