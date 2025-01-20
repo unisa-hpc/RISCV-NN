@@ -2,7 +2,6 @@ import argparse
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-
 from parsing.parse import DumpsParser
 from parsing.codebook import *
 
@@ -21,10 +20,10 @@ class PlotSpeedUps:
     """
 
     def __init__(self, dumps_dirs_list: [str], dir_out: str):
-        self.parser = DumpsParser(dumps_dirs_list)
         self.dumps_parser = DumpsParser(dumps_dirs_list)
         self.raw_data = None
         self.proc_data = None
+        self.proc_data_speedup = None
         self.dir_out = dir_out
 
     def load_data(self):
@@ -64,7 +63,54 @@ class PlotSpeedUps:
             self.proc_data['benchId'].astype(str) + ';;' + \
             self.proc_data['hw']
 
-    def generate_all_plots(self):
+
+
+        """
+        Preprocess the raw data for benchID.
+        None of the base kernels are auto-tuned. Only the UUTs are auto-tuned.
+        These will be added:
+        - Speedup_vv: Vectorized / Vectorized: avx2 base with avx2 uut, avx512 base with avx512 uut
+        - Speedup_vs: Vectorized / Scalar: scalar no autovec base with avx2 uut, scalar no autovec base with avx512 uut
+        - Speedup_ss: Scalar / Scalar: scalar no autovec base with scalar autovec base
+        """
+        unique_bids = self.proc_data['benchId'].unique()
+        for bench_id in unique_bids:
+            if bench_id == 0 or bench_id == 2 or bench_id == 3:
+                print(f"NYI: Preprocessing data for benchID={bench_id}")
+            elif bench_id == 7 or bench_id == 8:
+                print(f"Preprocessing data for benchID={bench_id}")
+
+                cols = list(self.proc_data.columns)
+                cols.append('speedup_vv')
+                cols.append('speedup_vs')
+                cols.append('speedup_ss')
+                self.data_proc = pd.DataFrame(columns=cols)
+
+                unique_bid_hw = self.proc_data['benchId_hw'].unique()
+
+                for bid_hw in unique_bid_hw:
+                    # Filter rows for SAV and SNA
+                    sav_rows = self.proc_data.loc[
+                        (self.proc_data['benchId_hw'] == bid_hw) &
+                        (self.proc_data['name'].str.contains("SAV"))
+                        ]
+                    sna_rows = self.proc_data.loc[
+                        (self.proc_data['benchId_hw'] == bid_hw) &
+                        (self.proc_data['name'].str.contains("SNA"))
+                        ]
+                    sav_rows.reset_index(drop=True, inplace=True)
+                    sna_rows.reset_index(drop=True, inplace=True)
+                    sav_rows.loc[:, 'speedup_ss'] = sna_rows['data_point'] / sav_rows['data_point']  # speed up is ()^-1
+                    self.proc_data_speedup = pd.concat([self.proc_data_speedup, sav_rows], ignore_index=True)
+
+            elif bench_id == 1 or bench_id == 5 or bench_id == 6:
+                print(f"Preprocessing data for benchID={bench_id}")
+            elif bench_id == 4:
+                print(f"NYI: Preprocessing data for benchID={bench_id}")
+            else:
+                print(f"Undefined benchID: {bench_id} for preprocessing.")
+
+    def plotgen_runtimes_all(self):
         """
         Generate all the plots, as many as needed for the parsed data.
         """
@@ -72,9 +118,9 @@ class PlotSpeedUps:
 
         unique_n_list = self.proc_data['N'].unique()
         for n in unique_n_list:
-            self.generate_plot(n)
+            self.plotgen_runtimes_one(n)
 
-    def generate_plot(self, n: int):
+    def plotgen_runtimes_one(self, n: int):
         """
         Generate a plot for a specific N.
         """
@@ -111,9 +157,43 @@ class PlotSpeedUps:
         # Show the plot
         plt.show()
 
+    def plotgen_speedups_all(self):
+        """
+        Generate all the plots, as many as needed for the parsed data.
+        """
+        self.preprocess_data()
 
-        pass
+        unique_n_list = self.proc_data_speedup['N'].unique()
+        for n in unique_n_list:
+            self.plotgen_speedups_one(n)
 
+    def plotgen_speedups_one(self, n: int):
+        # Extract the rows that have the specific N
+        masked_data = self.proc_data_speedup[self.proc_data_speedup['N'] == n]
+
+        plt.figure(figsize=(12, 6))
+
+        dbg = masked_data['speedup_ss'].unique()
+        print(f"Unique speedup_ss: {dbg}")
+
+        sns.barplot(
+            data=masked_data,
+            x='benchId_hw',
+            y='speedup_ss',
+            hue='benchId_hw_name',
+            dodge=True,
+            ci=95,  # Show 95% confidence intervals
+            capsize=0.05  # Add caps to the error bars
+        )
+        # Customize the plot
+        plt.title(f"Speedup for N={n}")
+        plt.xlabel("Group")
+        plt.ylabel("Speedup")
+        plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.tight_layout()
+
+        # Show the plot
+        plt.show()
 
 if __name__ == '__main__':
     # accept multiple instances of --dumps arguments
@@ -122,4 +202,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dumps = args.dumps
 
-    PlotSpeedUps(dumps, '/tmp').generate_all_plots()
+    obj = PlotSpeedUps(dumps, '/tmp')
+    obj.plotgen_runtimes_all()
+    obj.plotgen_speedups_all()
