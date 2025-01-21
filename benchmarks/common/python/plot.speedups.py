@@ -6,6 +6,8 @@ from parsing.parse import DumpsParser
 from parsing.codebook import *
 from parsing.lamda_funcs import *
 
+import matplotlib as mpl
+
 
 class PlotSpeedUps:
     """
@@ -208,18 +210,22 @@ class PlotSpeedUps:
         unique_bars = sorted(unique_bars)
 
         plt.figure(figsize=(12, 6))
+        order = sorted(masked_data['benchId_hw_name'].unique())
+
         sns.barplot(
             data=masked_data,
-            x='benchId_hw',
+            x='benchId_hw_name',
             y='data_point',
-            hue='benchId_hw_name',
-            dodge=True,
+            hue='benchId_hw',
+            order=order,
+            dodge=False,
             ci=95,  # Show 95% confidence intervals
             capsize=0.05  # Add caps to the error bars
         )
         # Customize the plot
         plt.title(f"Runtimes for N={n}")
         plt.xlabel("Group")
+        plt.xticks(rotation=90)
         plt.ylabel("Runtime (ms)")
         plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
@@ -239,23 +245,33 @@ class PlotSpeedUps:
 
     def plotgen_speedups_one(self, n: int):
         # Extract the rows that have the specific N
-        masked_data = self.proc_data_speedup[self.proc_data_speedup['N'] == n]
+        masked_data = self.proc_data_speedup[
+            (self.proc_data_speedup['N'] == n)
+            & (self.proc_data_speedup['benchId'] == 8)
+        ]
         plt.figure(figsize=(12, 6))
+
+        order = sorted(masked_data['benchId_hw_name_speeduptype'].unique())
+
         sns.barplot(
             data=masked_data,
-            x='benchId_hw',
+            x='benchId_hw_name_speeduptype',
             y='data_point',
-            hue='benchId_hw_name_speeduptype',
-            dodge=True,
+            hue='benchId_hw',
+            palette='viridis',
+            order=order,
+            dodge=False, # Do not set this to true. It will cause offset to the bars.
             ci=95,  # Show 95% confidence intervals
             capsize=0.05  # Add caps to the error bars
         )
         # Customize the plot
         plt.title(f"Speedup for N={n}")
         plt.xlabel("Group")
+        plt.xticks(rotation=90)
         plt.ylabel("Speedup")
         plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
+        #plt.tight_layout()
+        plt.subplots_adjust(bottom=0.5)  # Adjust the bottom margin
 
         # Show the plot
         plt.show()
@@ -268,5 +284,5 @@ if __name__ == '__main__':
     dumps = args.dumps
 
     obj = PlotSpeedUps(dumps, '/tmp')
-    #obj.plotgen_runtimes_all()
+    obj.plotgen_runtimes_all()
     obj.plotgen_speedups_all()
