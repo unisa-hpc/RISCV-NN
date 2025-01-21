@@ -4,6 +4,7 @@ import seaborn as sns
 import pandas as pd
 from parsing.parse import DumpsParser
 from parsing.codebook import *
+from parsing.lamda_funcs import *
 
 
 class PlotSpeedUps:
@@ -25,6 +26,8 @@ class PlotSpeedUps:
         self.proc_data = None
         self.proc_data_speedup = None
         self.dir_out = dir_out
+        sns.set_theme(style="whitegrid")
+        sns.color_palette("hls", 8)
 
     def load_data(self):
         self.dumps_parser.parse_all()
@@ -63,12 +66,9 @@ class PlotSpeedUps:
             self.proc_data['benchId'].astype(str) + ';;' + \
             self.proc_data['hw']
 
-
-
         """
-        Preprocess the raw data for benchID.
-        None of the base kernels are auto-tuned. Only the UUTs are auto-tuned.
-        These will be added:
+        The problem with speedups is that we CANNOT add them as new columns. We can have a speedup_type column.
+        These will be added as rows to the speedup_type column:
         - Speedup_vv: Vectorized / Vectorized: avx2 base with avx2 uut, avx512 base with avx512 uut
         - Speedup_vs: Vectorized / Scalar: scalar no autovec base with avx2 uut, scalar no autovec base with avx512 uut
         - Speedup_ss: Scalar / Scalar: scalar no autovec base with scalar autovec base
@@ -79,29 +79,87 @@ class PlotSpeedUps:
                 print(f"NYI: Preprocessing data for benchID={bench_id}")
             elif bench_id == 7 or bench_id == 8:
                 print(f"Preprocessing data for benchID={bench_id}")
-
                 cols = list(self.proc_data.columns)
-                cols.append('speedup_vv')
-                cols.append('speedup_vs')
-                cols.append('speedup_ss')
+                cols.append('speedup_type')
                 self.data_proc = pd.DataFrame(columns=cols)
-
                 unique_bid_hw = self.proc_data['benchId_hw'].unique()
-
+                unique_Ns = self.proc_data['N'].unique()
+                # speedup_ss
                 for bid_hw in unique_bid_hw:
-                    # Filter rows for SAV and SNA
                     sav_rows = self.proc_data.loc[
                         (self.proc_data['benchId_hw'] == bid_hw) &
                         (self.proc_data['name'].str.contains("SAV"))
-                        ]
+                    ]
                     sna_rows = self.proc_data.loc[
                         (self.proc_data['benchId_hw'] == bid_hw) &
                         (self.proc_data['name'].str.contains("SNA"))
-                        ]
+                    ]
                     sav_rows.reset_index(drop=True, inplace=True)
                     sna_rows.reset_index(drop=True, inplace=True)
-                    sav_rows.loc[:, 'speedup_ss'] = sna_rows['data_point'] / sav_rows['data_point']  # speed up is ()^-1
+                    # assert that the num of rows is the same
+                    assert sav_rows.shape[0] == sna_rows.shape[0]
+                    sav_rows.loc[:, 'data_point'] = sna_rows['data_point'] / sav_rows['data_point']  # speed up is ()^-1
+                    sav_rows.loc[:, 'speedup_type'] = 'speedup_ss'
                     self.proc_data_speedup = pd.concat([self.proc_data_speedup, sav_rows], ignore_index=True)
+
+                # speedup_vs
+                # for speedup_vs, since our samples for scalar and vector kernels are not equal,
+                # we need to reduce them manually and then calculate the speedup.
+                # Basically we either:
+                # [*] reduce everything to one sample with median operator and divide.
+                # [*] reduce only the smaller group to one sample with median operator and divide every raw data entry in the larger group by the reduced val.
+                # [ ] reduce everything to stats (min, max, median, ave) and divide the stats tuples and plot manually.
+                # Since we are reducing, we have to mask everything down to the last combination (N, hw, name, configs, etc.)
+                for bid_hw in unique_bid_hw:
+                    for unique_n in unique_Ns:
+                        avx2_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw'] == bid_hw) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("AVX2"))
+                        ]
+                        avx512_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw'] == bid_hw) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("AVX512"))
+                        ]
+                        sna_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw'] == bid_hw) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("SNA"))
+                        ]
+
+                        avx2_rows.reset_index(drop=True, inplace=True)
+                        avx512_rows.reset_index(drop=True, inplace=True)
+                        sna_rows.reset_index(drop=True, inplace=True)
+
+                        if sna_rows.empty: #TODO: benchId07 is broken here, FIX IT
+                            print(f"Skipping N={unique_n} for {bid_hw} due to missing data sna_rows.")
+                            continue
+
+                        # reduce the smallest group to one sample, scalar kernels have no auto-tuning, only (hw, N, benchId)
+                        sna_rows.loc[:, 'data_point'] = sna_rows['data_point'].median()
+                        # only keep the first row of sna
+                        sna_rows = sna_rows.iloc[[0]]
+
+                        # some benchmarks only have avx512 or avx2 data
+                        if avx2_rows.empty:
+                            print(f"Skipping N={unique_n} for {bid_hw} due to missing data avx2_rows.")
+                            continue
+                        else:
+                            avx2_rows['data_point'] = sna_rows['data_point'].iloc[0] / avx2_rows['data_point']
+                            avx2_rows = avx2_rows.assign(speedup_type='speedup_vs')
+                            self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx2_rows], ignore_index=True)
+
+                        if avx512_rows.empty:
+                            print(f"Skipping N={unique_n} for {bid_hw} due to missing data avx512_rows.")
+                            continue
+                        else:
+                            avx512_rows['data_point'] = sna_rows['data_point'].iloc[0] / avx512_rows['data_point']
+                            avx512_rows = avx512_rows.assign(speedup_type='speedup_vs')
+                            self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx512_rows], ignore_index=True)
 
             elif bench_id == 1 or bench_id == 5 or bench_id == 6:
                 print(f"Preprocessing data for benchID={bench_id}")
@@ -109,6 +167,18 @@ class PlotSpeedUps:
                 print(f"NYI: Preprocessing data for benchID={bench_id}")
             else:
                 print(f"Undefined benchID: {bench_id} for preprocessing.")
+
+        self.proc_data_speedup['benchId_hw_name_speeduptype'] = \
+            self.proc_data_speedup['benchId'].astype(str) + ';;' + \
+            self.proc_data_speedup['hw'] + ';;' + \
+            translate_codename_to(self.proc_data_speedup['name']) + ';;' + \
+            self.proc_data_speedup['speedup_type']
+
+        self.proc_data_speedup['benchId_hw_speeduptype'] = \
+            self.proc_data_speedup['benchId'].astype(str) + ';;' + \
+            self.proc_data_speedup['hw'] + ';;' + \
+            self.proc_data_speedup['speedup_type']
+
 
     def plotgen_runtimes_all(self):
         """
@@ -170,17 +240,12 @@ class PlotSpeedUps:
     def plotgen_speedups_one(self, n: int):
         # Extract the rows that have the specific N
         masked_data = self.proc_data_speedup[self.proc_data_speedup['N'] == n]
-
         plt.figure(figsize=(12, 6))
-
-        dbg = masked_data['speedup_ss'].unique()
-        print(f"Unique speedup_ss: {dbg}")
-
         sns.barplot(
             data=masked_data,
             x='benchId_hw',
-            y='speedup_ss',
-            hue='benchId_hw_name',
+            y='data_point',
+            hue='benchId_hw_name_speeduptype',
             dodge=True,
             ci=95,  # Show 95% confidence intervals
             capsize=0.05  # Add caps to the error bars
@@ -198,10 +263,10 @@ class PlotSpeedUps:
 if __name__ == '__main__':
     # accept multiple instances of --dumps arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dumps', type=str, required=True, nargs='+')
+    parser.add_argument('--dumps', type=str, required=True, action='append')
     args = parser.parse_args()
     dumps = args.dumps
 
     obj = PlotSpeedUps(dumps, '/tmp')
-    obj.plotgen_runtimes_all()
+    #obj.plotgen_runtimes_all()
     obj.plotgen_speedups_all()
