@@ -9,30 +9,39 @@ from parsing.timer_stats import TimerStatsParser
 from parsing.utils import *
 
 
-def get_best_config(dumps_dir: str, benchid: int, out: str, parse_pairs_func=lambda pairs: {}, unique_names_two_args_func=lambda pairs, hw: ''):
+def get_best_config(dumps_dir: str, benchid: int, out: str, parse_pairs_func=lambda pairs: {},
+                    unique_names_two_args_func=lambda pairs, hw: ''):
     """
     Find the best unroll factor for each hardware and print it.
     It looks for benchId{benchid}.txt in the dumps_dir to extract all the relevant json files.
     """
     init()
-    all_hw_names = get_all_hw_names(dumps_dir, benchid)
-    all_compiler_names = get_all_compiler_names(dumps_dir, benchid)
+    all_hw_names = get_all_hw_names(dumps_dir, benchid, only_best=False)
+    all_compiler_names = get_all_compiler_names(dumps_dir, benchid, only_best=False)
 
-    # json_report structure: (no lists, everything is a dict)
-    # benchId -> hw_name -> N -> config -> {key: value}
+    # First, read existing JSON if it exists
+    existing_json_report = {}
+    if pathlib.Path(out).exists():
+        print(f'Reading existing json report from {out}')
+        with open(out, 'r') as f:
+            existing_json_report = json.load(f)
+
+    # Create new report dictionary
     json_report_dict = {}
 
     for hw_name in all_hw_names:
         for compiler_name in all_compiler_names:
             print('=================================================')
-            print(f'Finding the best configuration for {Fore.GREEN}benchId{benchid}{Fore.RESET}, on {Fore.GREEN}{hw_name}{Fore.RESET}, with {Fore.GREEN}{compiler_name}{Fore.RESET} compiler')
+            print(
+                f'Finding the best configuration for {Fore.GREEN}benchId{benchid}{Fore.RESET}, on {Fore.GREEN}{hw_name}{Fore.RESET}, with {Fore.GREEN}{compiler_name}{Fore.RESET} compiler')
 
             unique_names_func = lambda x: unique_names_two_args_func(x, hw_name)
 
-            all_jsons = get_all_json_files(dumps_dir, benchid, hw_name, compiler_name)
+            all_jsons = get_all_json_files(dumps_dir, benchid, hw_name, compiler_name, only_best=False)
             if len(all_jsons) == 0:
                 print(f'No json files found for {benchid} on {hw_name}. Skipping...')
                 continue
+
             parse_unique_names = lambda name: {
                 pair.split('=')[0]: pair.split('=')[1] for pair in name.split(';;')
             }
@@ -41,13 +50,10 @@ def get_best_config(dumps_dir: str, benchid: int, out: str, parse_pairs_func=lam
             parsed_union = pd.concat([run.get_df() for run in parsed_runs], ignore_index=True)
             parsed_union['name_N_hw_comb'] = parsed_union.apply(unique_names_func, axis=1)
 
-            # phase 1: Extract the unique name_N_hw_comb s.
             unique_name_N_hw_comb = parsed_union['name_N_hw_comb'].unique()
 
-            # phase 2: For each unique name_N_hw_comb, collect all configurations and their runtimes
             configs_and_runtimes = {}
             for name_N_hw_comb in unique_name_N_hw_comb:
-                # get the rows corresponding to this unique name_N_hw_comb
                 rows = parsed_union[parsed_union['name_N_hw_comb'] == name_N_hw_comb]
                 median_runtime = rows['data_point'].median()
                 conf = parse_unique_names(name_N_hw_comb)
@@ -57,87 +63,45 @@ def get_best_config(dumps_dir: str, benchid: int, out: str, parse_pairs_func=lam
                     configs_and_runtimes[key] = []
 
                 filtered_conf = copy.copy(conf)
-
-                # Filter out hw, N, benchId and keep the rest
                 filtered_conf.pop('hw')
                 filtered_conf.pop('N')
                 filtered_conf.pop('name')
 
                 configs_and_runtimes[key].append((filtered_conf, median_runtime))
 
-            # phase 3: Find and print the best unroll factor and all configurations for each case
             for (name, hw, N), configurations in configs_and_runtimes.items():
-                # Sort configurations by runtime
                 sorted_configs = sorted(configurations, key=lambda x: x[1])
                 best_config, best_runtime = sorted_configs[0]
 
-                # Format all configurations for printing
-                all_configs_str = ', '.join([
-                    f"{conf} (runtime: {runtime:.2f})"
-                    for conf, runtime in sorted_configs
-                ])
+                # Create nested structure if it doesn't exist
+                if str(benchid) not in json_report_dict:
+                    json_report_dict[str(benchid)] = {}
+                if hw not in json_report_dict[str(benchid)]:
+                    json_report_dict[str(benchid)][hw] = {}
+                if compiler_name not in json_report_dict[str(benchid)][hw]:
+                    json_report_dict[str(benchid)][hw][compiler_name] = {}
 
-                msg = (f'Best configuration for {Fore.GREEN}benchId{benchid}{Fore.RESET}, '
-                       f'kernel ({Fore.GREEN}{name}{Fore.RESET}), on {Fore.GREEN}{hw}{Fore.RESET}, '
-                       f'for N={Fore.GREEN}{N}{Fore.RESET} is {Fore.RED}{best_config}{Fore.RESET} '
-                       f'FROM {Fore.YELLOW}[{all_configs_str}]{Fore.RESET}'
-                )
-                print(msg)
+                json_report_dict[str(benchid)][hw][compiler_name][str(N)] = best_config
 
-                # Create keys if they don't exist in json_report
-                if benchid not in json_report_dict:
-                    json_report_dict[benchid] = {}
-                if hw not in json_report_dict[benchid]:
-                    json_report_dict[benchid][hw] = {}
-                if compiler_name not in json_report_dict[benchid][hw]:
-                    json_report_dict[benchid][hw][compiler_name] = {}
-                if str(N) not in json_report_dict[benchid][hw][compiler_name]:
-                    json_report_dict[benchid][hw][compiler_name][str(N)] = {}
-                json_report_dict[benchid][hw][compiler_name][str(N)] = best_config
+    # Merge with existing data
+    for bench_id, hw_dict in json_report_dict.items():
+        if bench_id not in existing_json_report:
+            existing_json_report[bench_id] = {}
 
-    json_report = json.dumps(json_report_dict, indent=4)
-    # check if out file exists, if exists, read it and merge with json_report_dict and write it back (overwrite)
-    # if not exists, create it and write json_report_dict
-    # if there is conflict, throw exception
+        for hw, compilers_dict in hw_dict.items():
+            if hw not in existing_json_report[bench_id]:
+                existing_json_report[bench_id][hw] = {}
 
-    if pathlib.Path(out).exists():
-        print(f'Merging the new json report with the existing one at {out}')
-        with open(out, 'r') as f:
-            existing_json_report = json.load(f)
+            for compiler_name, N_dict in compilers_dict.items():
+                if compiler_name not in existing_json_report[bench_id][hw]:
+                    existing_json_report[bench_id][hw][compiler_name] = {}
 
-        # merge the two dictionaries
-        for bench_id, hw_dict in json_report_dict.items():
-            if bench_id not in existing_json_report:
-                existing_json_report[bench_id] = {}
+                # Merge N_dict into existing data
+                existing_json_report[bench_id][hw][compiler_name].update(N_dict)
 
-            for hw, compilers_dict in hw_dict.items():
-                if hw not in existing_json_report[bench_id]:
-                    existing_json_report[bench_id][hw] = {}
-
-                for compiler_name, N_dict in compilers_dict.items():
-                    if compiler_name not in existing_json_report[bench_id][hw]:
-                        existing_json_report[bench_id][hw][compiler_name] = {}
-
-                    for N, config in N_dict.items():
-                        if N not in existing_json_report[bench_id][hw][compiler_name]:
-                            existing_json_report[bench_id][hw][compiler_name][N] = config
-                        else:
-                            # Check if the existing configuration matches the new one
-                            existing_config = existing_json_report[bench_id][hw][compiler_name][N]
-                            if existing_config != config:
-                                raise Exception(
-                                    f"Conflict in the existing JSON file {out} for benchId {bench_id}, hw {hw}, compiler {compiler_name}, N {N}.\n"
-                                    f"Existing: {existing_config}, New: {config}"
-                                )
-            # If no exception was raised, the dictionaries are merged successfully.
-
-        # write the merged dictionary back to the file
-        with open(out, 'w') as f:
-            json.dump(existing_json_report, f, indent=4)
-    else:
-        print(f'Writing the new json report to {out}')
-        with open(out, 'w') as f:
-            f.write(json_report)
+    # Write merged result back to file
+    with open(out, 'w') as f:
+        json.dump(existing_json_report, indent=4, fp=f)
 
 
 if __name__ == '__main__':

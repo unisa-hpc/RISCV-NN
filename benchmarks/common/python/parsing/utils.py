@@ -22,42 +22,47 @@ def get_all_tuples(dump_dir: str, bench_id: int) -> [str]:
         # find all the json files in current_run_dir
         line = line.strip()
         # seperate hw, path for each line
-        t = line.split(',', 2)
+        t = line.split(',', 3)  # hw, compiler, best|autotune, sub_dump_dir_name
         # strip all elements in the tuple
         t_stripped = [x.strip() for x in t]
-        if len(t_stripped) != 3:
+        if len(t_stripped) != 4:
             raise ValueError('Invalid line: ' + line)
         tuples.append(t_stripped)
     return tuples
 
 
-def get_all_hw_names(dump_dir: str, bench_id: int) -> [str]:
+def get_all_hw_names(dump_dir: str, bench_id: int, only_best) -> [str]:
     hw_names = []
     all_tuples = get_all_tuples(dump_dir, bench_id)
+    run_type = 'best' if only_best else 'autotune'
     for entry in all_tuples:
-        if entry[0] not in hw_names:
+        if entry[0] not in hw_names and entry[2] == run_type:
             hw_names.append(entry[0])
     print(f'Found these hardware names: {hw_names}')
     return hw_names
 
 
-def get_all_compiler_names(dump_dir: str, bench_id: int) -> [str]:
+def get_all_compiler_names(dump_dir: str, bench_id: int, only_best) -> [str]:
     compiler_names = []
     all_tuples = get_all_tuples(dump_dir, bench_id)
+    run_type = 'best' if only_best else 'autotune'
     for entry in all_tuples:
-        if entry[1] not in compiler_names:
+        if entry[1] not in compiler_names and entry[2] == run_type:
             compiler_names.append(entry[1])
     print(f'Found these compiler names: {compiler_names}')
     return compiler_names
 
 
-def get_all_json_files(dump_dir: str, bench_id: int, only_this_hw: str, only_this_compiler: str) -> [str]:
+def get_all_json_files(dump_dir: str, bench_id: int, only_this_hw: str, only_this_compiler: str, only_best) -> [str]:
     """
     Get the abs path of all the json files in the dump directory, recursively.
     """
     all_tuples = get_all_tuples(dump_dir, bench_id)
     json_files = []
-    for hw, compiler, sub_dump_dir_name in all_tuples:
+    run_type = 'best' if only_best else 'autotune'
+    for hw, compiler, r_type, sub_dump_dir_name in all_tuples:
+        if r_type != run_type:
+            continue
         if only_this_hw != hw and only_this_hw is not None:
             continue
         if only_this_compiler != compiler and only_this_compiler is not None:
