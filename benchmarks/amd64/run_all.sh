@@ -20,26 +20,26 @@ fi
 
 pip install --user argparse pandas colorama pathlib matplotlib numpy seaborn
 
-cd 02
+cd 2
 if [ "$delete_dumps" = true ]; then
-    bash runme.sh --machine=$machine -d
+    bash runme.sh --machine=$machine "$compiler" -d
 fi
-bash runme.sh --machine=$machine $compiler --auto-tune
-bash runme.sh --machine=$machine $compiler
+bash runme.sh --machine=$machine "$compiler" --auto-tune
+bash runme.sh --machine=$machine "$compiler"
 cd ..
 
-cd 07
+cd 7
 if [ "$delete_dumps" = true ]; then
-    bash runme.sh --machine=$machine -d
+    bash runme.sh --machine=$machine "$compiler" -d
 fi
-bash runme.sh --machine=$machine $compiler --auto-tune
-bash runme.sh --machine=$machine $compiler
+bash runme.sh --machine=$machine "$compiler" --auto-tune
+bash runme.sh --machine=$machine "$compiler"
 cd ..
 
-cd 08
+cd 8
 if [ "$delete_dumps" = true ]; then
-    bash runme.sh --machine=$machine -d
+    bash runme.sh --machine=$machine "$compiler" -d
 fi
-bash runme.sh --machine=$machine $compiler --auto-tune
-bash runme.sh --machine=$machine $compiler
+bash runme.sh --machine=$machine "$compiler" --auto-tune
+bash runme.sh --machine=$machine "$compiler"
 cd ..
