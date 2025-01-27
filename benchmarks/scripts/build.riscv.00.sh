@@ -92,14 +92,14 @@ benchId=$(basename "$(dirname "$abs_main")")
 if [ "$delete_dumps" = true ]; then
   echo "Deleting..."
   rm -rf "$new_dump_dir"
-  delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$dump_dir" "$machine"
+  delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$dump_dir" "$machine" "$compiler"
 fi
 
 # Set compiler flags dynamically
 set_compiler_flags "$compiler" "$extra_flags"
 
 {
-  compiler_version=$($compiler --version | head -n 1)
+  compiler_version=$($compiler --version | head -n 1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
   echo "Arch: RISCV 64"
   echo "Compiler: $compiler"
   echo "Compiler version: $compiler_version"
@@ -144,7 +144,7 @@ set_compiler_flags "$compiler" "$extra_flags"
   compile_status=$((compile_main_status + compile_vec_status + compile_scalar_vec_status + compile_scalar_novec_status))
 
   # Append the new dump dir to the text file dumps directory
-  echo "${machine}, ${timestamp}" >> "$dump_dir/benchId${benchId}.txt"
+  echo "${machine}, ${compiler_version}, ${timestamp}" >> "$dump_dir/benchId${benchId}.txt"
 
   if [ $compile_status -eq 0 ]; then
     # Run the binary and capture its output

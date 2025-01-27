@@ -57,18 +57,21 @@ class PlotSpeedUps:
         """
         Add a column to the raw data that is a combination of the name and hw.
         """
-        self.proc_data['name_hw'] = \
+        self.proc_data['name_hw_compiler'] = \
             self.proc_data['name'] + ';;' + \
-            self.proc_data['hw']
+            self.proc_data['hw'] + ';;' + \
+            self.proc_data['compiler']
 
-        self.proc_data['benchId_hw_name'] = \
+        self.proc_data['benchId_hw_compiler_name'] = \
             self.proc_data['benchId'].astype(str)  + ';;' + \
             self.proc_data['hw'] + ';;' + \
+            self.proc_data['compiler'] + ';;' + \
             translate_codename_to(self.proc_data['name'])
 
-        self.proc_data['benchId_hw'] = \
+        self.proc_data['benchId_hw_compiler'] = \
             'BenchId' + self.proc_data['benchId'].astype(str) + ', ' + \
-            self.proc_data['hw']
+            self.proc_data['hw'] + ', ' + \
+            self.proc_data['compiler']
 
         """
         The problem with speedups is that we CANNOT add them as new columns. We can have a speedup_type column.
@@ -86,16 +89,16 @@ class PlotSpeedUps:
                 cols = list(self.proc_data.columns)
                 cols.append('speedup_type')
                 self.data_proc = pd.DataFrame(columns=cols)
-                unique_bid_hw = self.proc_data['benchId_hw'].unique()
+                unique_bid_hw_compiler = self.proc_data['benchId_hw_compiler'].unique()
                 unique_Ns = self.proc_data['N'].unique()
                 # speedup_ss
-                for bid_hw in unique_bid_hw:
+                for bid_hw_compiler in unique_bid_hw_compiler:
                     sav_rows = self.proc_data.loc[
-                        (self.proc_data['benchId_hw'] == bid_hw) &
+                        (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                         (self.proc_data['name'].str.contains("SAV"))
                     ]
                     sna_rows = self.proc_data.loc[
-                        (self.proc_data['benchId_hw'] == bid_hw) &
+                        (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                         (self.proc_data['name'].str.contains("SNA"))
                     ]
                     sav_rows.reset_index(drop=True, inplace=True)
@@ -114,22 +117,22 @@ class PlotSpeedUps:
                 # [*] reduce only the smaller group to one sample with median operator and divide every raw data entry in the larger group by the reduced val.
                 # [ ] reduce everything to stats (min, max, median, ave) and divide the stats tuples and plot manually.
                 # Since we are reducing, we have to mask everything down to the last combination (N, hw, name, configs, etc.)
-                for bid_hw in unique_bid_hw:
+                for bid_hw_compiler in unique_bid_hw_compiler:
                     for unique_n in unique_Ns:
                         avx2_rows = self.proc_data.loc[
-                            (self.proc_data['benchId_hw'] == bid_hw) &
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
                             (self.proc_data['name'].str.contains("AVX2"))
                         ]
                         avx512_rows = self.proc_data.loc[
-                            (self.proc_data['benchId_hw'] == bid_hw) &
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
                             (self.proc_data['name'].str.contains("AVX512"))
                         ]
                         sna_rows = self.proc_data.loc[
-                            (self.proc_data['benchId_hw'] == bid_hw) &
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
                             (self.proc_data['name'].str.contains("SNA"))
@@ -140,7 +143,7 @@ class PlotSpeedUps:
                         sna_rows.reset_index(drop=True, inplace=True)
 
                         if sna_rows.empty:
-                            print(f"Skipping N={unique_n} for {bid_hw} due to missing data sna_rows.")
+                            print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data sna_rows.")
                             continue
 
                         # reduce the smallest group to one sample, scalar kernels have no auto-tuning, only (hw, N, benchId)
@@ -150,7 +153,7 @@ class PlotSpeedUps:
 
                         # some benchmarks only have avx512 or avx2 data
                         if avx2_rows.empty:
-                            print(f"Skipping N={unique_n} for {bid_hw} due to missing data avx2_rows.")
+                            print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx2_rows.")
                             continue
                         else:
                             avx2_rows['data_point'] = sna_rows['data_point'].iloc[0] / avx2_rows['data_point']
@@ -158,7 +161,7 @@ class PlotSpeedUps:
                             self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx2_rows], ignore_index=True)
 
                         if avx512_rows.empty:
-                            print(f"Skipping N={unique_n} for {bid_hw} due to missing data avx512_rows.")
+                            print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx512_rows.")
                             continue
                         else:
                             avx512_rows['data_point'] = sna_rows['data_point'].iloc[0] / avx512_rows['data_point']
@@ -170,16 +173,16 @@ class PlotSpeedUps:
                 cols = list(self.proc_data.columns)
                 cols.append('speedup_type')
                 self.data_proc = pd.DataFrame(columns=cols)
-                unique_bid_hw = self.proc_data['benchId_hw'].unique()
+                unique_bid_hw_compiler = self.proc_data['benchId_hw_compiler'].unique()
                 unique_Ns = self.proc_data['N'].unique()
                 # speedup_ss
-                for bid_hw in unique_bid_hw:
+                for bid_hw_compiler in unique_bid_hw_compiler:
                     sav_rows = self.proc_data.loc[
-                        (self.proc_data['benchId_hw'] == bid_hw) &
+                        (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                         (self.proc_data['name'].str.contains("SAV"))
                         ]
                     sna_rows = self.proc_data.loc[
-                        (self.proc_data['benchId_hw'] == bid_hw) &
+                        (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                         (self.proc_data['name'].str.contains("SNA"))
                         ]
                     sav_rows.reset_index(drop=True, inplace=True)
@@ -198,16 +201,16 @@ class PlotSpeedUps:
                 # [*] reduce only the smaller group to one sample with median operator and divide every raw data entry in the larger group by the reduced val.
                 # [ ] reduce everything to stats (min, max, median, ave) and divide the stats tuples and plot manually.
                 # Since we are reducing, we have to mask everything down to the last combination (N, hw, name, configs, etc.)
-                for bid_hw in unique_bid_hw:
+                for bid_hw_compiler in unique_bid_hw_compiler:
                     for unique_n in unique_Ns:
                         rvv_rows = self.proc_data.loc[
-                            (self.proc_data['benchId_hw'] == bid_hw) &
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
                             (self.proc_data['name'].str.contains("RVV"))
                             ]
                         sna_rows = self.proc_data.loc[
-                            (self.proc_data['benchId_hw'] == bid_hw) &
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
                             (self.proc_data['name'].str.contains("SNA"))
@@ -217,7 +220,7 @@ class PlotSpeedUps:
                         sna_rows.reset_index(drop=True, inplace=True)
 
                         if sna_rows.empty:
-                            print(f"Skipping N={unique_n} for {bid_hw} due to missing data sna_rows.")
+                            print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data sna_rows.")
                             continue
 
                         # reduce the smallest group to one sample, scalar kernels have no auto-tuning, only (hw, N, benchId)
@@ -227,7 +230,7 @@ class PlotSpeedUps:
 
                         # some benchmarks only have avx512 or avx2 data
                         if rvv_rows.empty:
-                            print(f"Skipping N={unique_n} for {bid_hw} due to missing data rvv_rows.")
+                            print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data rvv_rows.")
                             continue
                         else:
                             rvv_rows['data_point'] = sna_rows['data_point'].iloc[0] / rvv_rows['data_point']
@@ -239,15 +242,17 @@ class PlotSpeedUps:
             else:
                 print(f"Undefined benchID: {bench_id} for preprocessing.")
 
-        self.proc_data_speedup['benchId_hw_name_speeduptype'] = \
+        self.proc_data_speedup['benchId_hw_compiler_name_speeduptype'] = \
             self.proc_data_speedup['benchId'].astype(str) + ';;' + \
             self.proc_data_speedup['hw'] + ';;' + \
+            self.proc_data_speedup['compiler'] + ';;' + \
             translate_codename_to(self.proc_data_speedup['name']) + ';;' + \
             self.proc_data_speedup['speedup_type']
 
-        self.proc_data_speedup['benchId_hw_speeduptype'] = \
+        self.proc_data_speedup['benchId_hw_compiler_speeduptype'] = \
             self.proc_data_speedup['benchId'].astype(str) + ';;' + \
             self.proc_data_speedup['hw'] + ';;' + \
+            self.proc_data_speedup['compiler'] + ';;' + \
             self.proc_data_speedup['speedup_type']
 
 
@@ -269,23 +274,23 @@ class PlotSpeedUps:
         masked_data = self.proc_data[self.proc_data['N'] == n]
 
         # Extract the group names, each group is a unique (benchId, hw) pair
-        group_names = masked_data['benchId_hw'].unique()
+        group_names = masked_data['benchId_hw_compiler'].unique()
         group_names = sorted(group_names)
 
         # So we need to create k-bars and assign a group for each one.
         # First thing to do is to find how many bars we need to create.
-        # Each bar has a unique (name, hw, benchId) combination. N is already fixed. So we use col `benchId_hw_name`.
-        unique_bars = masked_data['benchId_hw_name'].unique()
+        # Each bar has a unique (name, hw, benchId) combination. N is already fixed. So we use col `benchId_hw_compiler_name`.
+        unique_bars = masked_data['benchId_hw_compiler_name'].unique()
         unique_bars = sorted(unique_bars)
 
         plt.figure(figsize=(12, 6))
-        order = sorted(masked_data['benchId_hw_name'].unique())
+        order = sorted(masked_data['benchId_hw_compiler_name'].unique())
 
         barplot = sns.barplot(
             data=masked_data,
-            x='benchId_hw_name',
+            x='benchId_hw_compiler_name',
             y='data_point',
-            hue='benchId_hw',
+            hue='benchId_hw_compiler',
             order=order,
             dodge=False,
             ci=95,  # Show 95% confidence intervals
@@ -331,13 +336,13 @@ class PlotSpeedUps:
         ]
 
         fig = plt.figure(figsize=(6, 6))
-        order = sorted(masked_data['benchId_hw_name_speeduptype'].unique())
+        order = sorted(masked_data['benchId_hw_compiler_name_speeduptype'].unique())
 
         barplot = sns.barplot(
             data=masked_data,
-            x='benchId_hw_name_speeduptype',
+            x='benchId_hw_compiler_name_speeduptype',
             y='data_point',
-            hue='benchId_hw',
+            hue='benchId_hw_compiler',
             palette='viridis',
             order=order,
             dodge=False, # Do not set this to true. It will cause offset to the bars.
@@ -375,5 +380,5 @@ if __name__ == '__main__':
     dumps = args.dumps
 
     obj = PlotSpeedUps(dumps, '/tmp')
-    # obj.plotgen_runtimes_all()
+    obj.plotgen_runtimes_all()
     obj.plotgen_speedups_all()

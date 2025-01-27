@@ -39,7 +39,7 @@ if [ "$flag_auto_tune" = true ]; then
       for i1 in "${range_i1[@]}"; do
         for i2 in "${range_i2[@]}"; do
           echo "Benchmarking for Unroll Factor of $i and N of $n."
-          bash build.riscv.00.sh --machine=$machine "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
+          bash build.riscv.00.sh --machine=$machine $compiler "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done
       done
     done
@@ -51,11 +51,12 @@ else
 
   for n in "${range_n[@]}"; do
     # parse the autotuner json file and get the best configuration for this N
-    parse_autotuner_best_conf_json ../../dumps/autotuner.json $current_benchId $machine $n
+    compiler_version=$($compiler --version | head -n 1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    parse_autotuner_best_conf_json ../../dumps/autotuner.json $current_benchId "$machine" "$compiler_version" $n
     echo "Building for N of $n with the auto tuned best config: UNROLL_FACTOR0=$UNROLL_FACTOR0 UNROLL_FACTOR1=$UNROLL_FACTOR1 UNROLL_FACTOR2=$UNROLL_FACTOR2"
-    bash build.riscv.00.sh --machine=$machine "-DUNROLL_FACTOR0=$UNROLL_FACTOR0 -DUNROLL_FACTOR1=$UNROLL_FACTOR1 -DUNROLL_FACTOR2=$UNROLL_FACTOR2 -DN=$n $args"
+    bash build.riscv.00.sh --machine=$machine "$compiler" "-DUNROLL_FACTOR0=$UNROLL_FACTOR0 -DUNROLL_FACTOR1=$UNROLL_FACTOR1 -DUNROLL_FACTOR2=$UNROLL_FACTOR2 -DN=$n $args"
     echo "Also building for N of $n with the default tunable parameters."
-    bash build.riscv.00.sh --machine=$machine "-DN=$n $args"
+    bash build.riscv.00.sh --machine=$machine "$compiler" "-DN=$n $args"
   done
 fi
 

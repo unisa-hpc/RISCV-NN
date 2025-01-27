@@ -105,26 +105,31 @@ class DumpsParser:
             bench_id_str = bench_id + ('_autotune' if is_autotune_runs else '')
             bench_id = int(bench_id)
 
-            hw_names = get_all_hw_names(dump_path, bench_id_str)
+            hw_names = get_all_hw_names(dump_path, bench_id)
+            compiler_names = get_all_compiler_names(dump_path, bench_id)
 
             if bench_id not in parsed_dumps:
                 parsed_dumps[bench_id] = {}
             for hw in hw_names:
-                bench_id_str_all_json_paths = get_all_json_files(dump_path, bench_id_str, only_this_hw=hw)
-                for json_path in bench_id_str_all_json_paths:
-                    timer_stats_parser = TimerStatsParser(json_path, get_lambda_pairs(str(bench_id)))
+                for compiler in compiler_names:
+                    bench_id_str_all_json_paths = get_all_json_files(dump_path, bench_id, only_this_hw=hw, only_this_compiler=compiler)
+                    for json_path in bench_id_str_all_json_paths:
+                        timer_stats_parser = TimerStatsParser(json_path, get_lambda_pairs(bench_id))
 
-                    if hw not in parsed_dumps[bench_id]:
-                        parsed_dumps[bench_id][hw] = {}
+                        if hw not in parsed_dumps[bench_id]:
+                            parsed_dumps[bench_id][hw] = {}
 
-                    k = 'auto-tune' if is_autotune_runs else 'best'
+                        if compiler not in parsed_dumps[bench_id][hw]:
+                            parsed_dumps[bench_id][hw][compiler] = {}
 
-                    if k not in parsed_dumps[bench_id][hw]:
-                        parsed_dumps[bench_id][hw][k] = []
+                        k = 'auto-tune' if is_autotune_runs else 'best'
 
-                    parsed_dumps[bench_id][hw][k].append(
-                        timer_stats_parser.get_df()
-                    )
+                        if k not in parsed_dumps[bench_id][hw][compiler]:
+                            parsed_dumps[bench_id][hw][compiler][k] = []
+
+                        parsed_dumps[bench_id][hw][compiler][k].append(
+                            timer_stats_parser.get_df()
+                        )
 
         with open(pathlib.Path(self.dumps_dirs_list[dumps_dirs_index])/'autotuner.json', 'r') as f:
             parsed_json = json.load(f)
@@ -144,15 +149,17 @@ class DumpsParser:
         merged_frames = []
 
         for bench_id, hw_dict in data.items():
-            for hw, runs_dict in hw_dict.items():
-                for run_type, runs in runs_dict.items():
-                    # Avoid modifying the original data frame
-                    for run in runs:
-                        cpy = run.copy()
-                        cpy['benchId'] = bench_id
-                        cpy['hw'] = hw
-                        cpy['run_type'] = run_type
-                        merged_frames.append(cpy)
+            for hw, compilers_dict in hw_dict.items():
+                for compiler, runs_dict in compilers_dict.items():
+                    for run_type, runs in runs_dict.items():
+                        # Avoid modifying the original data frame
+                        for run in runs:
+                            cpy = run.copy()
+                            cpy['benchId'] = bench_id
+                            cpy['hw'] = hw
+                            cpy['run_type'] = run_type
+                            cpy['compiler'] = compiler
+                            merged_frames.append(cpy)
 
         # Concatenate all DataFrames into one
         if merged_frames:

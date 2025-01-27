@@ -13,8 +13,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     get_best_config(
         args.dumps_dir,
-        args.benchid,
+        int(args.benchid),
         (pathlib.Path(args.dumps_dir) / "autotuner.json").__str__(),
-        get_lambda_pairs(args.benchid),
-        get_lambda_parse_pairs(args.benchid)
+        get_lambda_pairs(int(args.benchid)),
+        get_lambda_parse_pairs(int(args.benchid))
     )

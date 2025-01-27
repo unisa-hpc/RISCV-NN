@@ -7,7 +7,7 @@
 #include <iostream>
 
 constexpr int BENCH_ID = 4;
-constexpr size_t RUNS = 256;
+constexpr size_t RUNS = 64;
 
 // fallback to the default if not defined
 #ifndef UNROLL_FACTOR0

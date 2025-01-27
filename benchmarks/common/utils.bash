@@ -3,9 +3,17 @@
 cleanup_directories() {
   local input_file="$1"
   local machine="$2"
+  local compiler_exec="$3"
+
+  local compiler_version=$($compiler_exec --version | head -n 1)
 
   if [[ ! -f "$input_file" ]]; then
     echo "Error: Input file '$input_file' not found"
+    return 1
+  fi
+
+  if [[ -z "$compiler" ]]; then
+    echo "Error: Compiler version must be specified"
     return 1
   fi
 
@@ -15,25 +23,31 @@ cleanup_directories() {
   # Create an empty temp file
   : > "$temp_file"
 
-  while IFS=, read -r prefix path; do
+  while IFS=, read -r val_machine val_compiler_ver val_path; do
     # Skip empty lines
-    [[ -z "$prefix" && -z "$path" ]] && continue
+    [[ -z "$val_machine" && -z "$val_compiler_ver" && -z "$val_path" ]] && continue
 
-    # Trim whitespace
-    prefix=$(echo "$prefix" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    path=$(echo "$path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    full_path="$input_dir/$path"
+    # Trim whitespace from all fields
+    val_machine=$(echo "$val_machine" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    val_compiler_ver=$(echo "$val_compiler_ver" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    val_path=$(echo "$val_path" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
-    if [[ "$prefix" == "$machine" ]]; then
+    full_path="$input_dir/$val_path"
+
+    if [[ "$val_machine" == "$machine" && "$val_compiler_ver" == "$compiler_version" ]]; then
       if [[ -d "$full_path" ]]; then
         echo "Deleting directory: $full_path"
+        echo "  - Machine: $val_machine"
+        echo "  - Compiler: $val_compiler_ver"
         rm -rf "$full_path"
       else
         echo "Warning: Directory not found: $full_path"
+        echo "  - Machine: $val_machine"
+        echo "  - Compiler: $val_compiler_ver"
       fi
     else
       # Preserve non-matching lines
-      echo "$prefix,$path" >> "$temp_file"
+      echo "$val_machine,$val_compiler_ver,$val_path" >> "$temp_file"
     fi
   done < "$input_file"
 
@@ -49,10 +63,11 @@ delete_flag_handling() {
   local input_file="$1"
   local local_dump_dir="$2"
   local machine="$3"
+  local compiler_exec="$4"
 
   if [[ -d "$local_dump_dir" ]]; then
     echo "Deleting directories and updating file for machine: $machine"
-    cleanup_directories "$input_file" "$machine"
+    cleanup_directories "$input_file" "$machine" "$compiler_exec"
 
     # Check if the input file is now empty
     if [[ ! -s "$input_file" ]]; then
@@ -83,6 +98,7 @@ function setup_autotuner_args() {
   flag_delete_dumps=false
   flag_auto_tune=false
   machine=""
+  compiler=""
   args=""
 
   # Process the arguments and set the flags and the machine name. Add the rest of the arguments to the args string
@@ -98,7 +114,12 @@ function setup_autotuner_args() {
           machine="${i#*=}"
           ;;
       *)
-          args+="$i "
+          # Check if argument matches compiler pattern
+          if [[ $i =~ ^(g\+\+|clang\+\+) ]]; then
+              compiler="$i"
+          else
+              args+="$i "
+          fi
           ;;
     esac
   done
@@ -112,7 +133,14 @@ function setup_autotuner_args() {
   # Make sure the machine name is provided
   if [ -z "$machine" ]; then
     echo "Error: --machine argument is mandatory"
-    echo "Usage: $0 --machine=<string> [-d] [--auto-tune] [g++|clang++] [extra_flags]"
+    echo "Usage: $0 --machine=<string> compiler_exec [-d] [--auto-tune] [extra_flags]"
+    exit 1
+  fi
+
+  # Make sure a valid compiler is provided
+  if [ -z "$compiler" ]; then
+    echo "Error: A compiler (g++ or clang++) must be provided"
+    echo "Usage: $0 --machine=<string> compiler_exec [-d] [--auto-tune] [extra_flags]"
     exit 1
   fi
 }
@@ -121,7 +149,8 @@ parse_autotuner_best_conf_json() {
     local json_file="$1"
     local benchId="$2"
     local hw="$3"
-    local N="$4"
+    local compiler_version="$4"
+    local N="$5"
 
     local json=""
 
@@ -139,12 +168,12 @@ parse_autotuner_best_conf_json() {
     # Read the JSON file
     json=$(cat "$json_file")
 
-    # Extract the configuration for the specified benchId, hw, and N
-    conf=$(echo "$json" | jq -c ".[\"$benchId\"][\"$hw\"][\"$N\"]")
+    # Extract the configuration for the specified benchId, hw, compiler, and N
+    conf=$(echo "$json" | jq -c ".[\"$benchId\"][\"$hw\"][\"$compiler_version\"][\"$N\"]")
 
     # Check if the conf exists
     if [ "$conf" == "null" ]; then
-        echo "No configuration found for benchId=$benchId, hw=$hw, N=$N"
+        echo "No configuration found for benchId=$benchId, hw=$hw, compiler=$compiler_version, N=$N"
         return 1
     fi
 
