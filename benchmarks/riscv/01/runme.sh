@@ -29,7 +29,7 @@ echo "" >> "../../dumps/benchId${current_benchId}.txt"
 # Delete any sub-dumps directories of this benchId inside the dumps directory if the flag is set
 if [ "$flag_delete_dumps" = true ]; then
   echo "Deleting the dumps directory."
-  bash build.riscv.00.sh -d --machine=$machine
+  bash build.riscv.00.sh -d --machine=$machine "$compiler"
   exit 0
 fi
 
@@ -39,7 +39,7 @@ if [ "$flag_auto_tune" = true ]; then
       for i1 in "${range_i1[@]}"; do
         for i2 in "${range_i2[@]}"; do
           echo "Benchmarking for Unroll Factor of $i and N of $n."
-          bash build.riscv.00.sh --machine=$machine $compiler "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
+          bash build.riscv.00.sh --machine=$machine "$compiler" "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done
       done
     done

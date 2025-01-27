@@ -29,7 +29,7 @@ echo "" >> "../../dumps/benchId${current_benchId}.txt"
 # Delete any sub-dumps directories of this benchId inside the dumps directory if the flag is set
 if [ "$flag_delete_dumps" = true ]; then
   echo "Deleting the dumps directory."
-  bash build.amd64.00.sh -d --machine=$machine
+  bash build.amd64.00.sh -d --machine=$machine "$compiler"
   exit 0
 fi
 

@@ -29,12 +29,11 @@ echo "" >> "../../dumps/benchId${current_benchId}.txt"
 # Delete any sub-dumps directories of this benchId inside the dumps directory if the flag is set
 if [ "$flag_delete_dumps" = true ]; then
   echo "Deleting the dumps directory."
-  bash build.riscv.00.sh -d --machine=$machine
+  bash build.riscv.00.sh -d --machine=$machine "$compiler"
   exit 0
 fi
 
 if [ "$flag_auto_tune" = true ]; then
-
   index=0
   total_benchmarks=$(( ${#range_n[@]} * ${#range_i0[@]} * ${#range_i1[@]} * ${#range_i2[@]} ))
 
@@ -46,7 +45,7 @@ if [ "$flag_auto_tune" = true ]; then
           echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
           echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
           echo "Benchmarking for Unroll Factor of $i and N of $n."
-          bash build.riscv.00.sh --machine=$machine $compiler "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
+          bash build.riscv.00.sh --machine=$machine "$compiler" "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done
       done
     done
