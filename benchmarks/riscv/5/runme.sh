@@ -16,7 +16,9 @@
 # The last command will run the autotuner and show the best configuration in terms of median runtime for
 # any unique (N, Machine) pair.
 
-current_benchId="01"
+set -e
+
+current_benchId="5"
 
 script_dir=$(dirname "$0")
 source "$script_dir/../../common/utils.bash"
@@ -34,10 +36,16 @@ if [ "$flag_delete_dumps" = true ]; then
 fi
 
 if [ "$flag_auto_tune" = true ]; then
+  index=0
+  total_benchmarks=$(( ${#range_n[@]} * ${#range_i0[@]} * ${#range_i1[@]} * ${#range_i2[@]} ))
+
   for n in "${range_n[@]}"; do
     for i0 in "${range_i0[@]}"; do
       for i1 in "${range_i1[@]}"; do
         for i2 in "${range_i2[@]}"; do
+          index=$((index+1))
+          echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
+          echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
           echo "Benchmarking for Unroll Factor of $i and N of $n."
           bash build.riscv.00.sh --machine=$machine "$compiler" "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
         done
@@ -66,8 +74,8 @@ if [ "$flag_auto_tune" = true ]; then
   python ../../common/python/autotune.py --dumps-dir ../../dumps --benchid $current_benchId
 fi
 
-# Run the plotting script if the auto-tuner flag is not set
-if [ "$flag_auto_tune" = false ]; then
-  echo "Running the plotting script."
-  python ../../common/plot.runtimes.per.benchId.py --dumps-dir "../../dumps" --benchid "$current_benchId" --out "../../dumps/BenchId${current_benchId}.png"
-fi
+## Run the plotting script if the auto-tuner flag is not set
+#if [ "$flag_auto_tune" = false ]; then
+#  echo "Running the plotting script."
+#  python ../../common/plot.runtimes.per.benchId.py --dumps-dir "../../dumps" --benchid "$current_benchId" --out "../../dumps/BenchId${current_benchId}.png"
+#fi

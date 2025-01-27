@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "You can disable scalar kernels and verification passes by adding optional argument: -DSKIP_SCALAR_AND_VERIFICATION=1"
 
 #bash build.amd64.00.sh -d # wipe the dumps dir.

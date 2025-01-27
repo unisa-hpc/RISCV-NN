@@ -115,7 +115,7 @@ def get_best_config(dumps_dir: str, benchid: int, out: str, parse_pairs_func=lam
                     existing_json_report[bench_id][hw] = {}
 
                 for compiler_name, N_dict in compilers_dict.items():
-                    if compiler_name not in existing_json_report[bench_id]:
+                    if compiler_name not in existing_json_report[bench_id][hw]:
                         existing_json_report[bench_id][hw][compiler_name] = {}
 
                     for N, config in N_dict.items():

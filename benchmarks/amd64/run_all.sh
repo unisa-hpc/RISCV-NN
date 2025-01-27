@@ -1,5 +1,9 @@
+
+# exit on failure
+set -e
+
 # Check if there is at least one argument supplied
-if [ $# -lt 1 ]; then
+if [ $# -lt 2 ]; then
     echo "Usage: $0 machine_name compiler_exec"
     exit 1
 fi

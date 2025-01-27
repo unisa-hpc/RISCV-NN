@@ -6,10 +6,7 @@ def get_all_tuples(dump_dir: str, bench_id: int) -> [str]:
     if not isinstance(bench_id, int):
         raise ValueError(f'bench_id should be an integer, got {bench_id}')
 
-    # get the two digit string representation of bench_id with zeros padded to the left
-    if bench_id >99:
-        raise ValueError(f'bench_id should be less than 100, got {bench_id}')
-    bench_id_str = str(bench_id).zfill(2)
+    bench_id_str = str(bench_id) # no more zero padded benchIds.
 
     # check if f'benchId{bench_id}.txt' exists
     if not pathlib.Path(dump_dir).joinpath(f'benchId{bench_id_str}.txt').exists():
