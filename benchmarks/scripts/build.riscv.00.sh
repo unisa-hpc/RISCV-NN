@@ -1,6 +1,6 @@
 #!/bin/bash
 
-compiler=riscv64-linux-gnu-g++
+compiler=g++
 
 # Dynamically set compiler flags based on compiler type
 function set_compiler_flags() {
@@ -28,7 +28,6 @@ function set_compiler_flags() {
 }
 
 # get the path to the symlinked script (not the real file, the symlink's path)
-
 script_dir=$(dirname "$0")
 dump_dir="$script_dir/../../dumps"
 dump_dir=$(realpath "$dump_dir")
@@ -38,6 +37,7 @@ source "$script_dir/../../common/utils.bash"
 # Process all arguments: handle -d, compiler, and machine arguments
 args=()
 machine=""
+best=false  # Add flag for --best option
 
 # First pass to extract machine argument
 for i in "$@"; do
@@ -45,13 +45,20 @@ for i in "$@"; do
         --machine=*)
             machine="${i#*=}"
             ;;
+        --best)
+            best=true
+            ;;
     esac
 done
 
 # Check if machine argument was provided
 if [ -z "$machine" ]; then
     echo "Error: --machine argument is mandatory"
-    echo "Usage: $0 --machine=<string> [-d] [g++|clang++] [extra_flags]"
+    echo "Usage: $0 --machine=<string> [--best] [-d] [g++|clang++] [extra_flags]"
+    echo "Required: machine"
+    echo "Optional: --best, -d, g++<suffix>|clang++<suffix>, extra_flags"
+    # When best flag is set, the script will add the `best` keyword to each line in benchIdXX.txt
+    # Otherwise, it will add `autotune` to each line.
     exit 1
 fi
 
@@ -61,7 +68,7 @@ for arg in "$@"; do
         delete_dumps=true
     elif [[ "$arg" =~ ^(g\+\+|clang\+\+) ]]; then
         compiler="$arg"
-    elif [[ "$arg" != --machine=* ]]; then  # Explicitly exclude --machine arguments
+    elif [[ "$arg" != --machine=* && "$arg" != "--best" ]]; then  # Exclude both --machine and --best
         args+=("$arg")
     fi
 done
@@ -144,7 +151,13 @@ set_compiler_flags "$compiler" "$extra_flags"
   compile_status=$((compile_main_status + compile_vec_status + compile_scalar_vec_status + compile_scalar_novec_status))
 
   # Append the new dump dir to the text file dumps directory
-  echo "${machine}, ${compiler_version}, ${timestamp}" >> "$dump_dir/benchId${benchId}.txt"
+  is_best_or_autotune=""
+  if [ "$best" = true ]; then
+    is_best_or_autotune="best"
+  else
+    is_best_or_autotune="autotune"
+  fi
+  echo "${machine}, ${compiler_version}, ${is_best_or_autotune}, ${timestamp}" >> "$dump_dir/benchId${benchId}.txt"
 
   if [ $compile_status -eq 0 ]; then
     # Run the binary and capture its output
