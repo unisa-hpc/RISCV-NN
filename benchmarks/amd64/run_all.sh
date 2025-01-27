@@ -1,4 +1,3 @@
-
 # exit on failure
 set -e
 
@@ -7,6 +6,7 @@ if [ $# -lt 2 ]; then
     echo "Usage: $0 machine_name compiler_exec"
     exit 1
 fi
+
 machine=$1
 compiler=$2
 
@@ -20,26 +20,23 @@ fi
 
 pip install --user argparse pandas colorama pathlib matplotlib numpy seaborn
 
-cd 2
-if [ "$delete_dumps" = true ]; then
-    bash runme.sh --machine=$machine "$compiler" -d
-fi
-bash runme.sh --machine=$machine "$compiler" --auto-tune
-bash runme.sh --machine=$machine "$compiler"
-cd ..
+# Function to process each benchmark
+process_benchmark() {
+    local bench_id=$1
+    echo "Processing benchmark $bench_id..."
+    cd $bench_id
+    if [ "$delete_dumps" = true ]; then
+        echo "Deleting dumps for benchmark $bench_id..."
+        bash runme.sh --machine=$machine "$compiler" -d
+    fi
+    echo "Running auto-tune for benchmark $bench_id..."
+    bash runme.sh --machine=$machine "$compiler" --auto-tune
+    echo "Running final compilation for benchmark $bench_id..."
+    bash runme.sh --machine=$machine "$compiler"
+    cd ..
+}
 
-cd 7
-if [ "$delete_dumps" = true ]; then
-    bash runme.sh --machine=$machine "$compiler" -d
-fi
-bash runme.sh --machine=$machine "$compiler" --auto-tune
-bash runme.sh --machine=$machine "$compiler"
-cd ..
-
-cd 8
-if [ "$delete_dumps" = true ]; then
-    bash runme.sh --machine=$machine "$compiler" -d
-fi
-bash runme.sh --machine=$machine "$compiler" --auto-tune
-bash runme.sh --machine=$machine "$compiler"
-cd ..
+# Process each benchmark
+for bench_id in 2 7 8; do
+    process_benchmark $bench_id
+done
