@@ -59,7 +59,7 @@ benchId=$(basename "$(dirname "$abs_main")")
 echo "sources_main: $sources_main"
 echo "abs_main: $abs_main"
 echo "benchId: $benchId"
-delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$new_dump_dir"
+delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$new_dump_dir" "-"
 
 {
   echo "sources_main: $sources_main"
