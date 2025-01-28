@@ -114,11 +114,23 @@ function setup_autotuner_args() {
           machine="${i#*=}"
           ;;
       *)
-          # Check if argument matches compiler pattern
-          if [[ $i =~ ^(g\+\+|clang\+\+) ]]; then
-              compiler="$i"
+          # Check if the argument is a compiler (g++ or clang++ with any prefix or suffix)
+          if [[ $i =~ (g\+\+|clang\+\+) ]]; then
+              # Check if the compiler is in PATH or is an executable file
+              if which "$i" > /dev/null 2>&1 || [ -x "$i" ]; then
+                  compiler="$i"
+              else
+                  echo "Error: Compiler '$i' not found in PATH or is not executable."
+                  exit 1
+              fi
           else
-              args+="$i "
+              # If the argument is not a compiler, check if it's a path or name that should be a compiler
+              if [[ $i =~ / ]]; then
+                  echo "Error: Provided path '$i' is not a valid g++ or clang++ compiler."
+              else
+                  echo "Error: Provided name '$i' is not a valid g++ or clang++ compiler."
+              fi
+              exit 1
           fi
           ;;
     esac

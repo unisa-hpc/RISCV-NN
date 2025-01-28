@@ -4,25 +4,28 @@ compiler=g++
 
 # Dynamically set compiler flags based on compiler type
 function set_compiler_flags() {
-    local compiler="$1"
+    local compiler_path="$1"
     local extra_flags="${2:-}"
-    echo "Compiler passed to set_compiler_flags: $compiler"
+    echo "Compiler passed to set_compiler_flags: $compiler_path"
+
+    # Extract compiler basename from path
+    local compiler_name=$(basename "$compiler_path")
 
     # G++ flags
-    if [[ "$compiler" =~ ^(riscv64-linux-gnu-)?g\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
+    if [[ "$compiler_name" =~ ^g\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
         echo "Using G++ compatible flags."
         flags_main="-O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_vec="-c -O3 -march=rv64gcv -DAUTOVEC -fopt-info-vec-all -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_novec="-c -O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
-    elif [[ "$compiler" =~ ^clang\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
+    elif [[ "$compiler_name" =~ ^clang\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
         echo "Using Clang++ compatible flags."
         flags_main="-O3 -march=rv64gcv -fno-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=rv64gcv -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_vec="-c -O3 -march=rv64gcv -DAUTOVEC -fvectorize -Rpass=loop-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_novec="-c -O3 -march=rv64gcv -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
     else
-        echo "Error: Unrecognized compiler '$compiler'. Must be g++ or clang++ (with optional version number)"
+        echo "Error: Unrecognized compiler '$compiler_name'. Must be g++ or clang++ (with optional version number)"
         exit 1
     fi
 }
@@ -54,9 +57,9 @@ done
 # Check if machine argument was provided
 if [ -z "$machine" ]; then
     echo "Error: --machine argument is mandatory"
-    echo "Usage: $0 --machine=<string> [--best] [-d] [g++|clang++] [extra_flags]"
+    echo "Usage: $0 --machine=<string> [--best] [-d] [/path/to/g++|/path/to/clang++] [extra_flags]"
     echo "Required: machine"
-    echo "Optional: --best, -d, g++<suffix>|clang++<suffix>, extra_flags"
+    echo "Optional: --best, -d, path to g++/clang++ (with optional suffix), extra_flags"
     # When best flag is set, the script will add the `best` keyword to each line in benchIdXX.txt
     # Otherwise, it will add `autotune` to each line.
     exit 1
@@ -66,8 +69,14 @@ fi
 for arg in "$@"; do
     if [ "$arg" == "-d" ]; then
         delete_dumps=true
-    elif [[ "$arg" =~ ^(g\+\+|clang\+\+) ]]; then
-        compiler="$arg"
+    elif [[ $(basename "$arg") =~ ^(g\+\+|clang\+\+) ]]; then
+        # Check if the compiler exists
+        if command -v "$arg" &> /dev/null; then
+            compiler="$arg"
+        else
+            echo "Error: Compiler '$arg' not found"
+            exit 1
+        fi
     elif [[ "$arg" != --machine=* && "$arg" != "--best" ]]; then  # Exclude both --machine and --best
         args+=("$arg")
     fi

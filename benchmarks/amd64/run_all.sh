@@ -7,10 +7,28 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
+mkdir -p ../dumps
 machine=$1
 
 # Array of compiler executable names
-compilers=("g++" "clang++-17")
+# Initialize arrays for compilers' paths
+declare -a compilers=()
+
+# Clang++ compilers
+spack load llvm@18.1.8
+compilers+=("$(spack location -i llvm@18.1.8)/bin/clang++")
+spack load llvm@17.0.6
+compilers+=("$(spack location -i llvm@17.0.6)/bin/clang++")
+
+# G++ compilers
+spack load gcc@14.2.0
+compilers+=("$(spack location -i gcc@14.2.0)/bin/g++")
+spack load gcc@13.2.0
+compilers+=("$(spack location -i gcc@13.2.0)/bin/g++")
+
+for i in "${!compilers[@]}"; do
+  echo "** Index: $i, Compiler Path: ${compilers[$i]}"
+done
 
 # Prompt user about deleting the dumps directory
 read -p "Do you want to delete the related sub-dumps directories related to each benchId? (y/n): " delete_dumps_input
