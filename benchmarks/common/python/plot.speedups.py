@@ -332,7 +332,6 @@ class PlotSpeedUps:
         # Extract the rows that have the specific N
         masked_data = self.proc_data_speedup[
             (self.proc_data_speedup['N'] == n)
-            & (self.proc_data_speedup['benchId'] == 8)
         ]
 
         fig = plt.figure(figsize=(6, 6))
