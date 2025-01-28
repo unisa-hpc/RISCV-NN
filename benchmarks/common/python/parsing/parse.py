@@ -96,8 +96,8 @@ class DumpsParser:
             bench_id = bench_id[:bench_id.rfind('.')]
             bench_id = int(bench_id)
 
-            hw_names = get_all_hw_names(dump_path, bench_id)
-            compiler_names = get_all_compiler_names(dump_path, bench_id)
+            hw_names = get_all_hw_names(dump_path, bench_id, only_best=None)
+            compiler_names = get_all_compiler_names(dump_path, bench_id, only_best=None)
 
             if bench_id not in parsed_dumps:
                 parsed_dumps[bench_id] = {}

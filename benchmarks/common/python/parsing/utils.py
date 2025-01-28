@@ -32,22 +32,28 @@ def get_all_tuples(dump_dir: str, bench_id: int) -> [str]:
 
 
 def get_all_hw_names(dump_dir: str, bench_id: int, only_best) -> [str]:
+    # only_best true or false or None(for all)
     hw_names = []
     all_tuples = get_all_tuples(dump_dir, bench_id)
     run_type = 'best' if only_best else 'autotune'
     for entry in all_tuples:
-        if entry[0] not in hw_names and entry[2] == run_type:
+        if only_best is not None and entry[2] != run_type:
+            continue
+        if entry[0] not in hw_names:
             hw_names.append(entry[0])
     print(f'Found these hardware names: {hw_names}')
     return hw_names
 
 
 def get_all_compiler_names(dump_dir: str, bench_id: int, only_best) -> [str]:
+    # only_best true or false or None(for all)
     compiler_names = []
     all_tuples = get_all_tuples(dump_dir, bench_id)
     run_type = 'best' if only_best else 'autotune'
     for entry in all_tuples:
-        if entry[1] not in compiler_names and entry[2] == run_type:
+        if only_best is not None and entry[2] != run_type:
+            continue
+        if entry[1] not in compiler_names:
             compiler_names.append(entry[1])
     print(f'Found these compiler names: {compiler_names}')
     return compiler_names
@@ -61,7 +67,7 @@ def get_all_json_files(dump_dir: str, bench_id: int, only_this_hw: str, only_thi
     json_files = []
     run_type = 'best' if only_best else 'autotune'
     for hw, compiler, r_type, sub_dump_dir_name in all_tuples:
-        if r_type != run_type:
+        if r_type != run_type and only_best is not None:
             continue
         if only_this_hw != hw and only_this_hw is not None:
             continue
