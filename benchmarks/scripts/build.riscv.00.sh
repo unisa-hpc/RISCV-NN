@@ -13,7 +13,7 @@ function set_compiler_flags() {
         echo "Using G++ compatible flags."
         flags_main="-O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
-        flags_scalar_vec="-c -O3 -march=rv64gcv -DAUTOVEC -fopt-info-vec -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_scalar_vec="-c -O3 -march=rv64gcv -DAUTOVEC -fopt-info-vec-all -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_novec="-c -O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
     elif [[ "$compiler" =~ ^clang\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
         echo "Using Clang++ compatible flags."
