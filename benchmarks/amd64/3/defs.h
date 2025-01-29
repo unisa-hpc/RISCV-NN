@@ -85,6 +85,13 @@ constexpr int S_Y_DEFAULT = 1;
 #define UNROLL_FACTOR3_BASELINE UNROLL_FACTOR3_DEFAULT
 #endif
 
+// This is just a flag, so we can separate the best config runs from best config runs with the default unrolling factors
+// to compute the gain we get from autotuning, in the pyhton plotting scripts. It does not affect any of the unrolling factors values.
+#ifdef AUTOTUNE_IS_DISABLED
+#define FLAG_AUTOTUNE_DISABLED 1
+#else
+#define FLAG_AUTOTUNE_DISABLED 0
+#endif
 
 // do not change these values
 constexpr int input_height = I_H;

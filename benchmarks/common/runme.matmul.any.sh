@@ -65,10 +65,15 @@ run_benchmark() {
         for n in "${range_n[@]}"; do
             compiler_version=$($compiler --version | head -n 1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             parse_autotuner_best_conf_json ../../dumps/autotuner.json $current_benchId "$machine" "$compiler_version" $n
+
+            # AUTOTUNE_IS_DISABLED is just a flag that will be reported in the json files by the timer classes.
+            # This will help us to find the rows that belong to the run with default tunable parameters.
+
+            # AUTOTUNE_BASELINE_KERNELS enables the baseline kernels (scalar or avx/rvv) auto-tuning.
             echo "Building for N of $n with the auto tuned best config: UNROLL_FACTOR0=$UNROLL_FACTOR0 UNROLL_FACTOR1=$UNROLL_FACTOR1 UNROLL_FACTOR2=$UNROLL_FACTOR2"
             bash "$build_script" --machine=$machine --best "$compiler" "-DAUTOTUNE_BASELINE_KERNELS -DUNROLL_FACTOR0=$UNROLL_FACTOR0 -DUNROLL_FACTOR1=$UNROLL_FACTOR1 -DUNROLL_FACTOR2=$UNROLL_FACTOR2 -DN=$n $args"
             echo "Also building for N of $n with the default tunable parameters."
-            bash "$build_script" --machine=$machine --best "$compiler" "-DAUTOTUNE_BASELINE_KERNELS -DN=$n $args"
+            bash "$build_script" --machine=$machine --best "$compiler" "-DAUTOTUNE_BASELINE_KERNELS -DAUTOTUNE_IS_DISABLED -DN=$n $args"
         done
     fi
 

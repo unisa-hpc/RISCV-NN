@@ -75,6 +75,7 @@ void matmul_gpu_cublas_gold(
 int main(int argc, char *argv[]) {
     std::cout << "RUNS: " << RUNS << std::endl;
     std::cout << "N: " << N << std::endl;
+    std::cout << "FLAG_AUTOTUNE_DISABLED: " << FLAG_AUTOTUNE_DISABLED << std::endl;
 
     CTensor<float> tnA({N, N});
     CTensor<float> tnB({N, N});
@@ -192,7 +193,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, true, 0), //"LaunchKernel01"
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             },
         );
         for (volatile int i = 0; i < RUNS; ++i) {
@@ -215,7 +216,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, true, 1), //"LaunchKernel04",
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             }
         );
         for (volatile int i = 0; i < RUNS; ++i) {
@@ -238,7 +239,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, true, 2), //"LaunchKernel08",
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             }
         );
         for (volatile int i = 0; i < RUNS; ++i) {
@@ -261,7 +262,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, false, 0), //"LaunchKernel01_PoT",
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             }
         );
         for (volatile int i = 0; i < RUNS; ++i) {
@@ -284,7 +285,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, false, 1), //"LaunchKernel01_PoT16",
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             }
         );
         for (volatile int i = 0; i < RUNS; ++i) {
@@ -307,7 +308,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, false, 2), //"LaunchKernel04_PoT",
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             }
         );
         for (volatile int i = 0; i < RUNS; ++i) {
@@ -330,7 +331,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, false, 3), //"LaunchKernel01_PoT4bit",
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             }
         );
         for (volatile int i = 0; i < RUNS; ++i) {
@@ -353,7 +354,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, false, 4), //"LaunchKernel04_PoT4bit",
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             }
         );
         for (volatile int i = 0; i < RUNS; ++i) {
@@ -377,7 +378,7 @@ int main(int argc, char *argv[]) {
         timer_stats stats(
             get_code_name(BENCH_ID, kernel_kind::CUDA, false, 5), //"LaunchKernel04_PoT2bit",
             {
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             }
         );
         for (volatile int i = 0; i < RUNS; ++i) {

@@ -25,6 +25,7 @@ def get_lambda_pairs(bench_id: int):
         return None
     elif bench_id == 1 or bench_id == 2 or bench_id == 5 or bench_id == 6 or bench_id == 7 or bench_id == 8:
         return lambda pairs: {
+            'FLAG_AUTOTUNE_DISABLED': pairs['FLAG_AUTOTUNE_DISABLED'],
             'N': pairs['N'],
             'UNROLL_FACTOR0': pairs['UNROLL_FACTOR0'],
             'UNROLL_FACTOR1': pairs['UNROLL_FACTOR1'],

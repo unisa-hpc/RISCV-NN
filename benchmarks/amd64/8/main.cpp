@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
     const int RUNS_SCALAR = RUNS<=3 ? RUNS : 3;
 
     std::cout << "N: " << N << std::endl;
+    std::cout << "FLAG_AUTOTUNE_DISABLED: " << FLAG_AUTOTUNE_DISABLED << std::endl;
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
     std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
@@ -94,7 +95,7 @@ int main(int argc, char** argv) {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
                 {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             },
             !true
         );
@@ -111,7 +112,7 @@ int main(int argc, char** argv) {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
                 {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             },
             !true
         );
@@ -128,7 +129,7 @@ int main(int argc, char** argv) {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
                 {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             },
             !true
         );
@@ -147,7 +148,7 @@ int main(int argc, char** argv) {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
                 {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             },
             !true
         );
@@ -166,7 +167,7 @@ int main(int argc, char** argv) {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1},
                 {"UNROLL_FACTOR2", UNROLL_FACTOR2},
-                {"N", N}
+                {"N", N}, {"FLAG_AUTOTUNE_DISABLED", FLAG_AUTOTUNE_DISABLED}
             },
             false
         );

@@ -73,27 +73,6 @@ class PlotSpeedUps:
             self.proc_data['hw'] + ', ' + \
             self.proc_data['compiler']
 
-        # Add tunables column for each benchId cluster
-        unique_bids = self.proc_data['benchId'].unique()
-        default_combs = ''.join(['1;;' for _ in range(3)])
-        default_combs = default_combs[:-2]
-        for bid in unique_bids:
-            tunable_col_names = get_tunable_params_list(int(bid))
-            masked_data = self.proc_data[self.proc_data['benchId'] == bid]
-            # Add a col called tunables_comb that is a combination of all tunables columns
-            if tunable_col_names is not None:
-                masked_data['tunables_comb'] = masked_data[tunable_col_names].apply(
-                    lambda row: ';;'.join(row.values.astype(str)), axis=1
-                )
-                # add another col called `is_default_tunables` that is True if the tunables are the defaults (all 1s)
-                masked_data['is_default_tunables'] = masked_data['tunables_comb'] == default_combs
-                # add the column to the original dataframe if it does not exist
-                if 'tunables_comb' not in self.proc_data.columns:
-                    self.proc_data['tunables_comb'] = None
-                if 'is_default_tunables' not in self.proc_data.columns:
-                    self.proc_data['is_default_tunables'] = None
-                self.proc_data.update(masked_data)
-
         """
         The problem with speedups is that we CANNOT add them as new columns. We can have a speedup_type column.
         These will be added as rows to the speedup_type column:
@@ -116,11 +95,13 @@ class PlotSpeedUps:
                 for bid_hw_compiler in unique_bid_hw_compiler:
                     sav_rows = self.proc_data.loc[
                         (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
-                        (self.proc_data['name'].str.contains("SAV"))
+                        (self.proc_data['name'].str.contains("SAV")) &
+                        (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
                     ]
                     sna_rows = self.proc_data.loc[
                         (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
-                        (self.proc_data['name'].str.contains("SNA"))
+                        (self.proc_data['name'].str.contains("SNA")) &
+                        (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
                     ]
                     sav_rows.reset_index(drop=True, inplace=True)
                     sna_rows.reset_index(drop=True, inplace=True)
@@ -140,19 +121,22 @@ class PlotSpeedUps:
                             (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
-                            (self.proc_data['name'].str.contains("AVX2"))
+                            (self.proc_data['name'].str.contains("AVX2")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
                         ]
                         avx512_rows = self.proc_data.loc[
                             (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
-                            (self.proc_data['name'].str.contains("AVX512"))
+                            (self.proc_data['name'].str.contains("AVX512")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
                         ]
                         sna_rows = self.proc_data.loc[
                             (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
-                            (self.proc_data['name'].str.contains("SNA"))
+                            (self.proc_data['name'].str.contains("SNA")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
                         ]
 
                         avx2_rows.reset_index(drop=True, inplace=True)
@@ -191,6 +175,75 @@ class PlotSpeedUps:
                             else:
                                 print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx512_rows.")
 
+                # speedup_vv: avx2 base with avx2 uut, avx512 base with avx512 uut (all auto-tuned)
+                for bid_hw_compiler in unique_bid_hw_compiler:
+                    for unique_n in unique_Ns:
+                        # BenchId 7 and 8 have only Baselines (avx2 and avx512) and Ours (avx512). So we only have 1 speedup VV for avx512.
+                        avx512_ours_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("AVX512")) &
+                            (self.proc_data['name'].str.contains("ours")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
+                        ]
+                        avx512_baseline_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("AVX512")) &
+                            (self.proc_data['name'].str.contains("base")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
+                        ]
+                        if avx512_ours_rows.empty or avx512_baseline_rows.empty:
+                            print(
+                                f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx512_ours_rows or avx512_baseline_rows.")
+                            continue
+                        avx512_ours_rows.reset_index(drop=True, inplace=True)
+                        avx512_baseline_rows.reset_index(drop=True, inplace=True)
+                        # assert that the num of rows is the same
+                        assert avx512_ours_rows.shape[0] == avx512_baseline_rows.shape[0]
+                        avx512_ours_rows.loc[:, 'data_point'] = avx512_baseline_rows['data_point'] / avx512_ours_rows[
+                            'data_point']  # speed up is ()^-1
+                        avx512_ours_rows.loc[:, 'speedup_type'] = 'speedup_vv'
+                        self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx512_ours_rows], ignore_index=True)
+
+
+                # auto-tuning gain
+                for bid_hw_compiler in unique_bid_hw_compiler:
+                    for unique_n in unique_Ns:
+                        # BenchId 7 and 8 have only Baselines (avx2 and avx512) and Ours (avx512). So we only have 1 gain for avx512.
+                        avx512_ours_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("AVX512")) &
+                            (self.proc_data['name'].str.contains("ours")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
+                            ]
+                        avx512_ours_no_autotune_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("AVX512")) &
+                            (self.proc_data['name'].str.contains("ours")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 1)
+                            ]
+                        if avx512_ours_rows.empty or avx512_ours_no_autotune_rows.empty:
+                            print(
+                                f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx512_ours_rows or avx512_ours_no_autotune_rows.")
+                            continue
+                        avx512_ours_rows.reset_index(drop=True, inplace=True)
+                        avx512_ours_no_autotune_rows.reset_index(drop=True, inplace=True)
+                        # assert that the num of rows is the same
+                        assert avx512_ours_rows.shape[0] == avx512_ours_no_autotune_rows.shape[0]
+                        avx512_ours_rows.loc[:, 'data_point'] = avx512_ours_no_autotune_rows['data_point'] / avx512_ours_rows[
+                            'data_point']  # speed up is ()^-1
+                        avx512_ours_rows.loc[:, 'speedup_type'] = 'autotuning_gain'
+                        self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx512_ours_rows],
+                                                           ignore_index=True)
+
+
             elif bench_id == 1 or bench_id == 5 or bench_id == 6:
                 print(f"Preprocessing data for benchID={bench_id}")
                 cols = list(self.proc_data.columns)
@@ -218,13 +271,6 @@ class PlotSpeedUps:
 
                 # speedup_vs
                 # for speedup_vs, since our samples for scalar and vector kernels are not equal,
-                # we need to reduce them manually and then calculate the speedup.
-                # Basically we either:
-                # [ ] reduce everything to one sample with median operator and divide.
-                # [*] reduce only the smaller group to one sample with median operator and divide every raw data entry in the larger group by the reduced val.
-                # [ ] reduce everything to stats (min, max, median, ave) and divide the stats tuples and plot manually.
-                # Since we are reducing, we have to mask everything down to the last combination (N, hw, name, configs, etc.)
-                # TODO: Implement legit speedup calculation for scalar vs vector kernels.
                 for bid_hw_compiler in unique_bid_hw_compiler:
                     for unique_n in unique_Ns:
                         rvv_rows = self.proc_data.loc[
@@ -247,19 +293,97 @@ class PlotSpeedUps:
                             print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data sna_rows.")
                             continue
 
-                        # reduce the smallest group to one sample, scalar kernels have no auto-tuning, only (hw, N, benchId)
-                        sna_rows.loc[:, 'data_point'] = sna_rows['data_point'].median()
-                        # only keep the first row of sna
-                        sna_rows = sna_rows.iloc[[0]]
+                        # loop over sna_rows['data_point'] and concat the speedup_vs rows (NOT TESTED YET)
+                        for sna_row in sna_rows['data_point']:
+                            # Handle RVV calculations
+                            if not rvv_rows.empty:
+                                # Create a new copy for this iteration
+                                rvv_rows_current = rvv_rows.copy()
+                                rvv_rows_current['data_point'] = sna_row / rvv_rows['data_point']
+                                rvv_rows_current = rvv_rows_current.assign(speedup_type='speedup_vs')
+                                self.proc_data_speedup = pd.concat([self.proc_data_speedup, rvv_rows_current],
+                                                                   ignore_index=True)
+                            else:
+                                print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data rvv_rows.")
 
-                        # some benchmarks only have avx512 or avx2 data
-                        if rvv_rows.empty:
-                            print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data rvv_rows.")
+                        ## some benchmarks only have avx512 or avx2 data
+                        #if rvv_rows.empty:
+                        #    print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data rvv_rows.")
+                        #    continue
+                        #else:
+                        #    rvv_rows['data_point'] = sna_rows['data_point'].iloc[0] / rvv_rows['data_point']
+                        #    rvv_rows = rvv_rows.assign(speedup_type='speedup_vs')
+                        #    self.proc_data_speedup = pd.concat([self.proc_data_speedup, rvv_rows], ignore_index=True)
+
+                # speedup_vv: rvv base with rvv uut (all auto-tuned)
+                for bid_hw_compiler in unique_bid_hw_compiler:
+                    for unique_n in unique_Ns:
+                        # The benches have only Baselines (avx2 and avx512) and Ours (avx512). So we only have 1 speedup VV for avx512.
+                        rvv_ours_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("RVV")) &
+                            (self.proc_data['name'].str.contains("ours")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
+                            ]
+                        rvv_baseline_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("RVV")) &
+                            (self.proc_data['name'].str.contains("base")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
+                            ]
+                        if rvv_ours_rows.empty or rvv_baseline_rows.empty:
+                            print(
+                                f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data rvv_ours_rows or rvv_baseline_rows.")
                             continue
-                        else:
-                            rvv_rows['data_point'] = sna_rows['data_point'].iloc[0] / rvv_rows['data_point']
-                            rvv_rows = rvv_rows.assign(speedup_type='speedup_vs')
-                            self.proc_data_speedup = pd.concat([self.proc_data_speedup, rvv_rows], ignore_index=True)
+                        rvv_ours_rows.reset_index(drop=True, inplace=True)
+                        rvv_baseline_rows.reset_index(drop=True, inplace=True)
+                        # assert that the num of rows is the same
+                        assert rvv_ours_rows.shape[0] == rvv_baseline_rows.shape[0]
+                        rvv_ours_rows.loc[:, 'data_point'] = rvv_baseline_rows['data_point'] / rvv_ours_rows[
+                            'data_point']  # speed up is ()^-1
+                        rvv_ours_rows.loc[:, 'speedup_type'] = 'speedup_vv'
+                        self.proc_data_speedup = pd.concat([self.proc_data_speedup, rvv_ours_rows],
+                                                           ignore_index=True)
+
+                # auto-tuning gain
+                for bid_hw_compiler in unique_bid_hw_compiler:
+                    for unique_n in unique_Ns:
+                        # These benches have only Baselines (avx2 and rvv) and Ours (rvv). So we only have 1 gain for rvv.
+                        rvv_ours_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("RVV")) &
+                            (self.proc_data['name'].str.contains("ours")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
+                            ]
+                        rvv_ours_no_autotune_rows = self.proc_data.loc[
+                            (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
+                            (self.proc_data['N'] == unique_n) &
+                            (self.proc_data['run_type'] == 'best') &
+                            (self.proc_data['name'].str.contains("RVV")) &
+                            (self.proc_data['name'].str.contains("ours")) &
+                            (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 1)
+                            ]
+                        if rvv_ours_rows.empty or rvv_ours_no_autotune_rows.empty:
+                            print(
+                                f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data rvv_ours_rows or rvv_ours_no_autotune_rows.")
+                            continue
+                        rvv_ours_rows.reset_index(drop=True, inplace=True)
+                        rvv_ours_no_autotune_rows.reset_index(drop=True, inplace=True)
+                        # assert that the num of rows is the same
+                        assert rvv_ours_rows.shape[0] == rvv_ours_no_autotune_rows.shape[0]
+                        rvv_ours_rows.loc[:, 'data_point'] = rvv_ours_no_autotune_rows['data_point'] / \
+                                                                rvv_ours_rows[
+                                                                    'data_point']  # speed up is ()^-1
+                        rvv_ours_rows.loc[:, 'speedup_type'] = 'autotuning_gain'
+                        self.proc_data_speedup = pd.concat([self.proc_data_speedup, rvv_ours_rows],
+                                                           ignore_index=True)
+
 
             elif bench_id == 4:
                 print(f"NYI: Preprocessing data for benchID={bench_id}")
@@ -327,7 +451,7 @@ class PlotSpeedUps:
                 barplot.annotate(format(p.get_height(), '.3f'),
                              (p.get_x() + p.get_width() / 2., p.get_height()),
                              ha='left', va='center',
-                             xytext=(3, 15),  # 9 points vertical offset
+                             xytext=(-3, 15),
                              textcoords='offset points',
                              rotation=90,
                              fontsize=6)
@@ -379,10 +503,10 @@ class PlotSpeedUps:
                 barplot.annotate(format(p.get_height(), '.3f'),
                                  (p.get_x() + p.get_width() / 2., p.get_height()),
                                  ha='left', va='center',
-                                 xytext=(3, 15),  # 9 points vertical offset
+                                 xytext=(-3, 15),
                                  textcoords='offset points',
                                  rotation=90,
-                                 fontsize=8)
+                                 fontsize=6)
 
         # Customize the plot
         plt.title(f"Speedup for N={n}")
