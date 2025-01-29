@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 compiler=g++
 
 # Dynamically set compiler flags based on compiler type
@@ -57,16 +58,31 @@ while [[ $# -gt 0 ]]; do
             delete_dumps=true
             shift
             ;;
+        -D*|[-+][A-Za-z]*|-[A-Za-z]*=[A-Za-z0-9]*)
+            # Handle compiler flags that start with -D or other common flag patterns
+            if [[ -z "$extra_flags" ]]; then
+                extra_flags="$1"
+            else
+                extra_flags="$extra_flags $1"
+            fi
+            shift
+            ;;
         *)
-            if [[ $(basename "$1") =~ ^(g\+\+|clang\+\+) ]]; then
+            # Check if the argument is a compiler path
+            if [[ -x "$1" ]] && [[ $(basename "$1") =~ ^(g\+\+|clang\+\+)(-[0-9]+([.][0-9]+)*)?$ ]]; then
                 if command -v "$1" &> /dev/null; then
                     compiler="$1"
                 else
                     echo "Error: Compiler '$1' not found"
                     exit 1
                 fi
-            elif [[ -z "$extra_flags" ]]; then
-                extra_flags="$1"
+            else
+                # If not a compiler and extra_flags is empty, treat as extra flags
+                if [[ -z "$extra_flags" ]]; then
+                    extra_flags="$1"
+                else
+                    extra_flags="$extra_flags $1"
+                fi
             fi
             shift
             ;;
