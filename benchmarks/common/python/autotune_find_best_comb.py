@@ -9,7 +9,7 @@ from parsing.timer_stats import TimerStatsParser
 from parsing.utils import *
 
 
-def get_best_config(dumps_dir: str, benchid: int, out: str, parse_pairs_func=lambda pairs: {},
+def get_best_config_shared_combination_for_each_benchId(dumps_dir: str, benchid: int, out: str, parse_pairs_func=lambda pairs: {},
                     unique_names_two_args_func=lambda pairs, hw: ''):
     """
     Find the best unroll factor for each hardware and print it.

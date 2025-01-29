@@ -8,10 +8,10 @@
 #range_i1=(1 2 4 8 16)
 #range_i2=(1 2 4 8 16)
 
-range_n=(64 128)
-range_i0=(1)
-range_i1=(1)
-range_i2=(1 2)
+range_n=(64 256 768 1024 2048)
+range_i0=(1 2 4)
+range_i1=(1 2 4)
+range_i2=(1 2 4)
 
 #range_n=(64 128 256 512)
 #range_i0=(1 2 4 8 16)
