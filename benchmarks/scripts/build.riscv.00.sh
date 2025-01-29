@@ -5,7 +5,7 @@ compiler=g++
 # Dynamically set compiler flags based on compiler type
 function set_compiler_flags() {
     local compiler_path="$1"
-    local extra_flags="${2:-}"
+    local extra_flags="$2"
     echo "Compiler passed to set_compiler_flags: $compiler_path"
 
     # Extract compiler basename from path
@@ -38,18 +38,37 @@ delete_dumps=false
 source "$script_dir/../../common/utils.bash"
 
 # Process all arguments: handle -d, compiler, and machine arguments
-args=()
 machine=""
 best=false  # Add flag for --best option
+extra_flags=""
 
-# First pass to extract machine argument
-for i in "$@"; do
-    case $i in
+# Process all arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
         --machine=*)
-            machine="${i#*=}"
+            machine="${1#*=}"
+            shift
             ;;
         --best)
             best=true
+            shift
+            ;;
+        -d)
+            delete_dumps=true
+            shift
+            ;;
+        *)
+            if [[ $(basename "$1") =~ ^(g\+\+|clang\+\+) ]]; then
+                if command -v "$1" &> /dev/null; then
+                    compiler="$1"
+                else
+                    echo "Error: Compiler '$1' not found"
+                    exit 1
+                fi
+            elif [[ -z "$extra_flags" ]]; then
+                extra_flags="$1"
+            fi
+            shift
             ;;
     esac
 done
@@ -60,29 +79,8 @@ if [ -z "$machine" ]; then
     echo "Usage: $0 --machine=<string> [--best] [-d] [/path/to/g++|/path/to/clang++] [extra_flags]"
     echo "Required: machine"
     echo "Optional: --best, -d, path to g++/clang++ (with optional suffix), extra_flags"
-    # When best flag is set, the script will add the `best` keyword to each line in benchIdXX.txt
-    # Otherwise, it will add `autotune` to each line.
     exit 1
 fi
-
-# Process remaining arguments
-for arg in "$@"; do
-    if [ "$arg" == "-d" ]; then
-        delete_dumps=true
-    elif [[ $(basename "$arg") =~ ^(g\+\+|clang\+\+) ]]; then
-        # Check if the compiler exists
-        if command -v "$arg" &> /dev/null; then
-            compiler="$arg"
-        else
-            echo "Error: Compiler '$arg' not found"
-            exit 1
-        fi
-    elif [[ "$arg" != --machine=* && "$arg" != "--best" ]]; then  # Exclude both --machine and --best
-        args+=("$arg")
-    fi
-done
-
-extra_flags=${args[0]:-}  # First argument is optional; if not provided, it defaults to an empty string
 
 sources_main="main.cpp"
 sources_vec="vectorized.cpp"
