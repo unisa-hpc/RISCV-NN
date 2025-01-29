@@ -47,10 +47,10 @@ void conv2d_direct_padding_ochw_avx_try18(
     int channels_in,
     int channels_out) {
 
-    constexpr int FACTOR0 = UNROLL_FACTOR0;
-    constexpr int FACTOR1 = UNROLL_FACTOR1;
-    constexpr int FACTOR2 = UNROLL_FACTOR2;
-    constexpr int FACTOR3 = UNROLL_FACTOR3;
+    constexpr int FACTOR0 = UNROLL_FACTOR0_BASELINE;
+    constexpr int FACTOR1 = UNROLL_FACTOR1_BASELINE;
+    constexpr int FACTOR2 = UNROLL_FACTOR2_BASELINE;
+    constexpr int FACTOR3 = UNROLL_FACTOR3_BASELINE;
 
     if ((padding_valid && !padding_same)) {
         // valid padding
@@ -382,6 +382,11 @@ int main(int argc, char** argv) {
     std::cout << "UNROLLING FACTOR 1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLLING FACTOR 2: " << UNROLL_FACTOR2 << std::endl;
     std::cout << "UNROLLING FACTOR 3: " << UNROLL_FACTOR3 << std::endl;
+    std::cout << "UNROLLING FACTOR 0 BASELINE: " << UNROLL_FACTOR0_BASELINE << std::endl;
+    std::cout << "UNROLLING FACTOR 1 BASELINE: " << UNROLL_FACTOR1_BASELINE << std::endl;
+    std::cout << "UNROLLING FACTOR 2 BASELINE: " << UNROLL_FACTOR2_BASELINE << std::endl;
+    std::cout << "UNROLLING FACTOR 3 BASELINE: " << UNROLL_FACTOR3_BASELINE << std::endl;
+
     std::cout << "INPUT HEIGHT: " << I_H << std::endl;
     std::cout << "INPUT WIDTH: " << I_W << std::endl;
     std::cout << "KERNEL HEIGHT: " << K_H << std::endl;
@@ -394,8 +399,11 @@ int main(int argc, char** argv) {
 
     std::cout << "RUNS: " << RUNS << std::endl;
     std::cout << "RUNS_SCALAR: " << RUNS_SCALAR << std::endl;
-    std::cout << "ALWAYS_REPORT: " << ALWAYS_REPORT_STR << std::endl;
-    std::cout << "ARE_ALL_DEFAULT: " << ARE_ALL_DEFAULT << std::endl;
+    #ifdef AUTOTUNE_BASELINE_KERNELS
+    std::cout << "AUTOTUNE_BASELINE_KERNELS: YES" << std::endl;
+    #else
+    std::cout << "AUTOTUNE_BASELINE_KERNELS: NO" << std::endl;
+    #endif
 
     const size_t _out_height = GetOutHeight(input_height, kernel_height, stride_y);
     const size_t _out_width = GetOutWidth(input_width, kernel_width, stride_x);
@@ -439,10 +447,10 @@ int main(int argc, char** argv) {
             timer_stats tp(
                 get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Direct OCHW Conv2D With Mul NoAutovec",
                 {
-                  {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
-                  {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
-                  {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
-                  {"UNROLL_FACTOR3", UNROLL_FACTOR3_DEFAULT},
+                  {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
+                  {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
+                  {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
+                  {"UNROLL_FACTOR3", UNROLL_FACTOR3_BASELINE},
                   {"I_H", I_H_DEFAULT},
                   {"I_W", I_W_DEFAULT},
                   {"K_H", K_H_DEFAULT},
@@ -452,7 +460,7 @@ int main(int argc, char** argv) {
                   {"S_X", S_X_DEFAULT},
                   {"S_Y", S_Y_DEFAULT}
                 },
-                !ARE_ALL_DEFAULT
+                !true
             );
             for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
                 timer_scope ts(tp);
@@ -472,10 +480,10 @@ int main(int argc, char** argv) {
             timer_stats tp(
                 get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Direct OCHW Conv2D With Mul Autovec",
                 {
-                  {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
-                  {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
-                  {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
-                  {"UNROLL_FACTOR3", UNROLL_FACTOR3_DEFAULT},
+                  {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
+                  {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
+                  {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
+                  {"UNROLL_FACTOR3", UNROLL_FACTOR3_BASELINE},
                   {"I_H", I_H_DEFAULT},
                   {"I_W", I_W_DEFAULT},
                   {"K_H", K_H_DEFAULT},
@@ -485,7 +493,7 @@ int main(int argc, char** argv) {
                   {"S_X", S_X_DEFAULT},
                   {"S_Y", S_Y_DEFAULT}
                 },
-                !ARE_ALL_DEFAULT
+                !true
             );
             for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
                 timer_scope ts(tp);
@@ -508,10 +516,10 @@ int main(int argc, char** argv) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0), //"Vectorized Direct OCHW Conv2D With MUL AVX2",
             {
-              {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
-              {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
-              {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
-              {"UNROLL_FACTOR3", UNROLL_FACTOR3_DEFAULT},
+              {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
+              {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
+              {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
+              {"UNROLL_FACTOR3", UNROLL_FACTOR3_BASELINE},
               {"I_H", I_H_DEFAULT},
               {"I_W", I_W_DEFAULT},
               {"K_H", K_H_DEFAULT},
@@ -521,7 +529,7 @@ int main(int argc, char** argv) {
               {"S_X", S_X_DEFAULT},
               {"S_Y", S_Y_DEFAULT}
             },
-            !ARE_ALL_DEFAULT
+            !true
         );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
@@ -557,7 +565,7 @@ int main(int argc, char** argv) {
         );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
-            conv2d_direct_padding_ochw_avx_try18<int32_t, kernel_width, kernel_height, stride_x, stride_y, true, false>(
+            conv2d_direct_padding_ochw_avx_try18_shift<int32_t, kernel_width, kernel_height, stride_x, stride_y, true, false>(
                 input_ptr, kernel_ptr, c_avx_shift_ptr,
                 input_height, input_width, channel_in, channel_out
             );

@@ -56,7 +56,7 @@ run_benchmark() {
                         echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
                         echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
                         echo "Benchmarking for Unroll Factors: $i0, $i1, $i2 and N of $n."
-                        bash "$build_script" --machine=$machine "$compiler" "-DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
+                        bash "$build_script" --machine=$machine "$compiler" "-DAUTOTUNE_BASELINE_KERNELS -DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
                     done
                 done
             done
@@ -66,9 +66,9 @@ run_benchmark() {
             compiler_version=$($compiler --version | head -n 1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             parse_autotuner_best_conf_json ../../dumps/autotuner.json $current_benchId "$machine" "$compiler_version" $n
             echo "Building for N of $n with the auto tuned best config: UNROLL_FACTOR0=$UNROLL_FACTOR0 UNROLL_FACTOR1=$UNROLL_FACTOR1 UNROLL_FACTOR2=$UNROLL_FACTOR2"
-            bash "$build_script" --machine=$machine --best "$compiler" "-DUNROLL_FACTOR0=$UNROLL_FACTOR0 -DUNROLL_FACTOR1=$UNROLL_FACTOR1 -DUNROLL_FACTOR2=$UNROLL_FACTOR2 -DN=$n $args"
+            bash "$build_script" --machine=$machine --best "$compiler" "-DAUTOTUNE_BASELINE_KERNELS -DUNROLL_FACTOR0=$UNROLL_FACTOR0 -DUNROLL_FACTOR1=$UNROLL_FACTOR1 -DUNROLL_FACTOR2=$UNROLL_FACTOR2 -DN=$n $args"
             echo "Also building for N of $n with the default tunable parameters."
-            bash "$build_script" --machine=$machine --best "$compiler" "-DN=$n $args -DALWAYS_REPORT"
+            bash "$build_script" --machine=$machine --best "$compiler" "-DAUTOTUNE_BASELINE_KERNELS -DN=$n $args"
         done
     fi
 

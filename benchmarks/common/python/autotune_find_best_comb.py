@@ -14,6 +14,10 @@ def get_best_config(dumps_dir: str, benchid: int, out: str, parse_pairs_func=lam
     """
     Find the best unroll factor for each hardware and print it.
     It looks for benchId{benchid}.txt in the dumps_dir to extract all the relevant json files.
+
+    Based on whether `-DAUTOTUNE_BASELINE_KERNELS` is defined or not, the baseline kernels in each benchmark
+    will or will not be participated in the autotuning process.
+
     """
     init()
     all_hw_names = get_all_hw_names(dumps_dir, benchid, only_best=False)

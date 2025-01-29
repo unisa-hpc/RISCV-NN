@@ -20,10 +20,10 @@ void FUNCTION_NAME(conv2d_direct_padding_ochw_scalar)(
     bool padding_valid,
     bool padding_same) {
 
-    constexpr int FACTOR0 = UNROLL_FACTOR0;
-    constexpr int FACTOR1 = UNROLL_FACTOR1;
-    constexpr int FACTOR2 = UNROLL_FACTOR2;
-    constexpr int FACTOR3 = UNROLL_FACTOR3;
+    constexpr int FACTOR0 = UNROLL_FACTOR0_BASELINE;
+    constexpr int FACTOR1 = UNROLL_FACTOR1_BASELINE;
+    constexpr int FACTOR2 = UNROLL_FACTOR2_BASELINE;
+    constexpr int FACTOR3 = UNROLL_FACTOR3_BASELINE;
 
     if (padding_valid && !padding_same) {
         const size_t heightOut = GetOutHeight(input_height, kernel_size_y, stride_y);

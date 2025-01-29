@@ -11,11 +11,18 @@ void rvv_matmul_mul_nopack_float(
     const float *__restrict__ a,
     const float *__restrict__ b,
     float *__restrict__ c) {
+    constexpr int FACTOR0 = UNROLL_FACTOR0_BASELINE;
+    constexpr int FACTOR1 = UNROLL_FACTOR1_BASELINE;
+    constexpr int FACTOR2 = UNROLL_FACTOR2_BASELINE;
+
     size_t vlmax = __riscv_vsetvlmax_e32m1();
+#pragma GCC unroll FACTOR0
     for (int j = 0; j < N; ++j) {
+#pragma GCC unroll FACTOR1
         for (int i = 0; i < N; ++i) {
             vfloat32m1_t vec_s = __riscv_vfmv_v_f_f32m1(0, vlmax);
             vfloat32m1_t vec_zero = __riscv_vfmv_v_f_f32m1(0, vlmax);
+#pragma GCC unroll FACTOR2
             for (int k = 0; k < N; k += __riscv_vsetvl_e32m1(N - k)) {
                 auto vl = __riscv_vsetvl_e32m1(N - k);
                 auto *ptr_a = a + j * N + k;

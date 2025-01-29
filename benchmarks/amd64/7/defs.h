@@ -41,12 +41,13 @@ constexpr int UNROLL_FACTOR2_DEFAULT = 1;
 #define N 256
 #endif
 
-// preprocessor to check if the factors are all equal to their defaults
-// if `ALWAYS_REPORT` is defined, it will always report the stats for non-participants in auto-tuning
-#ifndef ALWAYS_REPORT
-#define ARE_ALL_DEFAULT (UNROLL_FACTOR0 == UNROLL_FACTOR0_DEFAULT && UNROLL_FACTOR1 == UNROLL_FACTOR1_DEFAULT && UNROLL_FACTOR2 == UNROLL_FACTOR2_DEFAULT)
-#define ALWAYS_REPORT_STR "false"
+// AUTOTUNE_BASELINE_KERNELS controlls wheter to have the baseline kernels in the autotuning or not
+#ifdef AUTOTUNE_BASELINE_KERNELS
+#define UNROLL_FACTOR0_BASELINE UNROLL_FACTOR0
+#define UNROLL_FACTOR1_BASELINE UNROLL_FACTOR1
+#define UNROLL_FACTOR2_BASELINE UNROLL_FACTOR2
 #else
-#define ARE_ALL_DEFAULT false
-#define ALWAYS_REPORT_STR "true"
+#define UNROLL_FACTOR0_BASELINE UNROLL_FACTOR0_DEFAULT
+#define UNROLL_FACTOR1_BASELINE UNROLL_FACTOR1_DEFAULT
+#define UNROLL_FACTOR2_BASELINE UNROLL_FACTOR2_DEFAULT
 #endif

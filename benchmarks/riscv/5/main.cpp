@@ -38,11 +38,17 @@ int main(int argc, char **argv) {
     std::cout << "UNROLL_FACTOR0: " << UNROLL_FACTOR0 << std::endl;
     std::cout << "UNROLL_FACTOR1: " << UNROLL_FACTOR1 << std::endl;
     std::cout << "UNROLL_FACTOR2: " << UNROLL_FACTOR2 << std::endl;
+    std::cout << "UNROLL_FACTOR0_BASELINE: " << UNROLL_FACTOR0_BASELINE << std::endl;
+    std::cout << "UNROLL_FACTOR1_BASELINE: " << UNROLL_FACTOR1_BASELINE << std::endl;
+    std::cout << "UNROLL_FACTOR2_BASELINE: " << UNROLL_FACTOR2_BASELINE << std::endl;
 
     std::cout << "RUNS: " << RUNS << std::endl;
     std::cout << "RUNS_SCALAR: " << RUNS_SCALAR << std::endl;
-    std::cout << "ALWAYS_REPORT: " << ALWAYS_REPORT_STR << std::endl;
-    std::cout << "ARE_ALL_DEFAULT: " << ARE_ALL_DEFAULT << std::endl;
+    #ifdef AUTOTUNE_BASELINE_KERNELS
+    std::cout << "AUTOTUNE_BASELINE_KERNELS: YES" << std::endl;
+    #else
+    std::cout << "AUTOTUNE_BASELINE_KERNELS: NO" << std::endl;
+    #endif
 
     aligned_tensor<float> a_tensor({N, N}, ALIGNMENT);
     aligned_tensor<float> b_tensor({N, N}, ALIGNMENT);
@@ -72,12 +78,12 @@ int main(int argc, char **argv) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Matmul With Mul NoAutovec",
             {
-                {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
-                {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
-                {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
                 {"N", N}
             },
-            !ARE_ALL_DEFAULT
+            !true
         );
         for (volatile size_t i = 0; i < RUNS_SCALAR; ++i) {
             timer_scope ts(tp);
@@ -89,12 +95,12 @@ int main(int argc, char **argv) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Matmul With Mul Autovec",
             {
-                {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
-                {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
-                {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
                 {"N", N}
             },
-            !ARE_ALL_DEFAULT
+            !true
         );
         for (volatile size_t i = 0; i < RUNS_SCALAR; ++i) {
             timer_scope ts(tp);
@@ -106,12 +112,12 @@ int main(int argc, char **argv) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::RVV, true, 0), //"RVV Matmul With Mul Float",
             {
-                {"UNROLL_FACTOR0", UNROLL_FACTOR0_DEFAULT},
-                {"UNROLL_FACTOR1", UNROLL_FACTOR1_DEFAULT},
-                {"UNROLL_FACTOR2", UNROLL_FACTOR2_DEFAULT},
+                {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
+                {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
+                {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
                 {"N", N}
             },
-            !ARE_ALL_DEFAULT
+            !true
         );
         for (volatile size_t i = 0; i < RUNS; ++i) {
             timer_scope ts(tp);

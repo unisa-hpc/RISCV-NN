@@ -18,10 +18,16 @@ void avx2_matmul_mul_nopack_float(
     const float *__restrict__ b,
     float *__restrict__ c) {
     constexpr int VECTOR_ELEMENTS = 8; // AVX processes 8 float32 elements at once
+    constexpr int FACTOR0 = UNROLL_FACTOR0_BASELINE;
+    constexpr int FACTOR1 = UNROLL_FACTOR1_BASELINE;
+    constexpr int FACTOR2 = UNROLL_FACTOR2_BASELINE;
+#pragma GCC unroll FACTOR0
     for (int j = 0; j < N; ++j) {
+#pragma GCC unroll FACTOR1
         for (int i = 0; i < N; ++i) {
             __m256 vec_s = _mm256_setzero_ps(); // Initialize accumulator to zero
 
+#pragma GCC unroll FACTOR2
             for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
                 const float *ptr_a = a + j * N + k; // `a` is row major
                 const float *ptr_b = b + i * N + k; // `b` is column major
@@ -46,11 +52,16 @@ void avx512_matmul_mul_nopack_float(
     float *__restrict__ c) {
 
     constexpr int VECTOR_ELEMENTS = 16; // AVX512
-
+    constexpr int FACTOR0 = UNROLL_FACTOR0_BASELINE;
+    constexpr int FACTOR1 = UNROLL_FACTOR1_BASELINE;
+    constexpr int FACTOR2 = UNROLL_FACTOR2_BASELINE;
+#pragma GCC unroll FACTOR0
     for (int j = 0; j < N; ++j) {
+#pragma GCC unroll FACTOR1
         for (int i = 0; i < N; ++i) {
             __m512 vec_s = _mm512_setzero_ps(); // Initialize accumulator to zero
 
+#pragma GCC unroll FACTOR2
             for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
                 const float *ptr_a = a + j * N + k; // `a` is row major
                 const float *ptr_b = b + i * N + k; // `b` is column major
