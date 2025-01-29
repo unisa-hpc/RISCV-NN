@@ -73,6 +73,27 @@ class PlotSpeedUps:
             self.proc_data['hw'] + ', ' + \
             self.proc_data['compiler']
 
+        # Add tunables column for each benchId cluster
+        unique_bids = self.proc_data['benchId'].unique()
+        default_combs = ''.join(['1;;' for _ in range(3)])
+        default_combs = default_combs[:-2]
+        for bid in unique_bids:
+            tunable_col_names = get_tunable_params_list(int(bid))
+            masked_data = self.proc_data[self.proc_data['benchId'] == bid]
+            # Add a col called tunables_comb that is a combination of all tunables columns
+            if tunable_col_names is not None:
+                masked_data['tunables_comb'] = masked_data[tunable_col_names].apply(
+                    lambda row: ';;'.join(row.values.astype(str)), axis=1
+                )
+                # add another col called `is_default_tunables` that is True if the tunables are the defaults (all 1s)
+                masked_data['is_default_tunables'] = masked_data['tunables_comb'] == default_combs
+                # add the column to the original dataframe if it does not exist
+                if 'tunables_comb' not in self.proc_data.columns:
+                    self.proc_data['tunables_comb'] = None
+                if 'is_default_tunables' not in self.proc_data.columns:
+                    self.proc_data['is_default_tunables'] = None
+                self.proc_data.update(masked_data)
+
         """
         The problem with speedups is that we CANNOT add them as new columns. We can have a speedup_type column.
         These will be added as rows to the speedup_type column:
@@ -111,11 +132,7 @@ class PlotSpeedUps:
 
                 # speedup_vs
                 # for speedup_vs, since our samples for scalar and vector kernels are not equal,
-                # we need to reduce them manually and then calculate the speedup.
-                # Basically we either:
-                # [ ] reduce everything to one sample with median operator and divide.
-                # [*] reduce only the smaller group to one sample with median operator and divide every raw data entry in the larger group by the reduced val.
-                # [ ] reduce everything to stats (min, max, median, ave) and divide the stats tuples and plot manually.
+                # So to keep it legit, for each sample for scalars kernels, we calculate N speedups_vs for vector kernels.
                 # Since we are reducing, we have to mask everything down to the last combination (N, hw, name, configs, etc.)
                 for bid_hw_compiler in unique_bid_hw_compiler:
                     for unique_n in unique_Ns:
@@ -146,27 +163,33 @@ class PlotSpeedUps:
                             print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data sna_rows.")
                             continue
 
-                        # reduce the smallest group to one sample, scalar kernels have no auto-tuning, only (hw, N, benchId)
-                        sna_rows.loc[:, 'data_point'] = sna_rows['data_point'].median()
-                        # only keep the first row of sna
-                        sna_rows = sna_rows.iloc[[0]]
+                        # Create copies of the original dataframes to avoid modifying them in the loop
+                        avx2_rows_original = avx2_rows.copy()
+                        avx512_rows_original = avx512_rows.copy()
 
-                        # some benchmarks only have avx512 or avx2 data
-                        if avx2_rows.empty:
-                            print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx2_rows.")
-                            continue
-                        else:
-                            avx2_rows['data_point'] = sna_rows['data_point'].iloc[0] / avx2_rows['data_point']
-                            avx2_rows = avx2_rows.assign(speedup_type='speedup_vs')
-                            self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx2_rows], ignore_index=True)
+                        # loop over sna_rows['data_point'] and concat the speedup_vs rows
+                        for sna_row in sna_rows['data_point']:
+                            # Handle AVX2 calculations
+                            if not avx2_rows.empty:
+                                # Create a new copy for this iteration
+                                avx2_rows_current = avx2_rows_original.copy()
+                                avx2_rows_current['data_point'] = sna_row / avx2_rows_original['data_point']
+                                avx2_rows_current = avx2_rows_current.assign(speedup_type='speedup_vs')
+                                self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx2_rows_current],
+                                                                   ignore_index=True)
+                            else:
+                                print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx2_rows.")
 
-                        if avx512_rows.empty:
-                            print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx512_rows.")
-                            continue
-                        else:
-                            avx512_rows['data_point'] = sna_rows['data_point'].iloc[0] / avx512_rows['data_point']
-                            avx512_rows = avx512_rows.assign(speedup_type='speedup_vs')
-                            self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx512_rows], ignore_index=True)
+                            # Handle AVX512 calculations
+                            if not avx512_rows.empty:
+                                # Create a new copy for this iteration
+                                avx512_rows_current = avx512_rows_original.copy()
+                                avx512_rows_current['data_point'] = sna_row / avx512_rows_original['data_point']
+                                avx512_rows_current = avx512_rows_current.assign(speedup_type='speedup_vs')
+                                self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx512_rows_current],
+                                                                   ignore_index=True)
+                            else:
+                                print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx512_rows.")
 
             elif bench_id == 1 or bench_id == 5 or bench_id == 6:
                 print(f"Preprocessing data for benchID={bench_id}")
@@ -201,6 +224,7 @@ class PlotSpeedUps:
                 # [*] reduce only the smaller group to one sample with median operator and divide every raw data entry in the larger group by the reduced val.
                 # [ ] reduce everything to stats (min, max, median, ave) and divide the stats tuples and plot manually.
                 # Since we are reducing, we have to mask everything down to the last combination (N, hw, name, configs, etc.)
+                # TODO: Implement legit speedup calculation for scalar vs vector kernels.
                 for bid_hw_compiler in unique_bid_hw_compiler:
                     for unique_n in unique_Ns:
                         rvv_rows = self.proc_data.loc[
@@ -316,7 +340,7 @@ class PlotSpeedUps:
         lgd = plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)  # Adjust the bottom margin
         #plt.show()
-        plt.savefig(f"{self.dir_out}/runtime_N_{n}.png", bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(f"{self.dir_out}/runtime_N_{n}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     def plotgen_speedups_all(self):
         """
@@ -369,7 +393,7 @@ class PlotSpeedUps:
         plt.subplots_adjust(bottom=0.5, right=0.8)
         plt.tight_layout()
         #plt.show()
-        plt.savefig(f"{self.dir_out}/speedup_N_{n}.png", bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(f"{self.dir_out}/speedup_N_{n}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 if __name__ == '__main__':
     # accept multiple instances of --dumps arguments
