@@ -459,7 +459,7 @@ class PlotSpeedUps:
         # Customize the plot
         plt.title(f"Runtimes for N={n}")
         plt.xlabel("Group")
-        plt.xticks(rotation=90)
+        plt.xticks(rotation=90, fontsize=6)
         plt.ylabel("Runtime (ms)")
         lgd = plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)  # Adjust the bottom margin
@@ -511,7 +511,7 @@ class PlotSpeedUps:
         # Customize the plot
         plt.title(f"Speedup for N={n}")
         plt.xlabel("Group")
-        plt.xticks(rotation=90)
+        plt.xticks(rotation=90, fontsize=7)
         plt.ylabel("Speedup")
         lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)
