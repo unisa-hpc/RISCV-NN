@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
     #else
     std::cout << "AUTOTUNE_BASELINE_KERNELS: NO" << std::endl;
     #endif
+    std::cout << "RUN_BASELINES: " << RUN_BASELINES << std::endl;
 
     auto* a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
     auto* b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
@@ -88,7 +89,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Matmul With Mul NoAutovec",
             {
@@ -104,7 +105,7 @@ int main(int argc, char** argv) {
             vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Matmul With Mul Autovec",
             {
@@ -120,7 +121,7 @@ int main(int argc, char** argv) {
             vector_matmul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0), //"AVX Matmul With Mul",
             {
@@ -136,7 +137,7 @@ int main(int argc, char** argv) {
             vector_matmul_avx(a_ptr, b_ptr, c_avx_mul_ptr);
         }
     }
-    verify_results(c_scalar_ptr, c_avx_mul_ptr);
+    if (RUN_BASELINES) verify_results(c_scalar_ptr, c_avx_mul_ptr);
 
     // parse the B array to make it contain logs over actual powers of 2
     for (size_t i = 0; i < N * N; i++) {
@@ -163,7 +164,7 @@ int main(int argc, char** argv) {
             vector_matmul_shift(a_ptr, b_ptr, c_avx_shift_ptr);
         }
     }
-    verify_results(c_scalar_ptr, c_avx_shift_ptr);
+    if (RUN_BASELINES) verify_results(c_scalar_ptr, c_avx_shift_ptr);
 
     return 0;
 }

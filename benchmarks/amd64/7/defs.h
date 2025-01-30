@@ -59,3 +59,9 @@ constexpr int UNROLL_FACTOR2_DEFAULT = 1;
 #else
 #define FLAG_AUTOTUNE_DISABLED 0
 #endif
+
+#ifndef ONLY_RUN_OURS
+#define RUN_BASELINES 1
+#else
+#define RUN_BASELINES 0
+#endif

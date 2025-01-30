@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
     #else
     std::cout << "AUTOTUNE_BASELINE_KERNELS: NO" << std::endl;
     #endif
+    std::cout << "RUN_BASELINES: " << RUN_BASELINES << std::endl;
 
     auto *a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
     auto *b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
@@ -100,7 +101,7 @@ int main(int argc, char **argv) {
 
     init(b_ptr, N * N, true);
 
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Matmul With Mul NoAutovec",
             {
@@ -116,7 +117,7 @@ int main(int argc, char **argv) {
             vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Matmul With Mul Autovec",
             {
@@ -132,7 +133,7 @@ int main(int argc, char **argv) {
             vector_matmul_scalar_autovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::RVV, true, 0), //"RVV Matmul With Mul",
             {
@@ -148,7 +149,7 @@ int main(int argc, char **argv) {
             rvv_matmul_mul_nopack_int32(a_ptr, b_ptr, c_rvv_mul_ptr);
         }
     }
-    verify_results(c_scalar_ptr, c_rvv_mul_ptr);
+    if (RUN_BASELINES) verify_results(c_scalar_ptr, c_rvv_mul_ptr);
 
     // parse the B array to make it contain logs over actual powers of 2
     for (size_t i = 0; i < N * N; i++) {
@@ -179,7 +180,7 @@ int main(int argc, char **argv) {
             rvv_matmul_shift_nopack_int32(a_ptr, new_b_ptr, c_avx_shift_ptr);
         }
     }
-    verify_results(c_scalar_ptr, c_avx_shift_ptr);
+    if (RUN_BASELINES) verify_results(c_scalar_ptr, c_avx_shift_ptr);
 
     //TODO: fix the mem leak.
 

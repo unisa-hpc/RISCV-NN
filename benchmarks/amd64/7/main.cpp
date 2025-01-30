@@ -54,6 +54,7 @@ int main(int argc, char** argv) {
     #else
     std::cout << "AUTOTUNE_BASELINE_KERNELS: NO" << std::endl;
     #endif
+    std::cout << "RUN_BASELINES: " << RUN_BASELINES << std::endl;
 
     aligned_tensor<float> a_tensor({N, N}, ALIGNMENT);
     aligned_tensor<float> b_tensor({N, N}, ALIGNMENT);
@@ -79,7 +80,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Matmul With Mul NoAutovec",
             {
@@ -96,7 +97,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Matmul With Mul Autovec",
             {
@@ -113,7 +114,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0), //"AVX2 Matmul With Mul Float",
             {
@@ -129,10 +130,10 @@ int main(int argc, char** argv) {
             avx2_matmul_mul_nopack_float(a_ptr, b_ptr, c_avx_mul_ptr);
         }
     }
-    c_tensor_scalar.compare(c_tensor_avx5_mul);
+    if (RUN_BASELINES) c_tensor_scalar.compare(c_tensor_avx5_mul);
     c_tensor_avx5_mul.wipe();
 
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::AVX512, true, 0), //"AVX512 Matmul With Mul Float",
             {
@@ -148,7 +149,7 @@ int main(int argc, char** argv) {
             avx512_matmul_mul_nopack_float(a_ptr, b_ptr, c_avx_mul_ptr);
         }
     }
-    c_tensor_scalar.compare(c_tensor_avx5_mul);
+    if (RUN_BASELINES) c_tensor_scalar.compare(c_tensor_avx5_mul);
     c_tensor_avx5_mul.wipe();
 
     // Convert to PoT
@@ -184,7 +185,7 @@ int main(int argc, char** argv) {
             avx512_matmul_floatbitmanipu_nopack_float_uint8(a_ptr, bp_ptr, c_avx_mul_ptr);
         }
     }
-    c_tensor_scalar.compare(c_tensor_avx5_mul);
+    if (RUN_BASELINES) c_tensor_scalar.compare(c_tensor_avx5_mul);
 
     return 0;
 }

@@ -404,6 +404,7 @@ int main(int argc, char** argv) {
     #else
     std::cout << "AUTOTUNE_BASELINE_KERNELS: NO" << std::endl;
     #endif
+    std::cout << "RUN_BASELINES: " << RUN_BASELINES << std::endl;
 
     const size_t _out_height = GetOutHeight(input_height, kernel_height, stride_y);
     const size_t _out_width = GetOutWidth(input_width, kernel_width, stride_x);
@@ -441,78 +442,76 @@ int main(int argc, char** argv) {
     init(input_ptr, channel_in * input_height * input_width, true);
     init(kernel_ptr, channel_out * channel_in * kernel_height * kernel_width, true);
 
-    if (!SKIP_SCALAR_AND_VERIFICATION) {
-        wipe(c_scalar_noautovec_ptr, channel_out * _out_height * _out_width);
-        {
-            timer_stats tp(
-                get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Direct OCHW Conv2D With Mul NoAutovec",
-                {
-                  {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
-                  {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
-                  {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
-                  {"UNROLL_FACTOR3", UNROLL_FACTOR3_BASELINE},
-                  {"I_H", I_H_DEFAULT},
-                  {"I_W", I_W_DEFAULT},
-                  {"K_H", K_H_DEFAULT},
-                  {"K_W", K_W_DEFAULT},
-                  {"C_I", C_I_DEFAULT},
-                  {"C_O", C_O_DEFAULT},
-                  {"S_X", S_X_DEFAULT},
-                  {"S_Y", S_Y_DEFAULT}
-                },
-                !true
-            );
-            for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
-                timer_scope ts(tp);
-                conv2d_direct_padding_ochw_scalar_noautovec(
-                    input_ptr, kernel_ptr, c_scalar_noautovec_ptr,
-                    input_height, input_width, channel_in, channel_out,
-                    kernel_height, kernel_width, stride_x, stride_y,
-                    true, false
-                );
-            }
-        }
-        // no need to verify, this is our gold.
 
-        std::cout << "Preparing to launch..." << std::endl;
-        wipe(c_scalar_autovec_ptr, channel_out * _out_height * _out_width);
-        {
-            timer_stats tp(
-                get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Direct OCHW Conv2D With Mul Autovec",
-                {
-                  {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
-                  {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
-                  {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
-                  {"UNROLL_FACTOR3", UNROLL_FACTOR3_BASELINE},
-                  {"I_H", I_H_DEFAULT},
-                  {"I_W", I_W_DEFAULT},
-                  {"K_H", K_H_DEFAULT},
-                  {"K_W", K_W_DEFAULT},
-                  {"C_I", C_I_DEFAULT},
-                  {"C_O", C_O_DEFAULT},
-                  {"S_X", S_X_DEFAULT},
-                  {"S_Y", S_Y_DEFAULT}
-                },
-                !true
+    wipe(c_scalar_noautovec_ptr, channel_out * _out_height * _out_width);
+    if (RUN_BASELINES) {
+        timer_stats tp(
+            get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Direct OCHW Conv2D With Mul NoAutovec",
+            {
+              {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
+              {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
+              {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
+              {"UNROLL_FACTOR3", UNROLL_FACTOR3_BASELINE},
+              {"I_H", I_H_DEFAULT},
+              {"I_W", I_W_DEFAULT},
+              {"K_H", K_H_DEFAULT},
+              {"K_W", K_W_DEFAULT},
+              {"C_I", C_I_DEFAULT},
+              {"C_O", C_O_DEFAULT},
+              {"S_X", S_X_DEFAULT},
+              {"S_Y", S_Y_DEFAULT}
+            },
+            !true
+        );
+        for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
+            timer_scope ts(tp);
+            conv2d_direct_padding_ochw_scalar_noautovec(
+                input_ptr, kernel_ptr, c_scalar_noautovec_ptr,
+                input_height, input_width, channel_in, channel_out,
+                kernel_height, kernel_width, stride_x, stride_y,
+                true, false
             );
-            for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
-                timer_scope ts(tp);
-                conv2d_direct_padding_ochw_scalar_autovec(
-                    input_ptr, kernel_ptr, c_scalar_autovec_ptr,
-                    input_height, input_width, channel_in, channel_out,
-                    kernel_height, kernel_width, stride_x, stride_y,
-                    true, false
-                );
-            }
         }
-        // no need to verify, this is our gold.
-    } else {
-        std::cout << "WARNING: SKIP_SCALAR_AND_VERIFICATION is enabled. Skipping scalar runs." << std::endl;
     }
+    // no need to verify, this is our gold.
+
+    std::cout << "Preparing to launch..." << std::endl;
+    wipe(c_scalar_autovec_ptr, channel_out * _out_height * _out_width);
+    if (RUN_BASELINES) {
+        timer_stats tp(
+            get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Direct OCHW Conv2D With Mul Autovec",
+            {
+              {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
+              {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
+              {"UNROLL_FACTOR2", UNROLL_FACTOR2_BASELINE},
+              {"UNROLL_FACTOR3", UNROLL_FACTOR3_BASELINE},
+              {"I_H", I_H_DEFAULT},
+              {"I_W", I_W_DEFAULT},
+              {"K_H", K_H_DEFAULT},
+              {"K_W", K_W_DEFAULT},
+              {"C_I", C_I_DEFAULT},
+              {"C_O", C_O_DEFAULT},
+              {"S_X", S_X_DEFAULT},
+              {"S_Y", S_Y_DEFAULT}
+            },
+            !true
+        );
+        for (volatile size_t i = 0; i < RUNS_SCALAR; i++) {
+            timer_scope ts(tp);
+            conv2d_direct_padding_ochw_scalar_autovec(
+                input_ptr, kernel_ptr, c_scalar_autovec_ptr,
+                input_height, input_width, channel_in, channel_out,
+                kernel_height, kernel_width, stride_x, stride_y,
+                true, false
+            );
+        }
+    }
+    // no need to verify, this is our gold.
+
 
     std::cout << "Preparing to launch..." << std::endl;
     wipe(c_avx_mul_ptr, channel_out * _out_height * _out_width);
-    {
+    if (RUN_BASELINES) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0), //"Vectorized Direct OCHW Conv2D With MUL AVX2",
             {
@@ -539,7 +538,7 @@ int main(int argc, char** argv) {
             );
         }
     }
-    verify_results_ohw(c_scalar_noautovec_ptr, c_avx_mul_ptr, _out_height, _out_width, channel_out);
+    if (RUN_BASELINES) verify_results_ohw(c_scalar_noautovec_ptr, c_avx_mul_ptr, _out_height, _out_width, channel_out);
 
 
     std::cout << "Preparing to launch..." << std::endl;
@@ -571,7 +570,7 @@ int main(int argc, char** argv) {
             );
         }
     }
-    verify_results_ohw(c_scalar_noautovec_ptr, c_avx_shift_ptr, _out_height, _out_width, channel_out);
+    if (RUN_BASELINES) verify_results_ohw(c_scalar_noautovec_ptr, c_avx_shift_ptr, _out_height, _out_width, channel_out);
 
     free(input_ptr);
     free(kernel_ptr);

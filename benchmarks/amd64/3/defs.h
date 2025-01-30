@@ -93,6 +93,12 @@ constexpr int S_Y_DEFAULT = 1;
 #define FLAG_AUTOTUNE_DISABLED 0
 #endif
 
+#ifndef ONLY_RUN_OURS
+#define RUN_BASELINES 1
+#else
+#define RUN_BASELINES 0
+#endif
+
 // do not change these values
 constexpr int input_height = I_H;
 constexpr int input_width = I_W;
