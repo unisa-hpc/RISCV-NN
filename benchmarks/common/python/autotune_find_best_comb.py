@@ -74,6 +74,13 @@ def get_best_config_shared_combination_for_each_benchId(dumps_dir: str, benchid:
                 configs_and_runtimes[key].append((filtered_conf, median_runtime))
 
             for (name, hw, N), configurations in configs_and_runtimes.items():
+                ####################################
+                # IMPORTANT:
+                # Filter out anything that is not an `ours` kernel.
+                if 'ours' not in name:
+                    continue
+                ####################################
+
                 sorted_configs = sorted(configurations, key=lambda x: x[1])
                 best_config, best_runtime = sorted_configs[0]
 
