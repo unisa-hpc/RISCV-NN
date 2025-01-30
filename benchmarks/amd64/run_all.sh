@@ -1,9 +1,18 @@
 # exit on failure
 set -e
 
+log_file="/tmp/progressRunAllAmd64_$(date '+%Y%m%d_%H%M%S').log"
+exec &> >(tee -a "$log_file")
+
 # Check if there is at least one argument supplied
 if [ $# -lt 1 ]; then
     echo "Usage: $0 machine_name"
+    exit 1
+fi
+
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo "jq could not be found. Please install jq."
     exit 1
 fi
 
