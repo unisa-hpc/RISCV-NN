@@ -56,7 +56,9 @@ run_benchmark() {
                         echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
                         echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
                         echo "Benchmarking for Unroll Factors: $i0, $i1, $i2 and N of $n."
-                        bash "$build_script" --machine=$machine "$compiler" "-DAUTOTUNE_BASELINE_KERNELS -DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n $args"
+
+                        # Define ONLY_RUN_OURS to save time skipping the baseline kernels.
+                        bash "$build_script" --machine=$machine "$compiler" "-DAUTOTUNE_BASELINE_KERNELS -DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n -DONLY_RUN_OURS $args"
                     done
                 done
             done
