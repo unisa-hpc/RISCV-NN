@@ -121,7 +121,7 @@ if __name__ == '__main__':
     parser.add_argument('--dumps-dir', type=str, required=True)
     parser.add_argument('--benchid', type=str, required=True)
     args = parser.parse_args()
-    get_best_config(
+    get_best_config_shared_combination_for_each_benchId(
         args.dumps_dir,
         args.benchid,
         (pathlib.Path(args.dumps_dir)/"autotuner.json").__str__(),
