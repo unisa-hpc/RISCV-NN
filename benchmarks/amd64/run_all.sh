@@ -57,12 +57,12 @@ process_benchmark() {
     cd $bench_id
     if [ "$delete_dumps" = true ]; then
         echo "Deleting dumps for benchmark $bench_id..."
-        bash runme.sh --machine=$machine "$compiler" -d
+        bash runme.sh "$machine" "$compiler" -d
     fi
     echo "Running auto-tune for benchmark $bench_id with compiler $compiler..."
-    bash runme.sh --machine=$machine "$compiler" --auto-tune
+    bash runme.sh "$machine" "$compiler" --auto-tune
     echo "Running final compilation for benchmark $bench_id with compiler $compiler..."
-    bash runme.sh --machine=$machine "$compiler"
+    bash runme.sh "$machine" "$compiler"
     cd ..
 }
 

@@ -1,102 +1,118 @@
 #!/bin/bash
-
 set -e
-compiler=g++
+
+# Usage: $0 <machine> <compiler> [--best] [--extra <extra>] [-d]
+#
+# Arguments:
+#   <machine>: The name of the target machine (required).
+#   <compiler>: The compiler to use (required).  Should be "g++" or "clang++" (or variations like g++-11, clang++-14).
+#   --best:    A flag indicating that the best optimization options should be used (optional).
+#   --extra <extra>: An extra string argument that can be passed to the script (optional).
+#   -d:       A flag indicating that some files should be deleted (optional).
+#
+# Example:
+#   ./script.sh mymachine g++ --best --extra "-O3 -Wall" -d
+
 
 # Dynamically set compiler flags based on compiler type
 function set_compiler_flags() {
     local compiler_path="$1"
     local extra_flags="$2"
+    local is_gcc_flag="$3"
+    local is_clang_flag="$4"
     echo "Compiler passed to set_compiler_flags: $compiler_path"
 
-    # Extract compiler basename from path
-    local compiler_name=$(basename "$compiler_path")
-
-    # G++ flags
-    if [[ "$compiler_name" =~ ^g\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
+    # Check is_gcc_flag and is_clang_flag
+    if [[ "$is_gcc_flag" -eq 1 ]]; then
         echo "Using G++ compatible flags."
         flags_main="-O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_vec="-c -O3 -march=rv64gcv -DAUTOVEC -fopt-info-vec-all -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_novec="-c -O3 -march=rv64gcv -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
-    elif [[ "$compiler_name" =~ ^clang\+\+(|-[0-9]+([.][0-9]+)*)$ ]]; then
+    elif [[ "$is_clang_flag" -eq 1 ]]; then
         echo "Using Clang++ compatible flags."
         flags_main="-O3 -march=rv64gcv -fno-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=rv64gcv -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_vec="-c -O3 -march=rv64gcv -DAUTOVEC -fvectorize -Rpass=loop-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_novec="-c -O3 -march=rv64gcv -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
     else
-        echo "Error: Unrecognized compiler '$compiler_name'. Must be g++ or clang++ (with optional version number)"
+        echo "Error: Unrecognized compiler '$compiler_path'. Must be g++ or clang++ (with optional version number)"
         exit 1
     fi
 }
+
+# Parse the command-line arguments and export these variables: machine, compiler, flag_best, flag_delete, extra, is_gcc, is_clang
+parse_arguments() {
+    machine="$1"
+    compiler="$2"
+    flag_best=0
+    flag_delete=0
+    extra=""
+    is_gcc=0
+    is_clang=0
+
+    # Shift the positional arguments
+    shift 2
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --best)
+                flag_best=1
+                shift
+                ;;
+            --extra)
+                extra="$2"
+                shift 2
+                ;;
+            -d)  # Handle the -d option
+                flag_delete=1
+                shift
+                ;;
+            *)
+                echo "Invalid argument: $1"
+                exit 1
+                ;;
+        esac
+    done
+
+    # Check for GCC variants
+    if [[ "$compiler" == *"clang++"* ]]; then
+        is_gcc=0
+        is_clang=1
+    elif [[ "$compiler" == *"g++"* ]]; then
+        is_gcc=1
+        is_clang=0
+    fi
+
+    echo "## Parsed build script arguments:"
+    echo "## Machine: $machine"
+    echo "## Compiler: $compiler"
+    echo "## Flag Best: $flag_best"
+    echo "## Flag Del: $flag_delete"
+    echo "## Extra: $extra"
+    echo "## Is GCC: $is_gcc"
+    echo "## Is Clang: $is_clang"
+}
+
+# Check for mandatory arguments
+if [[ $# -lt 2 ]]; then
+    echo "Usage: $0 <machine> <compiler> [--best] [--extra <extra>] [-d]"
+    exit 1
+fi
+
+# Call the function to parse and process arguments
+# machine, compiler, flag_best, flag_delete, extra, is_gcc, is_clang
+parse_arguments "$@"
+
+# Use the parsed variables
+
 
 # get the path to the symlinked script (not the real file, the symlink's path)
 script_dir=$(dirname "$0")
 dump_dir="$script_dir/../../dumps"
 dump_dir=$(realpath "$dump_dir")
-delete_dumps=false
 source "$script_dir/../../common/utils.bash"
 
-# Process all arguments: handle -d, compiler, and machine arguments
-machine=""
-best=false  # Add flag for --best option
-extra_flags=""
-
-# Process all arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --machine=*)
-            machine="${1#*=}"
-            shift
-            ;;
-        --best)
-            best=true
-            shift
-            ;;
-        -d)
-            delete_dumps=true
-            shift
-            ;;
-        -D*|[-+][A-Za-z]*|-[A-Za-z]*=[A-Za-z0-9]*)
-            # Handle compiler flags that start with -D or other common flag patterns
-            if [[ -z "$extra_flags" ]]; then
-                extra_flags="$1"
-            else
-                extra_flags="$extra_flags $1"
-            fi
-            shift
-            ;;
-        *)
-            # Check if the argument is a compiler path
-            if [[ -x "$1" ]] && [[ $(basename "$1") =~ ^(g\+\+|clang\+\+)(-[0-9]+([.][0-9]+)*)?$ ]]; then
-                if command -v "$1" &> /dev/null; then
-                    compiler="$1"
-                else
-                    echo "Error: Compiler '$1' not found"
-                    exit 1
-                fi
-            else
-                # If not a compiler and extra_flags is empty, treat as extra flags
-                if [[ -z "$extra_flags" ]]; then
-                    extra_flags="$1"
-                else
-                    extra_flags="$extra_flags $1"
-                fi
-            fi
-            shift
-            ;;
-    esac
-done
-
-# Check if machine argument was provided
-if [ -z "$machine" ]; then
-    echo "Error: --machine argument is mandatory"
-    echo "Usage: $0 --machine=<string> [--best] [-d] [/path/to/g++|/path/to/clang++] [extra_flags]"
-    echo "Required: machine"
-    echo "Optional: --best, -d, path to g++/clang++ (with optional suffix), extra_flags"
-    exit 1
-fi
 
 sources_main="main.cpp"
 sources_vec="vectorized.cpp"
@@ -119,14 +135,14 @@ echo "sources_main: $sources_main"
 echo "abs_main: $abs_main"
 benchId=$(basename "$(dirname "$abs_main")")
 
-if [ "$delete_dumps" = true ]; then
+if [[ "$flag_delete" -eq 1 ]]; then
   echo "Deleting..."
   rm -rf "$new_dump_dir"
   delete_flag_handling "$dump_dir/benchId${benchId}.txt" "$dump_dir" "$machine" "$compiler"
 fi
 
 # Set compiler flags dynamically
-set_compiler_flags "$compiler" "$extra_flags"
+set_compiler_flags "$compiler" "$extra" "$is_gcc" "$is_clang"
 
 {
   compiler_version=$($compiler --version | head -n 1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -175,7 +191,7 @@ set_compiler_flags "$compiler" "$extra_flags"
 
   # Append the new dump dir to the text file dumps directory
   is_best_or_autotune=""
-  if [ "$best" = true ]; then
+  if [[ "$flag_best" -eq 1 ]]; then
     is_best_or_autotune="best"
   else
     is_best_or_autotune="autotune"
