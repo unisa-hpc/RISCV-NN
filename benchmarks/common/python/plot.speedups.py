@@ -52,7 +52,6 @@ class PlotSpeedUps:
             self.load_data()
         self._preprocess_add_columns()
 
-
     def _preprocess_add_columns(self):
         """
         Add a column to the raw data that is a combination of the name and hw.
@@ -63,7 +62,7 @@ class PlotSpeedUps:
             self.proc_data['compiler']
 
         self.proc_data['benchId_hw_compiler_name'] = \
-            self.proc_data['benchId'].astype(str)  + ';;' + \
+            self.proc_data['benchId'].astype(str) + ';;' + \
             self.proc_data['hw'] + ';;' + \
             self.proc_data['compiler'] + ';;' + \
             translate_codename_to(self.proc_data['name'])
@@ -97,12 +96,12 @@ class PlotSpeedUps:
                         (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                         (self.proc_data['name'].str.contains("SAV")) &
                         (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
-                    ]
+                        ]
                     sna_rows = self.proc_data.loc[
                         (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                         (self.proc_data['name'].str.contains("SNA")) &
                         (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
-                    ]
+                        ]
                     sav_rows.reset_index(drop=True, inplace=True)
                     sna_rows.reset_index(drop=True, inplace=True)
                     # assert that the num of rows is the same
@@ -123,21 +122,21 @@ class PlotSpeedUps:
                             (self.proc_data['run_type'] == 'best') &
                             (self.proc_data['name'].str.contains("AVX2")) &
                             (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
-                        ]
+                            ]
                         avx512_rows = self.proc_data.loc[
                             (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
                             (self.proc_data['name'].str.contains("AVX512")) &
                             (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
-                        ]
+                            ]
                         sna_rows = self.proc_data.loc[
                             (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
                             (self.proc_data['run_type'] == 'best') &
                             (self.proc_data['name'].str.contains("SNA")) &
                             (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
-                        ]
+                            ]
 
                         avx2_rows.reset_index(drop=True, inplace=True)
                         avx512_rows.reset_index(drop=True, inplace=True)
@@ -186,7 +185,7 @@ class PlotSpeedUps:
                             (self.proc_data['name'].str.contains("AVX512")) &
                             (self.proc_data['name'].str.contains("ours")) &
                             (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
-                        ]
+                            ]
                         avx512_baseline_rows = self.proc_data.loc[
                             (self.proc_data['benchId_hw_compiler'] == bid_hw_compiler) &
                             (self.proc_data['N'] == unique_n) &
@@ -194,7 +193,7 @@ class PlotSpeedUps:
                             (self.proc_data['name'].str.contains("AVX512")) &
                             (self.proc_data['name'].str.contains("base")) &
                             (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
-                        ]
+                            ]
                         if avx512_ours_rows.empty or avx512_baseline_rows.empty:
                             print(
                                 f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data avx512_ours_rows or avx512_baseline_rows.")
@@ -206,8 +205,8 @@ class PlotSpeedUps:
                         avx512_ours_rows.loc[:, 'data_point'] = avx512_baseline_rows['data_point'] / avx512_ours_rows[
                             'data_point']  # speed up is ()^-1
                         avx512_ours_rows.loc[:, 'speedup_type'] = 'speedup_vv'
-                        self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx512_ours_rows], ignore_index=True)
-
+                        self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx512_ours_rows],
+                                                           ignore_index=True)
 
                 # auto-tuning gain
                 for bid_hw_compiler in unique_bid_hw_compiler:
@@ -237,8 +236,9 @@ class PlotSpeedUps:
                         avx512_ours_no_autotune_rows.reset_index(drop=True, inplace=True)
                         # assert that the num of rows is the same
                         assert avx512_ours_rows.shape[0] == avx512_ours_no_autotune_rows.shape[0]
-                        avx512_ours_rows.loc[:, 'data_point'] = avx512_ours_no_autotune_rows['data_point'] / avx512_ours_rows[
-                            'data_point']  # speed up is ()^-1
+                        avx512_ours_rows.loc[:, 'data_point'] = avx512_ours_no_autotune_rows['data_point'] / \
+                                                                avx512_ours_rows[
+                                                                    'data_point']  # speed up is ()^-1
                         avx512_ours_rows.loc[:, 'speedup_type'] = 'autotuning_gain'
                         self.proc_data_speedup = pd.concat([self.proc_data_speedup, avx512_ours_rows],
                                                            ignore_index=True)
@@ -307,10 +307,10 @@ class PlotSpeedUps:
                                 print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data rvv_rows.")
 
                         ## some benchmarks only have avx512 or avx2 data
-                        #if rvv_rows.empty:
+                        # if rvv_rows.empty:
                         #    print(f"Skipping N={unique_n} for {bid_hw_compiler} due to missing data rvv_rows.")
                         #    continue
-                        #else:
+                        # else:
                         #    rvv_rows['data_point'] = sna_rows['data_point'].iloc[0] / rvv_rows['data_point']
                         #    rvv_rows = rvv_rows.assign(speedup_type='speedup_vs')
                         #    self.proc_data_speedup = pd.concat([self.proc_data_speedup, rvv_rows], ignore_index=True)
@@ -378,8 +378,8 @@ class PlotSpeedUps:
                         # assert that the num of rows is the same
                         assert rvv_ours_rows.shape[0] == rvv_ours_no_autotune_rows.shape[0]
                         rvv_ours_rows.loc[:, 'data_point'] = rvv_ours_no_autotune_rows['data_point'] / \
-                                                                rvv_ours_rows[
-                                                                    'data_point']  # speed up is ()^-1
+                                                             rvv_ours_rows[
+                                                                 'data_point']  # speed up is ()^-1
                         rvv_ours_rows.loc[:, 'speedup_type'] = 'autotuning_gain'
                         self.proc_data_speedup = pd.concat([self.proc_data_speedup, rvv_ours_rows],
                                                            ignore_index=True)
@@ -402,7 +402,6 @@ class PlotSpeedUps:
             self.proc_data_speedup['hw'] + ';;' + \
             self.proc_data_speedup['compiler'] + ';;' + \
             self.proc_data_speedup['speedup_type']
-
 
     def plotgen_runtimes_all(self):
         """
@@ -449,12 +448,12 @@ class PlotSpeedUps:
         for p in barplot.patches:
             if p.get_height() > 0:
                 barplot.annotate(format(p.get_height(), '.3f'),
-                             (p.get_x() + p.get_width() / 2., p.get_height()),
-                             ha='left', va='center',
-                             xytext=(-3, 15),
-                             textcoords='offset points',
-                             rotation=90,
-                             fontsize=6)
+                                 (p.get_x() + p.get_width() / 2., p.get_height()),
+                                 ha='left', va='center',
+                                 xytext=(-3, 15),
+                                 textcoords='offset points',
+                                 rotation=90,
+                                 fontsize=6)
 
         # Customize the plot
         plt.title(f"Runtimes for N={n}")
@@ -463,7 +462,7 @@ class PlotSpeedUps:
         plt.ylabel("Runtime (ms)")
         lgd = plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)  # Adjust the bottom margin
-        #plt.show()
+        # plt.show()
         plt.savefig(f"{self.dir_out}/runtime_N_{n}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     def plotgen_speedups_all(self):
@@ -492,7 +491,7 @@ class PlotSpeedUps:
             hue='benchId_hw_compiler',
             palette='viridis',
             order=order,
-            dodge=False, # Do not set this to true. It will cause offset to the bars.
+            dodge=False,  # Do not set this to true. It will cause offset to the bars.
             ci=95,  # Show 95% confidence intervals
             capsize=0.05  # Add caps to the error bars
         )
@@ -516,8 +515,57 @@ class PlotSpeedUps:
         lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)
         plt.tight_layout()
-        #plt.show()
+        # plt.show()
         plt.savefig(f"{self.dir_out}/speedup_N_{n}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+    def plotgen_speedups_over_N_all(self):
+        """
+        Generate the plot of speedups_vv (the most sensible vv case) over N for all the benchmarks, hw, and compilers.
+        """
+
+        self.preprocess_data()
+
+        # Prepare the dataframe for the plot
+        speedups_over_N = self.proc_data_speedup.copy()
+        speedups_over_N = speedups_over_N[0:0]  # clear the rows
+
+        for bench_id in self.proc_data_speedup['benchId'].unique():
+            for hw in self.proc_data_speedup['hw'].unique():
+                for compiler in self.proc_data_speedup['compiler'].unique():
+                    if bench_id in [7, 8, 5, 6]:
+                        # For these benchIds we only have 1 entry of speedup_vv, so we can just take any speed_vv entry.
+                        masked_data = self.proc_data_speedup[
+                            (self.proc_data_speedup['benchId'] == bench_id) &
+                            (self.proc_data_speedup['hw'] == hw) &
+                            (self.proc_data_speedup['compiler'] == compiler) &
+                            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
+                            ]
+                        speedups_over_N = pd.concat([speedups_over_N, masked_data], ignore_index=True)  # concat
+                    else:
+                        print(f"Skipping benchId={bench_id} for speedups_over_N.")
+                        continue
+
+        fig = plt.figure(figsize=(8, 6))
+        lineplot = sns.lineplot(
+            data=speedups_over_N,
+            x='N',
+            y='data_point',
+            hue='benchId_hw_compiler',
+            palette='viridis',
+            ci=95,  # Show 95% confidence intervals
+            markers=True,
+            dashes=False
+        )
+        plt.title("Speedup_vv Over N")
+        plt.xlabel("N")
+        plt.xticks(rotation=90, fontsize=7)
+        plt.ylabel("Speedup_vv")
+        lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.subplots_adjust(bottom=0.5, right=0.8)
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig(f"{self.dir_out}/speedup_vv_over_N.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
+
 
 if __name__ == '__main__':
     # accept multiple instances of --dumps arguments
@@ -529,3 +577,4 @@ if __name__ == '__main__':
     obj = PlotSpeedUps(dumps, '/tmp')
     obj.plotgen_runtimes_all()
     obj.plotgen_speedups_all()
+    obj.plotgen_speedups_over_N_all()
