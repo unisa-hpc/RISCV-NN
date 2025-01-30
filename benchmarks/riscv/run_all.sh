@@ -53,7 +53,7 @@ process_benchmark() {
 }
 
 # Process each benchmark
-for bench_id in 1 5 6; do
+for bench_id in 5 6; do
     for compiler in "${compilers[@]}"; do
         process_benchmark $bench_id "$compiler"
     done
