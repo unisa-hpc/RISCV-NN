@@ -19,7 +19,7 @@ mkdir -p ../dumps
 machine=$1
 
 # Array of compiler executable names
-compilers=("/usr/bin/g++-14" "/usr/bin/g++-13" "/usr/bin/clang++-18" "/usr/bin/clang++-17")
+compilers=("/usr/bin/g++-14" "/usr/bin/clang++-18" "/usr/bin/clang++-17") # GCC13.2 does not support LMUL, so it is not included
 for i in "${!compilers[@]}"; do
   echo "** Index: $i, Compiler Path: ${compilers[$i]}"
 done
