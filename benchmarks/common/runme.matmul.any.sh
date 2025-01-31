@@ -129,21 +129,63 @@ run_benchmark() {
         index=0
         total_benchmarks=$(( ${#range_n[@]} * ${#range_i0[@]} * ${#range_i1[@]} * ${#range_i2[@]} ))
 
-        for n in "${range_n[@]}"; do
-            for i0 in "${range_i0[@]}"; do
-                for i1 in "${range_i1[@]}"; do
-                    for i2 in "${range_i2[@]}"; do
-                        index=$((index+1))
-                        echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
-                        echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
-                        echo "Benchmarking for Unroll Factors: $i0, $i1, $i2 and N of $n."
+        # amd64 auto-tuning
+        if [[ "$arch_type" == "amd64" ]]; then
+            echo "Running the autotuner for the amd64 architecture."
+            for n in "${range_n[@]}"; do
+                for i0 in "${range_i0[@]}"; do
+                    for i1 in "${range_i1[@]}"; do
+                        for i2 in "${range_i2[@]}"; do
+                            index=$((index+1))
+                            echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
+                            echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
+                            echo "Benchmarking for Unroll Factors: $i0, $i1, $i2 and N of $n."
 
-                        # Define ONLY_RUN_OURS to save time skipping the baseline kernels.
-                        bash "$build_script" "$machine" "$compiler" --extra "-DAUTOTUNE_BASELINE_KERNELS -DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n -DONLY_RUN_OURS $extra"
+                            # Define ONLY_RUN_OURS to save time skipping the baseline kernels.
+                            bash "$build_script" "$machine" "$compiler" --extra "-DAUTOTUNE_BASELINE_KERNELS -DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n -DONLY_RUN_OURS $extra"
+                        done
                     done
                 done
             done
-        done
+        fi
+
+        if [[ "$arch_type" == "riscv"  ]]; then
+            echo "Running the autotuner for the riscv64 architecture."
+            for force_vls in 0 1; do
+                for n in "${range_n[@]}"; do
+                    for i0 in "${range_i0[@]}"; do
+                        for i1 in "${range_i1[@]}"; do
+                            for i2 in "${range_i2[@]}"; do
+                                index=$((index+1))
+                                echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
+                                echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
+                                echo "Benchmarking for Unroll Factors: $i0, $i1, $i2 and N of $n."
+
+                                vls_flag=""
+                                if [[ "$force_vls" -eq 1 ]]; then
+                                    if [[ "$is_gcc" -eq 1 ]]; then
+                                        # for gcc
+                                        vls_flag="-mrvv-vector-bits=zvl"
+                                    elif [[ "$is_clang" -eq 1 ]]; then
+                                        # for clang
+                                        vls_flag="-mrvv-vector-bits=256"
+                                    else
+                                        echo "Error: Unsupported compiler."
+                                        exit 1
+                                    fi
+                                fi
+
+                                echo "VLS compiler flag: $vls_flag"
+
+                                # Define ONLY_RUN_OURS to save time skipping the baseline kernels.
+                                bash "$build_script" "$machine" "$compiler" --extra "$vls_flag -DAUTOTUNE_BASELINE_KERNELS -DUNROLL_FACTOR0=$i0 -DUNROLL_FACTOR1=$i1 -DUNROLL_FACTOR2=$i2 -DN=$n -DONLY_RUN_OURS $extra"
+                            done
+                        done
+                    done
+                done
+            done
+        fi
+
     else
         # run with the best configuration found by the autotuner
         for n in "${range_n[@]}"; do
