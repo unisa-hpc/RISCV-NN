@@ -25,10 +25,10 @@ function set_compiler_flags() {
     # Check is_gcc_flag and is_clang_flag
     if [[ "$is_gcc_flag" -eq 1 ]]; then
         echo "Using G++ compatible flags."
-        flags_main="-O3 -march=rv64gcv_zvl256b -ffast-math -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
-        flags_vec="-c -O3 -march=rv64gcv_zvl256b -ffast-math -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
-        flags_scalar_vec="-c -O3 -march=rv64gcv_zvl256b -ffast-math -DAUTOVEC -fopt-info-vec-all -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
-        flags_scalar_novec="-c -O3 -march=rv64gcv_zvl256b -ffast-math -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_main="-O3 -march=rv64gcv_zvl256b -ffast-math  -mrvv-max-lmul=dynamic -fno-tree-vectorize -fno-tree-slp-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_vec="-c -O3 -march=rv64gcv_zvl256b -ffast-math  -mrvv-max-lmul=dynamic -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_scalar_vec="-c -O3 -march=rv64gcv_zvl256b -ffast-math -mrvv-max-lmul=dynamic -DAUTOVEC -fopt-info-vec-all -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_scalar_novec="-c -O3 -march=rv64gcv_zvl256b -ffast-math -mrvv-max-lmul=dynamic -fno-tree-vectorize -fno-tree-slp-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
     elif [[ "$is_clang_flag" -eq 1 ]]; then
         echo "Using Clang++ compatible flags."
         flags_main="-O3 -march=rv64gcv_zvl256b -ffast-math -fno-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
