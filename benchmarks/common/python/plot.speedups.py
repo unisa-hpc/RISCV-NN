@@ -403,7 +403,7 @@ class PlotSpeedUps:
             self.proc_data_speedup['compiler'] + ';;' + \
             self.proc_data_speedup['speedup_type']
 
-    def plotgen_runtimes_all(self):
+    def plotgen_runtimes_all(self, reversed_text_order=False):
         """
         Generate all the plots, as many as needed for the parsed data.
         """
@@ -411,9 +411,9 @@ class PlotSpeedUps:
 
         unique_n_list = self.proc_data['N'].unique()
         for n in unique_n_list:
-            self.plotgen_runtimes_one(n)
+            self.plotgen_runtimes_one(n, reversed_text_order)
 
-    def plotgen_runtimes_one(self, n: int):
+    def plotgen_runtimes_one(self, n: int, reversed_text_order=False):
         """
         Generate a plot for a specific N.
         """
@@ -431,7 +431,15 @@ class PlotSpeedUps:
         unique_bars = sorted(unique_bars)
 
         plt.figure(figsize=(12, 6))
-        order = sorted(masked_data['benchId_hw_compiler_name'].unique())
+
+        # reversed-text sorting
+        if reversed_text_order:
+            uniques = masked_data['benchId_hw_compiler_name'].unique()
+            reversed_uniques = [x[::-1] for x in uniques]
+            reversed_uniques.sort()
+            order = [x[::-1] for x in reversed_uniques]
+        else:
+            order = sorted(masked_data['benchId_hw_compiler_name'].unique())
 
         barplot = sns.barplot(
             data=masked_data,
@@ -463,9 +471,9 @@ class PlotSpeedUps:
         lgd = plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)  # Adjust the bottom margin
         # plt.show()
-        plt.savefig(f"{self.dir_out}/runtime_N_{n}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(f"{self.dir_out}/runtime_N_{n}_{reversed_text_order}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
-    def plotgen_speedups_all(self):
+    def plotgen_speedups_all(self, reversed_text_order=False):
         """
         Generate all the plots, as many as needed for the parsed data.
         """
@@ -473,16 +481,24 @@ class PlotSpeedUps:
 
         unique_n_list = self.proc_data_speedup['N'].unique()
         for n in unique_n_list:
-            self.plotgen_speedups_one(n)
+            self.plotgen_speedups_one(n, reversed_text_order)
 
-    def plotgen_speedups_one(self, n: int):
+    def plotgen_speedups_one(self, n: int, reversed_text_order=False):
         # Extract the rows that have the specific N
         masked_data = self.proc_data_speedup[
             (self.proc_data_speedup['N'] == n)
         ]
 
         fig = plt.figure(figsize=(6, 6))
-        order = sorted(masked_data['benchId_hw_compiler_name_speeduptype'].unique())
+
+        # reversed-text sorting
+        if reversed_text_order:
+            uniques = masked_data['benchId_hw_compiler_name_speeduptype'].unique()
+            reversed_uniques = [x[::-1] for x in uniques]
+            reversed_uniques.sort()
+            order = [x[::-1] for x in reversed_uniques]
+        else:
+            order = sorted(masked_data['benchId_hw_compiler_name_speeduptype'].unique())
 
         barplot = sns.barplot(
             data=masked_data,
@@ -516,7 +532,7 @@ class PlotSpeedUps:
         plt.subplots_adjust(bottom=0.5, right=0.8)
         plt.tight_layout()
         # plt.show()
-        plt.savefig(f"{self.dir_out}/speedup_N_{n}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(f"{self.dir_out}/speedup_N_{n}_{reversed_text_order}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     def plotgen_speedups_over_N_all(self):
         """
@@ -575,6 +591,8 @@ if __name__ == '__main__':
     dumps = args.dumps
 
     obj = PlotSpeedUps(dumps, '/tmp')
-    obj.plotgen_runtimes_all()
-    obj.plotgen_speedups_all()
+    obj.plotgen_runtimes_all(reversed_text_order=True)
+    obj.plotgen_runtimes_all(reversed_text_order=False)
+    obj.plotgen_speedups_all(reversed_text_order=True)
+    obj.plotgen_speedups_all(reversed_text_order=False)
     obj.plotgen_speedups_over_N_all()
