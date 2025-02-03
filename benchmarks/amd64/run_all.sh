@@ -47,7 +47,8 @@ else
     delete_dumps=false
 fi
 
-pip install --user argparse pandas colorama pathlib matplotlib numpy seaborn
+# For amd64, this is taken care of by `scripts/deps.amd64.sh`
+#pip install --user argparse pandas colorama pathlib matplotlib numpy seaborn
 
 # Function to process each benchmark
 process_benchmark() {
