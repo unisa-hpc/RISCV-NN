@@ -21,6 +21,12 @@ if [ ! -d "$spack_dir" ]; then
     echo "Spack not found. Installing it in $spack_dir..."
     git clone https://github.com/spack/spack.git "$spack_dir" || exit_on_error "Failed to clone Spack repository"
 
+    SPACK_CONFIG="$HOME/.spack/config.yaml"
+    mkdir -p "$HOME/.spack"
+    THREADS=$(nproc)
+    echo -e "config:\n  jobs: $THREADS" > "$SPACK_CONFIG"
+    echo "Updated $SPACK_CONFIG with $THREADS jobs"
+
     # Source Spack environment setup for subsequent commands
     source "$spack_dir/share/spack/setup-env.sh"
 
@@ -28,12 +34,12 @@ if [ ! -d "$spack_dir" ]; then
     echo "Installing specified LLVM and GCC versions..."
 
     # Install LLVM versions
-    spack install llvm@18.1.8 || exit_on_error "Failed to install LLVM 18.1.8"
     spack install llvm@17.0.6 || exit_on_error "Failed to install LLVM 17.0.6"
+    spack install llvm@18.1.8 || exit_on_error "Failed to install LLVM 18.1.8"
 
     # Install GCC versions
-    spack install gcc@14.2.0 || exit_on_error "Failed to install GCC 14.2.0"
     spack install gcc@13.2.0 || exit_on_error "Failed to install GCC 13.2.0"
+    spack install gcc@14.2.0 || exit_on_error "Failed to install GCC 14.2.0"
 fi
 
 # --- Install Miniconda (x86_64 only) ---
