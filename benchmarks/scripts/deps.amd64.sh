@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set root directory
-root_dir=~/riscvnn_rootdir
+root_dir=/run/media/saleh/LinuxData/02_workspace/RISCV-NN/benchmarks/scripts/riscvnn_rootdir
 spack_dir="$root_dir/spack"
 conda_dir="$root_dir/miniconda3"
 env_file="$root_dir/env.sh"
@@ -59,7 +59,8 @@ fi
 
 # --- Install Python Packages ---
 echo "Installing required Python packages in '$conda_env_name'..."
-"$conda_dir/bin/conda" run -n "$conda_env_name" conda install -y argparse pandas jq numpy seaborn matplotlib pathlib colorama || exit_on_error "Failed to install Python packages"
+"$conda_dir/bin/conda" run -n "$conda_env_name" conda install -y pandas jq numpy seaborn matplotlib pathlib colorama || exit_on_error "Failed to install Python packages"
+"$conda_dir/bin/conda" run -n "$conda_env_name" pip install --user argparse || exit_on_error "Failed to install Python package argparse"
 
 # --- Create env.sh ---
 echo "Creating environment setup script at $env_file..."
