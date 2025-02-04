@@ -32,6 +32,7 @@ if [ ! -d "$spack_dir" ]; then
 
     # Install specified LLVM and GCC versions
     echo "Installing specified LLVM and GCC versions..."
+    spack update || exit_on_error "Failed to update Spack"
 
     # Install LLVM versions
     spack install llvm@17.0.6 || exit_on_error "Failed to install LLVM 17.0.6"
