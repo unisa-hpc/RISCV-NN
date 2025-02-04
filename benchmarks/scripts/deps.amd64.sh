@@ -34,7 +34,7 @@ if [ ! -d "$spack_dir" ]; then
     echo "Installing specified LLVM and GCC versions..."
 
     # Install GCC versions
-    spack install gcc@13.3.0 || exit_on_error "Failed to install GCC 13.2.0"
+    spack install gcc@13.3.0 || exit_on_error "Failed to install GCC 13.3.0"
     spack install gcc@14.2.0 || exit_on_error "Failed to install GCC 14.2.0"
 
     # Install LLVM versions

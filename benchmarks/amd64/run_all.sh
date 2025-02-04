@@ -32,8 +32,8 @@ compilers+=("$(spack location -i llvm@17.0.6)/bin/clang++")
 # G++ compilers
 spack load gcc@14.2.0
 compilers+=("$(spack location -i gcc@14.2.0)/bin/g++")
-spack load gcc@13.2.0
-compilers+=("$(spack location -i gcc@13.2.0)/bin/g++")
+spack load gcc@13.3.0
+compilers+=("$(spack location -i gcc@13.3.0)/bin/g++")
 
 for i in "${!compilers[@]}"; do
   echo "** Index: $i, Compiler Path: ${compilers[$i]}"
