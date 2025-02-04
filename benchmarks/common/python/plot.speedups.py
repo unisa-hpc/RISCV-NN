@@ -102,6 +102,9 @@ class PlotSpeedUps:
                         (self.proc_data['name'].str.contains("SNA")) &
                         (self.proc_data['FLAG_AUTOTUNE_DISABLED'] == 0)
                         ]
+                    if sav_rows.empty or sna_rows.empty:
+                        print(f"Skipping {bid_hw_compiler} due to missing data sav_rows or sna_rows.")
+                        continue
                     sav_rows.reset_index(drop=True, inplace=True)
                     sna_rows.reset_index(drop=True, inplace=True)
                     # assert that the num of rows is the same
