@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set root directory
-root_dir=/run/media/saleh/LinuxData/02_workspace/RISCV-NN/benchmarks/scripts/riscvnn_rootdir
+root_dir=~/riscvnn_rootdir
 spack_dir="$root_dir/spack"
 conda_dir="$root_dir/miniconda3"
 env_file="$root_dir/env.sh"
