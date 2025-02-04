@@ -40,6 +40,8 @@ if [ ! -d "$spack_dir" ]; then
     # Install LLVM versions
     spack install llvm@17.0.6 || exit_on_error "Failed to install LLVM 17.0.6"
     spack install llvm@18.1.8 || exit_on_error "Failed to install LLVM 18.1.8"
+
+    echo "Finished installing the required compilers with Spack."
 fi
 
 # --- Install Miniconda (x86_64 only) ---
