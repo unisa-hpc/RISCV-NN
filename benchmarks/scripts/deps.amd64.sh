@@ -32,15 +32,14 @@ if [ ! -d "$spack_dir" ]; then
 
     # Install specified LLVM and GCC versions
     echo "Installing specified LLVM and GCC versions..."
-    spack update || exit_on_error "Failed to update Spack"
+
+    # Install GCC versions
+    spack install gcc@13.3.0 || exit_on_error "Failed to install GCC 13.2.0"
+    spack install gcc@14.2.0 || exit_on_error "Failed to install GCC 14.2.0"
 
     # Install LLVM versions
     spack install llvm@17.0.6 || exit_on_error "Failed to install LLVM 17.0.6"
     spack install llvm@18.1.8 || exit_on_error "Failed to install LLVM 18.1.8"
-
-    # Install GCC versions
-    spack install gcc@13.2.0 || exit_on_error "Failed to install GCC 13.2.0"
-    spack install gcc@14.2.0 || exit_on_error "Failed to install GCC 14.2.0"
 fi
 
 # --- Install Miniconda (x86_64 only) ---
