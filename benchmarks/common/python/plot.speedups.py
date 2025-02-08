@@ -564,7 +564,7 @@ class PlotSpeedUps:
                         print(f"Skipping benchId={bench_id} for speedups_over_N.")
                         continue
 
-        fig = plt.figure(figsize=(8, 6))
+        fig = plt.figure(figsize=(16, 6))
         lineplot = sns.lineplot(
             data=speedups_over_N,
             x='N',
