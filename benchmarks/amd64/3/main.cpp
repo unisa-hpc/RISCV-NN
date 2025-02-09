@@ -376,7 +376,7 @@ void init(int32_t* p, size_t len, bool PoT) {
 
 int main(int argc, char** argv) {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
-    const int RUNS_SCALAR = RUNS<=3 ? RUNS : 3;
+    const int RUNS_SCALAR = RUNS<=7 ? RUNS : 7;
 
     std::cout << "UNROLLING FACTOR 0: " << UNROLL_FACTOR0 << std::endl;
     std::cout << "UNROLLING FACTOR 1: " << UNROLL_FACTOR1 << std::endl;

@@ -34,8 +34,11 @@ void avx2_matmul_mul_nopack_float(
                 __m256 vec_a = _mm256_load_ps(ptr_a); // Load 8 float32 elements from `a`
                 __m256 vec_b = _mm256_load_ps(ptr_b); // Load 8 float32 elements from `b`
 
-                __m256 vec_mul = _mm256_mul_ps(vec_a, vec_b); // Multiply 8 elements
-                vec_s = _mm256_add_ps(vec_s, vec_mul);        // Accumulate results
+                //__m256 vec_mul = _mm256_mul_ps(vec_a, vec_b); // Multiply 8 elements
+                //vec_s = _mm256_add_ps(vec_s, vec_mul);        // Accumulate results
+
+                // using FMA
+                vec_s = _mm256_fmadd_ps(vec_a, vec_b, vec_s); // a*b+c  --> args=[a,b,c]
             }
 
             // Horizontal reduction of vec_s to get the final sum for this position
@@ -68,8 +71,11 @@ void avx512_matmul_mul_nopack_float(
                 __m512 vec_a = _mm512_load_ps(ptr_a); // Load 8 float32 elements from `a`
                 __m512 vec_b = _mm512_load_ps(ptr_b); // Load 8 float32 elements from `b`
 
-                __m512 vec_mul = _mm512_mul_ps(vec_a, vec_b); // Multiply 8 elements
-                vec_s = _mm512_add_ps(vec_s, vec_mul);        // Accumulate results
+                //__m512 vec_mul = _mm512_mul_ps(vec_a, vec_b); // Multiply 8 elements
+                //vec_s = _mm512_add_ps(vec_s, vec_mul);        // Accumulate results
+
+                // using FMA
+                vec_s = _mm512_fmadd_ps(vec_a, vec_b, vec_s); // a*b+c  --> args=[a,b,c]
             }
 
             // Horizontal reduction of vec_s to get the final sum for this position

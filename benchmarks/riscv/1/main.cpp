@@ -62,7 +62,7 @@ void init(int32_t *p, size_t len, bool PoT) {
 
 int main(int argc, char **argv) {
     constexpr size_t ALIGNMENT = 32; // 32-byte alignment
-    const int RUNS_SCALAR = RUNS<=3 ? RUNS : 3;
+    const int RUNS_SCALAR = RUNS<=7 ? RUNS : 7;
 
     std::cout << "N: " << N << std::endl;
     std::cout << "FLAG_AUTOTUNE_DISABLED: " << FLAG_AUTOTUNE_DISABLED << std::endl;

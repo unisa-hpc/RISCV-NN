@@ -32,7 +32,7 @@ extern void rvv_matmul_floatbitmanipu_packed2_float_uint8(
 
 int main(int argc, char **argv) {
     constexpr int ALIGNMENT = 32;
-    const int RUNS_SCALAR = RUNS<=3 ? RUNS : 3;
+    const int RUNS_SCALAR = RUNS<=7 ? RUNS : 7;
 
     std::cout << "N: " << N << std::endl;
     std::cout << "FLAG_AUTOTUNE_DISABLED: " << FLAG_AUTOTUNE_DISABLED << std::endl;
