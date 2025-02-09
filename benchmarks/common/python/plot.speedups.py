@@ -52,6 +52,10 @@ class PlotSpeedUps:
             self.load_data()
         self._preprocess_add_columns()
 
+        self.raw_data.to_excel(f"{self.dir_out}/raw_data.xlsx", index=False)
+        self.proc_data.to_excel(f"{self.dir_out}/proc_data.xlsx", index=False)
+        self.proc_data_speedup.to_excel(f"{self.dir_out}/proc_data_speedup.xlsx", index=False)
+
     def _preprocess_add_columns(self):
         """
         Add a column to the raw data that is a combination of the name and hw.

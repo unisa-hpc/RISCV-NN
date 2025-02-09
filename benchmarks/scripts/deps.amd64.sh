@@ -62,7 +62,7 @@ fi
 # --- Install Python Packages ---
 echo "Installing required Python packages in '$conda_env_name'..."
 "$conda_dir/bin/conda" run -n "$conda_env_name" conda install -y pandas jq numpy seaborn matplotlib pathlib colorama || exit_on_error "Failed to install Python packages"
-"$conda_dir/bin/conda" run -n "$conda_env_name" pip install --user argparse || exit_on_error "Failed to install Python package argparse"
+"$conda_dir/bin/conda" run -n "$conda_env_name" pip install --user argparse openpyxl || exit_on_error "Failed to install Python package argparse"
 
 # --- Create env.sh ---
 echo "Creating environment setup script at $env_file..."
