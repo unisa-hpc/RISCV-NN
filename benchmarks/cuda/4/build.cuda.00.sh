@@ -1,1 +1,0 @@
-../../scripts/build.cuda.00.sh
