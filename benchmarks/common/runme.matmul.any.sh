@@ -157,7 +157,7 @@ run_benchmark() {
                         for i1 in "${range_i1[@]}"; do
                             for i2 in "${range_i2[@]}"; do
                                 index=$((index+1))
-                                echo "*** benchmark $index out of $total_benchmarks (percent: $((index*100/total_benchmarks))%)"
+                                echo "*** benchmark $index out of $total_benchmarks (percent: $((index*50/total_benchmarks))%)"
                                 echo "Percent: $((index*100/total_benchmarks))%, N: $n, Unroll Factors: $i0, $i1, $i2" >> /tmp/progressBenchId${current_benchId}.txt
                                 echo "Benchmarking for Unroll Factors: $i0, $i1, $i2 and N of $n."
 

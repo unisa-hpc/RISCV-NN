@@ -13,7 +13,7 @@
 #include "common01.h"
 
 constexpr int BENCH_ID = 6;
-constexpr size_t RUNS = 128;
+constexpr size_t RUNS = 75;
 
 constexpr int UNROLL_FACTOR0_DEFAULT = 1;
 constexpr int UNROLL_FACTOR1_DEFAULT = 1;
