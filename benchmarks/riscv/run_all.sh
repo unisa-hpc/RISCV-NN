@@ -58,3 +58,5 @@ for bench_id in 5 6; do
         process_benchmark $bench_id "$compiler"
     done
 done
+
+echo "Finished running all benchmarks for riscv."

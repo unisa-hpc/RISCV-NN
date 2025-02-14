@@ -38,7 +38,7 @@ class PlotSpeedUps:
         self.raw_data = self.dumps_parser.get_dataframe_merged()
         self.proc_data = self.raw_data.copy()
 
-    def preprocess_data(self):
+    def preprocess_data(self, export_to_excel=False):
         """
         Preprocess the raw data (self.raw_data) to get the speedups.
 
@@ -52,9 +52,10 @@ class PlotSpeedUps:
             self.load_data()
         self._preprocess_add_columns()
 
-        self.raw_data.to_excel(f"{self.dir_out}/raw_data.xlsx", index=False)
-        self.proc_data.to_excel(f"{self.dir_out}/proc_data.xlsx", index=False)
-        self.proc_data_speedup.to_excel(f"{self.dir_out}/proc_data_speedup.xlsx", index=False)
+        if export_to_excel:
+            self.raw_data.to_excel(f"{self.dir_out}/raw_data.xlsx", index=False)
+            self.proc_data.to_excel(f"{self.dir_out}/proc_data.xlsx", index=False)
+            self.proc_data_speedup.to_excel(f"{self.dir_out}/proc_data_speedup.xlsx", index=False)
 
     def _preprocess_add_columns(self):
         """

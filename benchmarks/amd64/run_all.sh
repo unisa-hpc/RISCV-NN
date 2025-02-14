@@ -40,12 +40,13 @@ for i in "${!compilers[@]}"; do
 done
 
 # Prompt user about deleting the dumps directory
-read -p "Do you want to delete the related sub-dumps directories related to each benchId? (y/n): " delete_dumps_input
-if [[ "$delete_dumps_input" =~ ^[Yy]$ ]]; then
-    delete_dumps=true
-else
-    delete_dumps=false
-fi
+#read -p "Do you want to delete the related sub-dumps directories related to each benchId? (y/n): " delete_dumps_input
+delete_dumps=false
+#if [[ "$delete_dumps_input" =~ ^[Yy]$ ]]; then
+#    delete_dumps=true
+#else
+#    delete_dumps=false
+#fi
 
 # For amd64, this is taken care of by `scripts/deps.amd64.sh`
 #pip install --user argparse pandas colorama pathlib matplotlib numpy seaborn
@@ -73,3 +74,5 @@ for bench_id in 7 8; do
         process_benchmark $bench_id "$compiler"
     done
 done
+
+echo "Finished running all benchmarks for amd64."
