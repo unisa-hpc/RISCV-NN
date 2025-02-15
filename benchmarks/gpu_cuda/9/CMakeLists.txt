@@ -48,6 +48,21 @@ target_include_directories(${target_name}
 )
 target_link_libraries(${target_name} CUDA::cudart z)
 set_target_properties(${target_name} PROPERTIES CUDA_ARCHITECTURES "${CUDA_ARCHS}")
-target_compile_definitions(${target_name} PRIVATE TARGETNAME=\"${target_name}\" TARGETKERNEL=\"${kernel_version}\")
+target_compile_definitions(
+        ${target_name}
+        PRIVATE
+        TARGETNAME=\"${target_name}\"
+        TARGETKERNEL=\"${kernel_version}\"
+        vUF0=1
+        vUF1=1
+        vUF2=1
+        vUF3=1
+        vUF4=1
+        vUF5=1
+        vUF6=1
+        vUF7=1
+        vUF8=1
+        vUF9=1
+)
 target_compile_options(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
 target_compile_options(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-march=native>)

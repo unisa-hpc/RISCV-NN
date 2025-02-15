@@ -11,6 +11,18 @@ __global__ void KernelMatmulBase(
     const float* __restrict__ A,
     const float* __restrict__ B,
     float* __restrict__ C) {
+
+    constexpr uint UF0 = vUF0;
+    constexpr uint UF1 = vUF1;
+    constexpr uint UF2 = vUF2;
+    constexpr uint UF3 = vUF3;
+    constexpr uint UF4 = vUF4;
+    constexpr uint UF5 = vUF5;
+    constexpr uint UF6 = vUF6;
+    constexpr uint UF7 = vUF7;
+    constexpr uint UF8 = vUF8;
+    constexpr uint UF9 = vUF9;
+
     const size_t N = matrix_size;
     const size_t K = matrix_size;
 
@@ -26,8 +38,10 @@ __global__ void KernelMatmulBase(
     float regM[TM] = {0};
     float regN[TN] = {0};
 
+#pragma unroll UF0
     for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
         // Load row-major A into col-major As
+#pragma unroll UF1
         for (uint tid = threadIdx.x; tid < BM * (BK/4); tid += blockDim.x) {
             const uint col = tid / BM;        // Which column group (each group is 4 elements)
             const uint row = tid % BM;        // Which row in the block
@@ -42,6 +56,7 @@ __global__ void KernelMatmulBase(
             As[(col*4 + 3) * BM + row] = tmp.w;
         }
 
+#pragma unroll UF2
         for (uint tid=threadIdx.x; tid < BK * (BN); tid += blockDim.x) {
             const uint _tid_x = tid % (BN);
             const uint _tid_y = tid / (BN);
@@ -49,19 +64,21 @@ __global__ void KernelMatmulBase(
             Bs[(_tid_y)*(BN + extraCols) + _tid_x] = tmp;
         }
         __syncthreads();
-
+#pragma unroll UF3
         for (uint dotIdx = 0; dotIdx < BK; ++dotIdx) {
+#pragma unroll UF4
             for (uint i = 0; i < TM; ++i) {
                 // Modified to access As in col-major layout
                 regM[i] = As[dotIdx * BM + tid_y*TM + i];
             }
-
+#pragma unroll UF5
             for (uint i = 0; i < TN; ++i) {
                 auto val = Bs[(dotIdx)*(BN+extraCols) + (tid_x*TN+i)];
                 regN[i] = val;
             }
-
+#pragma unroll UF6
             for (uint resIdxM = 0; resIdxM < TM; ++resIdxM) {
+#pragma unroll UF7
                 for (uint resIdxN = 0; resIdxN < (TN); ++resIdxN) {
                     threadResults[resIdxM * (TN) + resIdxN] += regM[resIdxM] * regN[resIdxN];
                     //printf("regN[%d]: %d\n", resIdxN, regN[resIdxN]);
@@ -89,8 +106,9 @@ __global__ void KernelMatmulBase(
         }
     }
     */
-
+#pragma unroll UF8
     for (uint resIdxM = 0; resIdxM < TM; resIdxM++) {
+#pragma unroll UF9
         for (uint resIdxN = 0; resIdxN < (TN/4); resIdxN++) {
             float4 val;
             // Pack 4 consecutive results into float4
@@ -110,7 +128,6 @@ __global__ void KernelMatmulBase(
             reinterpret_cast<float4*>(&C[baseIdx])[0] = val;
 
             // Verify results
-
             //if (val.x != Gold[baseIdx] ||
             //    val.y != Gold[baseIdx + 1] ||
             //    val.z != Gold[baseIdx + 2] ||
@@ -127,6 +144,7 @@ __global__ void KernelMatmulBase(
 
 }
 
+#ifndef ONLY_KERNELS
 void LaunchKernelMatmulBase(
     cudaStream_t& stream,
     size_t matrix_size,
@@ -159,6 +177,7 @@ void LaunchKernelMatmulBase(
             <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
 }
+#endif
 // =================================================================================================
 // =================================================================================================
 
@@ -174,8 +193,18 @@ __global__ void KernelMatmulPotUint8Packed2(
     size_t matrix_size,
     const uint32_t* __restrict__ A,
     const uint8_t* __restrict__ B,
-    float* __restrict__ C,
-    const float* __restrict__ Gold) {
+    float* __restrict__ C) {
+
+    constexpr uint UF0 = vUF0;
+    constexpr uint UF1 = vUF1;
+    constexpr uint UF2 = vUF2;
+    constexpr uint UF3 = vUF3;
+    constexpr uint UF4 = vUF4;
+    constexpr uint UF5 = vUF5;
+    constexpr uint UF6 = vUF6;
+    constexpr uint UF7 = vUF7;
+    constexpr uint UF8 = vUF8;
+    constexpr uint UF9 = vUF9;
 
     const size_t N = matrix_size;
     const size_t K = matrix_size;
@@ -195,9 +224,11 @@ __global__ void KernelMatmulPotUint8Packed2(
     uint8_t  regN[TN*2];
 
     // Loop over tiles along the K dimension.
+#pragma unroll UF0
     for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
         // *** Load A into shared memory ***
         // Each thread loads one (or more) 4–element group from A.
+#pragma unroll UF1
         for (uint tid = threadIdx.x; tid < BM * (BK/4); tid += blockDim.x) {
             const uint col = tid / BM;  // group index (each group = 4 elements)
             const uint row = tid % BM;  // row index within the block
@@ -215,6 +246,7 @@ __global__ void KernelMatmulPotUint8Packed2(
         }
 
         // *** Load B into shared memory ***
+#pragma unroll UF2
         for (uint tid = threadIdx.x; tid < BK * (BN/2); tid += blockDim.x) {
             const uint _tid_x = tid % (BN/2);
             const uint _tid_y = tid / (BN/2);
@@ -224,16 +256,16 @@ __global__ void KernelMatmulPotUint8Packed2(
         __syncthreads();
 
         // Process the BK–length inner dimension.
-#pragma unroll
+#pragma unroll UF3
         for (int dotIdx = 0; dotIdx < BK; dotIdx++) {
             // Load a block of A from shared memory into registers.
-#pragma unroll
+#pragma unroll UF4
             for (int i = 0; i < TM; i++) {
                 regM[i] = As[dotIdx * BM + tid_y * TM + i];
             }
 
             // Load a block of B from shared memory, splitting each byte into two 4–bit values.
-#pragma unroll
+#pragma unroll UF5
             for (int i = 0; i < TN; i++) {
                 uint8_t packedVal = Bs[dotIdx * (BN/2 + extraCols) + (tid_x * TN + i)];
                 regN[2 * i + 0] = packedVal & 0x0F;
@@ -241,9 +273,9 @@ __global__ void KernelMatmulPotUint8Packed2(
             }
 
             // Accumulate the “dot–product” result.
-#pragma unroll
+#pragma unroll UF6
             for (int m = 0; m < TM; m++) {
-#pragma unroll
+#pragma unroll UF7
                 for (int n = 0; n < (TN * 2); n++) {
                     // Instead of computing the bit–tweaked value,
                     // use the precomputed constant table.
@@ -257,9 +289,9 @@ __global__ void KernelMatmulPotUint8Packed2(
     }
 
     // *** Write the accumulated results back to global memory ***
-#pragma unroll
+#pragma unroll UF8
     for (int m = 0; m < TM; m++) {
-#pragma unroll
+#pragma unroll UF9
         for (int n = 0; n < 2 * (TN / 4); n++) {
             float4 val;
             int base = m * (2 * TN) + n * 4;
@@ -275,14 +307,13 @@ __global__ void KernelMatmulPotUint8Packed2(
     }
 }
 
-
+#ifndef ONLY_KERNELS
 void LaunchKernelMatmulPotUint8Packed2(
     cudaStream_t& stream,
     size_t matrix_size,
     const uint32_t* __restrict__ tnA,
     const uint8_t* __restrict__ tnB,
-    float* __restrict__ tnC,
-    const float* __restrict__ Gold) {
+    float* __restrict__ tnC) {
     const size_t M = matrix_size;
     const size_t N = matrix_size;
     const size_t K = matrix_size;
@@ -300,7 +331,7 @@ void LaunchKernelMatmulPotUint8Packed2(
         std::cout << "blockDim: " << blockDim.x << std::endl;
         //KernelMatMul08_PoT4bits_As_Colmajor_vecloadstore_fixing_zero_vecstore<BM, BN, BK, TM, TN>
         KernelMatmulPotUint8Packed2<BM, BN, BK, TM, TN>
-            <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC, Gold);
+            <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
     else {
         // this is a hacky solution to the underlying problem
@@ -314,9 +345,10 @@ void LaunchKernelMatmulPotUint8Packed2(
         std::cout << "blockDim: " << blockDim.x << std::endl;
         //KernelMatMul08_PoT4bits_As_Colmajor_vecloadstore_fixing_zero_vecstore<BM, BN, BK, TM, TN>
         KernelMatmulPotUint8Packed2<BM, BN, BK, TM, TN>
-            <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC, Gold);
+            <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
 }
+#endif
 // =================================================================================================
 // =================================================================================================
 
@@ -333,8 +365,19 @@ __global__ void KernelMatmulPotUint8Packed4(
     size_t matrix_size,
     const uint32_t* __restrict__ A,
     const uint8_t* __restrict__ B,
-    float* __restrict__ C,
-    const float* __restrict__ Gold) {
+    float* __restrict__ C) {
+
+    constexpr uint UF0 = vUF0;
+    constexpr uint UF1 = vUF1;
+    constexpr uint UF2 = vUF2;
+    constexpr uint UF3 = vUF3;
+    constexpr uint UF4 = vUF4;
+    constexpr uint UF5 = vUF5;
+    constexpr uint UF6 = vUF6;
+    constexpr uint UF7 = vUF7;
+    constexpr uint UF8 = vUF8;
+    constexpr uint UF9 = vUF9;
+
     const size_t N = matrix_size;
     const size_t K = matrix_size;
 
@@ -349,8 +392,10 @@ __global__ void KernelMatmulPotUint8Packed4(
     uint32_t regM[TM] = {0};
     uint8_t regN[TN*4] = {0};
 
+#pragma unroll UF0
     for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
         // Load row-major A into col-major As
+#pragma unroll UF1
         for (uint tid = threadIdx.x; tid < BM * (BK/4); tid += blockDim.x) {
             const uint col = tid / BM;        // Which column group (each group is 4 elements)
             const uint row = tid % BM;        // Which row in the block
@@ -365,6 +410,7 @@ __global__ void KernelMatmulPotUint8Packed4(
             As[(col*4 + 3) * BM + row] = tmp.w;
         }
 
+#pragma unroll UF2
         for (uint tid=threadIdx.x; tid < BK * (BN/4); tid += blockDim.x) {
             const uint _tid_x = tid % (BN/4);
             const uint _tid_y = tid / (BN/4);
@@ -373,11 +419,14 @@ __global__ void KernelMatmulPotUint8Packed4(
         }
         __syncthreads();
 
+#pragma unroll UF3
         for (uint dotIdx = 0; dotIdx < BK; ++dotIdx) {
+#pragma unroll UF4
             for (uint i = 0; i < TM; ++i) {
                 regM[i] = As[dotIdx * BM + tid_y*TM + i];
             }
 
+#pragma unroll UF5
             for (uint i = 0; i < TN; ++i) {
                 auto val = Bs[(dotIdx)*(BN/4+extraCols) + (tid_x*TN+i)];
                 // Extract 2-bit values and store them separately
@@ -387,7 +436,9 @@ __global__ void KernelMatmulPotUint8Packed4(
                 regN[4*i+3] = (val >> 6) & 0x03;
             }
 
+#pragma unroll UF6
             for (uint resIdxM = 0; resIdxM < TM; ++resIdxM) {
+#pragma unroll UF7
                 for (uint resIdxN = 0; resIdxN < (TN*4); ++resIdxN) {
                     // Use the lookup table instead of bit manipulation
                     uint32_t offset = lut_pot_uint8_packed4[regN[resIdxN]];
@@ -400,7 +451,9 @@ __global__ void KernelMatmulPotUint8Packed4(
     }
 
     // Write results using float4 for coalesced memory access
+#pragma unroll UF8
     for (uint resIdxM = 0; resIdxM < TM; resIdxM++) {
+#pragma unroll UF9
         for (uint resIdxN = 0; resIdxN < 4*(TN/4); resIdxN++) {
             float4 val;
             // Pack 4 consecutive results into float4
@@ -419,13 +472,13 @@ __global__ void KernelMatmulPotUint8Packed4(
     }
 }
 
+#ifndef ONLY_KERNELS
 void LaunchKernelMatmulPotUint8Packed4(
     cudaStream_t& stream,
     size_t matrix_size,
     const uint32_t* __restrict__ tnA,
     const uint8_t* __restrict__ tnB,
-    float* __restrict__ tnC,
-    const float* __restrict__ Gold) {
+    float* __restrict__ tnC) {
     const size_t M = matrix_size;
     const size_t N = matrix_size;
     const size_t K = matrix_size;
@@ -443,7 +496,7 @@ void LaunchKernelMatmulPotUint8Packed4(
         std::cout << "blockDim: " << blockDim.x << std::endl;
         //KernelMatMul08_PoT2bits_fixed<BM, BN, BK, TM, TN>
         KernelMatmulPotUint8Packed4<BM, BN, BK, TM, TN>
-            <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC, Gold);
+            <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
     else {
         // this is a hacky solution to the underlying problem
@@ -457,9 +510,10 @@ void LaunchKernelMatmulPotUint8Packed4(
         std::cout << "blockDim: " << blockDim.x << std::endl;
         //KernelMatMul08_PoT2bits_fixed<BM, BN, BK, TM, TN>
         KernelMatmulPotUint8Packed4<BM, BN, BK, TM, TN>
-            <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC, Gold);
+            <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
 }
+#endif
 // =================================================================================================
 // =================================================================================================
 

@@ -14,8 +14,7 @@ extern void LaunchKernelMatmulPotUint8Packed2(
     size_t matrix_size,
     const uint32_t* __restrict__ tnA,
     const uint8_t* __restrict__ tnB,
-    float* __restrict__ tnC,
-    const float* __restrict__ Gold);
+    float* __restrict__ tnC);
 
 
 extern void LaunchKernelMatmulPotUint8Packed4(
@@ -23,5 +22,4 @@ extern void LaunchKernelMatmulPotUint8Packed4(
     size_t matrix_size,
     const uint32_t* __restrict__ tnA,
     const uint8_t* __restrict__ tnB,
-    float* __restrict__ tnC,
-    const float* __restrict__ Gold);
+    float* __restrict__ tnC);

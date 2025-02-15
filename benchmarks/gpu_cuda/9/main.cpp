@@ -1,9 +1,10 @@
 #include <cassert>
+#include <iostream>
+
 #include "common01.h"
 #include "CTensor.h"
 #include "CRandFiller.h"
 #include "kernels.h"
-#include <iostream>
 #include "common02.h"
 
 #include <cuda_runtime.h>
@@ -123,7 +124,7 @@ int main(int argc, char *argv[]) {
             // Each iteration will be blocked until the kernel finishes.
             // Even though we are using streams and kernels are launches asynchronously.
             timer_scope_cuda timer(stats, stream);
-            LaunchKernelMatmulPotUint8Packed2(stream, N, reinterpret_cast<const uint32_t*>(tnA.GetPtrDevice()), tnB_pot_packed4bit.GetPtrDevice(), tnC.GetPtrDevice(), goldTnC.GetPtrDevice());
+            LaunchKernelMatmulPotUint8Packed2(stream, N, reinterpret_cast<const uint32_t*>(tnA.GetPtrDevice()), tnB_pot_packed4bit.GetPtrDevice(), tnC.GetPtrDevice());
         }
         tnC.D2H();
         cudaDeviceSynchronize();
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]) {
             // Each iteration will be blocked until the kernel finishes.
             // Even though we are using streams and kernels are launches asynchronously.
             timer_scope_cuda timer(stats, stream);
-            LaunchKernelMatmulPotUint8Packed4(stream, N, reinterpret_cast<const uint32_t*>(tnA.GetPtrDevice()), tnB_pot_packed2bit.GetPtrDevice(), tnC.GetPtrDevice(), goldTnC.GetPtrDevice());
+            LaunchKernelMatmulPotUint8Packed4(stream, N, reinterpret_cast<const uint32_t*>(tnA.GetPtrDevice()), tnB_pot_packed2bit.GetPtrDevice(), tnC.GetPtrDevice());
         }
         tnC.D2H();
         cudaDeviceSynchronize();
