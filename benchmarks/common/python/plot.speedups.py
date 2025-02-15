@@ -32,6 +32,7 @@ class PlotSpeedUps:
         self.dir_out = dir_out
         sns.set_theme(style="whitegrid")
         sns.color_palette("hls", 8)
+        self.is_preprocessed = False
 
     def load_data(self):
         self.dumps_parser.parse_all()
@@ -48,6 +49,9 @@ class PlotSpeedUps:
             "Value": [5, 8, 3, 10, 7, 6, 2, 11, 9],  # Modified unique values for each bar
         }
         """
+        if self.is_preprocessed:
+            print("Data is already preprocessed.")
+            return
         if self.raw_data is None:
             self.load_data()
         self._preprocess_add_columns()
@@ -56,6 +60,8 @@ class PlotSpeedUps:
             self.raw_data.to_excel(f"{self.dir_out}/raw_data.xlsx", index=False)
             self.proc_data.to_excel(f"{self.dir_out}/proc_data.xlsx", index=False)
             self.proc_data_speedup.to_excel(f"{self.dir_out}/proc_data_speedup.xlsx", index=False)
+
+        self.is_preprocessed = True
 
     def _preprocess_add_columns(self):
         """
@@ -569,7 +575,7 @@ class PlotSpeedUps:
                         print(f"Skipping benchId={bench_id} for speedups_over_N.")
                         continue
 
-        fig = plt.figure(figsize=(16, 6))
+        fig = plt.figure(figsize=(32, 32))
         lineplot = sns.lineplot(
             data=speedups_over_N,
             x='N',
@@ -600,7 +606,8 @@ if __name__ == '__main__':
 
     obj = PlotSpeedUps(dumps, '/tmp')
     obj.plotgen_runtimes_all(reversed_text_order=True)
-    obj.plotgen_runtimes_all(reversed_text_order=False)
     obj.plotgen_speedups_all(reversed_text_order=True)
-    obj.plotgen_speedups_all(reversed_text_order=False)
     obj.plotgen_speedups_over_N_all()
+    obj.plotgen_runtimes_all(reversed_text_order=False)
+    obj.plotgen_speedups_all(reversed_text_order=False)
+

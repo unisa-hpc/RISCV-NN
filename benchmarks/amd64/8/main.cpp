@@ -35,7 +35,7 @@ extern void avx512_matmul_floatbitmanipu_nopack_float_uint8_no_magic(
     float *__restrict__ c);
 
 int main(int argc, char** argv) {
-    constexpr int ALIGNMENT = 32;
+    constexpr int ALIGNMENT = 64;
     const int RUNS_SCALAR = RUNS<=7 ? RUNS : 7;
 
     std::cout << "N: " << N << std::endl;

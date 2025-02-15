@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #SBATCH --job-name=run_all_amd64
 #SBATCH --output=run_all_amd64.out
@@ -14,7 +13,7 @@
 source ~/riscvnn_rootdir/activate_env.sh
 
 # Delete the folder foobar in the home directory
-rm -rf ~/benchmarks/dumps
+# rm -rf ~/benchmarks/dumps
 
 # Your commands go here
 echo "Running my job on $(hostname)"
