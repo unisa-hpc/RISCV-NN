@@ -51,21 +51,21 @@ class MyKernelAutoTuner:
         self.tune_params["block_size_x"] = [32, 64, 128, 256, 512, 1024]
         self.tune_params["block_size_y"] = [1]
         self.tune_params["block_size_z"] = [1]
-        self.tune_params["vBM"] = [128]
-        self.tune_params["vBN"] = [128]
-        self.tune_params["vBK"] = [8]
-        self.tune_params["vTM"] = [4, 8]
-        self.tune_params["vTN"] = [4, 8]
-        self.tune_params["vUF0"] = [1, ]
-        self.tune_params["vUF1"] = [1, ]
-        self.tune_params["vUF2"] = [1, ]
-        self.tune_params["vUF3"] = [1, ]
+        self.tune_params["vBM"] = [64, 128, 256]
+        self.tune_params["vBN"] = [64, 128, 256]
+        self.tune_params["vBK"] = [8, 16]
+        self.tune_params["vTM"] = [2, 4, 8]
+        self.tune_params["vTN"] = [2, 4, 8]
+        self.tune_params["vUF0"] = [1, 2]
+        self.tune_params["vUF1"] = [1, 2]
+        self.tune_params["vUF2"] = [1, 2]
+        self.tune_params["vUF3"] = [1, 2]
         self.tune_params["vUF4"] = [1, 2, 3, 4, 5, 6, 7, 8]
         self.tune_params["vUF5"] = [1, 2, 3, 4, 5, 6, 7, 8]
         self.tune_params["vUF6"] = [1, 2, 3, 4, 5, 6, 7, 8]
         self.tune_params["vUF7"] = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.tune_params["vUF8"] = [1, ]
-        self.tune_params["vUF9"] = [1, ]
+        self.tune_params["vUF8"] = [1, 2]
+        self.tune_params["vUF9"] = [1, 2]
         # ----------------------------------------
         self.results = {}
 
@@ -109,6 +109,9 @@ class MyKernelAutoTuner:
 
         if not (TN & (TN - 1) == 0):
             errors.append("TN should be a power of 2 for optimal performance")
+
+        if not (TN % 4 == 0):
+            errors.append("TN should be divisible by 4 for vectorized loads/stores from each thread")
 
         # 5. Divisibility constraints (from kernel implementation)
         if BN % 2 != 0:
@@ -385,7 +388,7 @@ if __name__ == "__main__":
 
     # args with default values
     parser.add_argument("--reps", type=int, default=10, help="Number of repetitions for each kernel configuration")
-    parser.add_argument("--time", type=int, default=7200, help="Time limit in seconds for each kernel configuration")
+    parser.add_argument("--time", type=int, default=3600*3, help="Time limit in seconds for each kernel configuration")
 
     args = parser.parse_args()
     dumps_dir = "../../dumps"
