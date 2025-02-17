@@ -278,7 +278,8 @@ class MyKernelAutoTuner:
             ],
             strategy_options={
                 "time_limit": int(self.limit_seconds),  # in seconds
-                "max_fevals": self.limit_iterations  # maximum number of evaluations
+                "max_fevals": self.limit_iterations,    # maximum number of evaluations
+                "maxiter": self.limit_iterations        # maximum number of iterations
             },
             verbose=True,
             answer=self.answer,
@@ -287,8 +288,8 @@ class MyKernelAutoTuner:
             cache=(pathlib.Path(self.dumps_dir) / pathlib.Path(f"cachefile__{self.kernel_file}__{self.kernel_name}__N{matrix_size}.json")).__str__(),
             simulation_mode=False, # Simulates opt from the existing cache file
         )
-        print("Finding the minimum time configuration...")
-        best = min(results_res, key=lambda x: x['time'])
+        ##print("Finding the minimum time configuration...")
+        ##best = min(results_res, key=lambda x: x['time'])
 
         # Initialize the nested dictionary structure if it does not exist
         if self.kernel_file not in self.results:
@@ -297,10 +298,10 @@ class MyKernelAutoTuner:
             self.results[self.kernel_file][self.kernel_name] = {}
         if matrix_size not in self.results[self.kernel_file][self.kernel_name]:
             self.results[self.kernel_file][self.kernel_name][matrix_size] = {}
-        self.results[self.kernel_file][self.kernel_name][matrix_size]["best"] = best
+        ##self.results[self.kernel_file][self.kernel_name][matrix_size]["best"] = best
         self.results[self.kernel_file][self.kernel_name][matrix_size]["env"] = results_env
         self.results[self.kernel_file][self.kernel_name][matrix_size]["all"] = results_res
-        print(f"Best configuration: {best}")
+        ##print(f"Best configuration: {best}")
 
     def get_results_all(self):
         return self.results
@@ -401,7 +402,8 @@ if __name__ == "__main__":
     parser.add_argument("cc", type=str, help="cuda_capability, for example: 70 or 89")
 
     # args with default values
-    parser.add_argument("--reps", type=int, default=10, help="Number of repetitions for each kernel configuration")
+    parser.add_argument("--maxiter", type=int, default=5000, help="Maximum number of iterations for each kernel configuration")
+    parser.add_argument("--reps", type=int, default=7, help="Number of repetitions for each kernel configuration")
     parser.add_argument("--time", type=int, default=3600*3, help="Time limit in seconds for each kernel configuration")
 
     args = parser.parse_args()
@@ -444,7 +446,7 @@ if __name__ == "__main__":
                         pot_words_per_uint8=words_per_uint8 if is_pot else 1,
                         launch_repetitions=args.reps,
                         limit_seconds=args.time,
-                        limit_iterations=1000000,
+                        limit_iterations=args.maxiter,
                         dumps_dir=pathlib.Path(sub_dump_dir).__str__()
                     )
 

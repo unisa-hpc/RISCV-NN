@@ -87,13 +87,17 @@ class PlotSpeedUps:
         self.proc_data['benchId_hw_compiler_name'] = \
             self.proc_data['benchId'].astype(str) + ';;' + \
             self.proc_data['hw'] + ';;' + \
-            self.proc_data['compiler'] + ';;' + \
+            translate_compiler_name_to(self.proc_data['compiler']) + ';;' + \
             translate_codename_to(self.proc_data['name'])
 
         self.proc_data['benchId_hw_compiler'] = \
             'BenchId' + self.proc_data['benchId'].astype(str) + ', ' + \
             self.proc_data['hw'] + ', ' + \
             self.proc_data['compiler']
+
+        self.proc_data['benchId_hw'] = \
+            'BenchId' + self.proc_data['benchId'].astype(str) + ', ' + \
+            self.proc_data['hw']
 
         """
         The problem with speedups is that we CANNOT add them as new columns. We can have a speedup_type column.
@@ -419,7 +423,7 @@ class PlotSpeedUps:
         self.proc_data_speedup['benchId_hw_compiler_name_speeduptype'] = \
             self.proc_data_speedup['benchId'].astype(str) + ';;' + \
             self.proc_data_speedup['hw'] + ';;' + \
-            self.proc_data_speedup['compiler'] + ';;' + \
+            translate_compiler_name_to(self.proc_data_speedup['compiler']) + ';;' + \
             translate_codename_to(self.proc_data_speedup['name']) + ';;' + \
             self.proc_data_speedup['speedup_type']
 
@@ -456,7 +460,7 @@ class PlotSpeedUps:
         unique_bars = masked_data['benchId_hw_compiler_name'].unique()
         unique_bars = sorted(unique_bars)
 
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(32, 32))
 
         # reversed-text sorting
         if reversed_text_order:
@@ -515,7 +519,7 @@ class PlotSpeedUps:
             (self.proc_data_speedup['N'] == n)
         ]
 
-        fig = plt.figure(figsize=(6, 6))
+        fig = plt.figure(figsize=(32, 32))
 
         # reversed-text sorting
         if reversed_text_order:
@@ -592,11 +596,19 @@ class PlotSpeedUps:
             data=speedups_over_N,
             x='N',
             y='data_point',
-            hue='benchId_hw_compiler',
+            hue='benchId_hw',
+            style=speedups_over_N['compiler'].apply(
+                lambda x:
+                    'dashed' if 'g++' in x and '14' in x else
+                    'dotted' if 'g++' in x and '13' in x else
+                    'solid' if 'clang' in x and '18' in x else
+                    'dashdot' if 'clang' in x and '17' in x else
+                    'solid'
+            ),
             palette='viridis',
             ci="sd",  # Show std-deviation confidence intervals
             markers=True,
-            dashes=False
+            dashes=True
         )
         plt.title("Speedup_vv Over N")
         plt.xlabel("N")
@@ -634,6 +646,8 @@ if __name__ == '__main__':
 
     if args.s_from is not None:
         obj = PlotSpeedUps.deserialize(args.s_from)
+        obj.plotgen_runtimes_all(reversed_text_order=True)
+        obj.plotgen_speedups_all(reversed_text_order=True)
         obj.plotgen_speedups_over_N_all()
     else:
         dumps = args.dumps
