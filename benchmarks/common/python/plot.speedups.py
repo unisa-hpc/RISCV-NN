@@ -474,7 +474,7 @@ class PlotSpeedUps:
             hue='benchId_hw_compiler',
             order=order,
             dodge=False,
-            ci=95,  # Show 95% confidence intervals
+            ci="sd",  # Show std-deviation confidence intervals
             capsize=0.05  # Add caps to the error bars
         )
 
@@ -534,7 +534,7 @@ class PlotSpeedUps:
             palette='viridis',
             order=order,
             dodge=False,  # Do not set this to true. It will cause offset to the bars.
-            ci=95,  # Show 95% confidence intervals
+            ci="sd",  # Show std-deviation confidence intervals
             capsize=0.05  # Add caps to the error bars
         )
 
@@ -594,7 +594,7 @@ class PlotSpeedUps:
             y='data_point',
             hue='benchId_hw_compiler',
             palette='viridis',
-            ci=95,  # Show 95% confidence intervals
+            ci="sd",  # Show std-deviation confidence intervals
             markers=True,
             dashes=False
         )

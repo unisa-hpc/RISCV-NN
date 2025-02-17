@@ -51,6 +51,7 @@ class MyKernelAutoTuner:
         self.tune_params["block_size_x"] = [32, 64, 128, 256, 512, 1024]
         self.tune_params["block_size_y"] = [1]
         self.tune_params["block_size_z"] = [1]
+        self.tune_params["pot_words_per_uint8"] = [self.pot_words_per_uint8] # dont modify this
         self.tune_params["vBM"] = [64, 128, 256]
         self.tune_params["vBN"] = [64, 128, 256]
         self.tune_params["vBK"] = [8, 16]
@@ -69,10 +70,11 @@ class MyKernelAutoTuner:
         # ----------------------------------------
         self.results = {}
 
+    @staticmethod
     def validate_kernel_parameters(
-            self,
             matrix_size: int,
             block_size_flat: int,
+            pot_words_per_uint8: int,
             BM: int,
             BN: int,
             BK: int,
@@ -131,10 +133,10 @@ class MyKernelAutoTuner:
             errors.append("BN must be divisible by 8 for float4 vectorized loads/stores")
 
         # 7. Thread block size constraints
-        threads_per_block = (BM * BN) // (TM * TN) // self.pot_words_per_uint8
+        threads_per_block = (BM * BN) // (TM * TN) // pot_words_per_uint8
         if threads_per_block > 1024:
             errors.append(
-                f"Total threads per block ((BM * BN)/(TM * TN)/{self.pot_words_per_uint8}) must not exceed 1024")
+                f"Total threads per block ((BM * BN)/(TM * TN)/{pot_words_per_uint8}) must not exceed 1024")
         if threads_per_block < 32:
             errors.append("Total threads per block should be at least 32 (one warp) for efficiency")
 
@@ -162,15 +164,17 @@ class MyKernelAutoTuner:
         if TN > BN:
             errors.append("TN cannot be larger than BN")
 
-        if block_size_flat != (BM * BN) // (TM * TN) // self.pot_words_per_uint8:
-            errors.append(f"block_size_x must be equal to (BM * BN) // (TM * TN) // {self.pot_words_per_uint8}")
+        if block_size_flat != (BM * BN) // (TM * TN) // pot_words_per_uint8:
+            errors.append(f"block_size_x must be equal to (BM * BN) // (TM * TN) // {pot_words_per_uint8}")
 
         return len(errors) == 0, errors
 
-    def restriction_func(self, conf_dict: dict) -> bool:
-        if not self.validate_kernel_parameters(
+    @staticmethod
+    def restriction_func(conf_dict: dict) -> bool:
+        if not MyKernelAutoTuner.validate_kernel_parameters(
                 size,
                 conf_dict["block_size_x"],
+                conf_dict["pot_words_per_uint8"],
                 conf_dict["vBM"],
                 conf_dict["vBN"],
                 conf_dict["vBK"],
@@ -179,18 +183,21 @@ class MyKernelAutoTuner:
         )[0]:
             return False
 
-        local_grid_x = self.custom_grid_x(conf_dict)
-        local_grid_y = self.custom_grid_y(conf_dict)
+        #local_grid_x = self.custom_grid_x(conf_dict)
+        #local_grid_y = self.custom_grid_y(conf_dict)
         # print(f"Valid conf: {conf_dict};;; local_grid_x:{size / local_grid_x} and local_grid_y:{size / local_grid_y} *")
         return True
 
+    @staticmethod
     def custom_grid_x(self, config):
         return config["vBN"]
 
+    @staticmethod
     def custom_grid_y(self, config):
         return config["vBM"]
 
-    def verification_func(self, ref, ans, atol=None):
+    @staticmethod
+    def verification_func(ref, ans, atol=None):
         # ref is the golden output we supplied to the answer argument.
         # ans is the output of the kernel under auto-tuning.
 
@@ -254,11 +261,15 @@ class MyKernelAutoTuner:
             restrictions=self.restriction_func,
             grid_div_x=["vBN"],
             grid_div_y=["vBM"],
-            strategy="bayes_opt",
+
+            #strategy="bayes_opt",
+            strategy="pso",
+            #strategy="bayes_opt",
+
+
             iterations=self.launch_repetitions,  # how many times a kernel is run for a given configuration
             compiler_options=[
                 "-O3",
-                "-Xptxas=\"-v\"",
                 "--fmad=true",
                 "--expt-relaxed-constexpr",
                 f"-arch=compute_{self.cuda_capability}",
@@ -272,8 +283,11 @@ class MyKernelAutoTuner:
             verbose=True,
             answer=self.answer,
             verify=self.verification_func,
-            atol=0.7
+            atol=0.7,
+            cache=(pathlib.Path(self.dumps_dir) / pathlib.Path(f"cachefile__{self.kernel_file}__{self.kernel_name}__N{matrix_size}.json")).__str__(),
+            simulation_mode=False, # Simulates opt from the existing cache file
         )
+        print("Finding the minimum time configuration...")
         best = min(results_res, key=lambda x: x['time'])
 
         # Initialize the nested dictionary structure if it does not exist
