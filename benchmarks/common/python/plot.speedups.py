@@ -1,6 +1,7 @@
 import argparse
 import inspect
-
+import pathlib
+import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -33,6 +34,17 @@ class PlotSpeedUps:
         sns.set_theme(style="whitegrid")
         sns.color_palette("hls", 8)
         self.is_preprocessed = False
+
+    def serialize(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+
+    @staticmethod
+    def deserialize(filename):
+        with open(filename, 'rb') as f:
+            obj = pickle.load(f)
+            print(f"Deserialized object of type {type(obj)}")
+            return obj
 
     def load_data(self):
         self.dumps_parser.parse_all()
@@ -600,14 +612,37 @@ class PlotSpeedUps:
 if __name__ == '__main__':
     # accept multiple instances of --dumps arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dumps', type=str, required=True, action='append')
+
+    parser.add_argument('--dumps', type=str, required=False, action='append')
+    parser.add_argument('--s-from', type=str, required=False, help='Restore the class state from a pickle file.')
+    parser.add_argument('--s-to', type=str, required=False, help='Save the class state to a pickle file.')
+
     args = parser.parse_args()
-    dumps = args.dumps
 
-    obj = PlotSpeedUps(dumps, '/tmp')
-    obj.plotgen_runtimes_all(reversed_text_order=True)
-    obj.plotgen_speedups_all(reversed_text_order=True)
-    obj.plotgen_speedups_over_N_all()
-    obj.plotgen_runtimes_all(reversed_text_order=False)
-    obj.plotgen_speedups_all(reversed_text_order=False)
+    # dumps and s-from are mutually exclusive
+    if args.dumps is None and args.s_from is None:
+        parser.error('At least one of --dumps or --s-from is required.')
+    if args.dumps is not None and args.s_from is not None:
+        # check if s-from file exists, if it does, ignore dumps, else ignore s-from, use pathlib
+        if not pathlib.Path(args.s_from).is_file():
+            print(f"File {args.s_from} does not exist.")
+            print("Ignoring --s-from.")
+            args.s_from = None
+        else:
+            print("When --s-from is provided, --dumps will be ignored.")
+            args.dumps = None
 
+    if args.s_from is not None:
+        obj = PlotSpeedUps.deserialize(args.s_from)
+        obj.plotgen_speedups_over_N_all()
+    else:
+        dumps = args.dumps
+        obj = PlotSpeedUps(dumps, '/tmp')
+        obj.plotgen_runtimes_all(reversed_text_order=True)
+        obj.plotgen_speedups_all(reversed_text_order=True)
+        obj.plotgen_speedups_over_N_all()
+        obj.plotgen_runtimes_all(reversed_text_order=False)
+        obj.plotgen_speedups_all(reversed_text_order=False)
+
+    if args.s_to is not None:
+        obj.serialize(args.s_to)
