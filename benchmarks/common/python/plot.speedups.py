@@ -49,7 +49,9 @@ class PlotSpeedUps:
     def load_data(self):
         self.dumps_parser.parse_all()
         self.raw_data = self.dumps_parser.get_dataframe_merged()
+        self.raw_data['compiler'] = translate_compiler_name_to(self.raw_data['compiler'])
         self.proc_data = self.raw_data.copy()
+
 
     def preprocess_data(self, export_to_excel=False):
         """
@@ -87,8 +89,8 @@ class PlotSpeedUps:
         self.proc_data['benchId_hw_compiler_name'] = \
             self.proc_data['benchId'].astype(str) + ';;' + \
             self.proc_data['hw'] + ';;' + \
-            translate_compiler_name_to(self.proc_data['compiler']) + ';;' + \
-            translate_codename_to(self.proc_data['name'])
+            self.proc_data['compiler'] + ';;' + \
+            self.proc_data['name']
 
         self.proc_data['benchId_hw_compiler'] = \
             'BenchId' + self.proc_data['benchId'].astype(str) + ', ' + \
@@ -423,8 +425,8 @@ class PlotSpeedUps:
         self.proc_data_speedup['benchId_hw_compiler_name_speeduptype'] = \
             self.proc_data_speedup['benchId'].astype(str) + ';;' + \
             self.proc_data_speedup['hw'] + ';;' + \
-            translate_compiler_name_to(self.proc_data_speedup['compiler']) + ';;' + \
-            translate_codename_to(self.proc_data_speedup['name']) + ';;' + \
+            self.proc_data_speedup['compiler'] + ';;' + \
+            self.proc_data_speedup['name'] + ';;' + \
             self.proc_data_speedup['speedup_type']
 
         self.proc_data_speedup['benchId_hw_compiler_speeduptype'] = \
