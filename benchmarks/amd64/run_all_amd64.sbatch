@@ -1,13 +1,17 @@
 #!/bin/bash
-#SBATCH --job-name=run_all_amd64
-#SBATCH --output=run_all_amd64.out
-#SBATCH --error=run_all_amd64.err
+#SBATCH --job-name=xxxxxx
+#SBATCH --output=orep.txt
+#SBATCH --error=erep.txt
 #SBATCH --time=23:00:00
 #SBATCH --partition=xxxxxxxxxxxxx
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks=1                    # So we reserve a whole cpu socket with 24 cores
+#SBATCH --nodes=1                     # and run our single thread benchmarks on core 0
+#SBATCH --sockets-per-node=1          # with taskset -c 0 ....
+#SBATCH --cores-per-socket=24         # cat /proc/self/status | grep Cpus_allowed_list
+#SBATCH --cpus-per-task=24
 #SBATCH --account=xxxxxxxxxxxxxxx
+
+cat /proc/self/status | grep Cpus_allowed_list
 
 # Source the bash script to enable conda and spack
 source ~/riscvnn_rootdir/activate_env.sh

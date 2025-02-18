@@ -5,11 +5,14 @@ import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+from IPython.core.pylabtools import figsize
+from matplotlib.lines import Line2D
 from parsing.parse import DumpsParser
 from parsing.codebook import *
 from parsing.lamda_funcs import *
-
 import matplotlib as mpl
+
+FORMAT='png'
 
 
 class PlotSpeedUps:
@@ -435,22 +438,33 @@ class PlotSpeedUps:
             self.proc_data_speedup['compiler'] + ';;' + \
             self.proc_data_speedup['speedup_type']
 
-    def plotgen_runtimes_all(self, reversed_text_order=False):
+    def plotgen_runtimes_all(self, reversed_text_order=False, per_hw=False):
         """
         Generate all the plots, as many as needed for the parsed data.
         """
         self.preprocess_data()
+        if not per_hw:
+            unique_n_list = self.proc_data['N'].unique()
+            for n in unique_n_list:
+                self.plotgen_runtimes_one(n, reversed_text_order)
+        else:
+            unique_hw_list = self.proc_data['hw'].unique()
+            for hw in unique_hw_list:
+                unique_n_list = self.proc_data['N'].unique()
+                for n in unique_n_list:
+                    self.plotgen_runtimes_one(n, reversed_text_order, hw)
 
-        unique_n_list = self.proc_data['N'].unique()
-        for n in unique_n_list:
-            self.plotgen_runtimes_one(n, reversed_text_order)
-
-    def plotgen_runtimes_one(self, n: int, reversed_text_order=False):
+    def plotgen_runtimes_one(self, n: int, reversed_text_order=False, hw: str=None):
         """
         Generate a plot for a specific N.
         """
         # Extract the rows that have the specific N
-        masked_data = self.proc_data[self.proc_data['N'] == n]
+        if hw is None:
+            cond = self.proc_data['N'] == n
+        else:
+            cond = (self.proc_data['N'] == n) & (self.proc_data['hw'] == hw)
+
+        masked_data = self.proc_data[cond]
 
         # Extract the group names, each group is a unique (benchId, hw) pair
         group_names = masked_data['benchId_hw_compiler'].unique()
@@ -503,25 +517,78 @@ class PlotSpeedUps:
         lgd = plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)  # Adjust the bottom margin
         # plt.show()
-        plt.savefig(f"{self.dir_out}/runtime_N_{n}_{reversed_text_order}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(f"{self.dir_out}/runtime_N_{n}_{reversed_text_order}_{hw}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
-    def plotgen_speedups_all(self, reversed_text_order=False):
+    def plotgen_speedups_all(self, reversed_text_order=False, per_hw=False):
         """
         Generate all the plots, as many as needed for the parsed data.
         """
         self.preprocess_data()
 
-        unique_n_list = self.proc_data_speedup['N'].unique()
-        for n in unique_n_list:
-            self.plotgen_speedups_one(n, reversed_text_order)
+        if not per_hw:
+            unique_n_list = self.proc_data_speedup['N'].unique()
+            for n in unique_n_list:
+                self.plotgen_speedups_one(n, reversed_text_order)
+        else:
+            unique_hw_list = self.proc_data_speedup['hw'].unique()
+            for hw in unique_hw_list:
+                unique_n_list = self.proc_data_speedup['N'].unique()
+                for n in unique_n_list:
+                    self.plotgen_speedups_one(n, reversed_text_order, hw=hw)
 
-    def plotgen_speedups_one(self, n: int, reversed_text_order=False):
+    def plotgen_speedups_all_per_n_subplots(self, reversed_text_order=False, per_hw=False):
+        """
+        Generate all the plots, as many as needed for the parsed data.
+        """
+        self.preprocess_data()
+
+        unique_hw_list = self.proc_data_speedup['hw'].unique() if per_hw else [None]
+
+        for hw in unique_hw_list:
+            if per_hw:
+                sub = self.proc_data_speedup[self.proc_data_speedup['hw']==hw]
+                unique_n_list = sub['N'].unique()
+            else:
+                unique_n_list = self.proc_data_speedup['N'].unique()
+
+            # create a figure with multiple subplots
+            fig, axs = plt.subplots(len(unique_n_list), 1, figsize=(32, 32))
+            fig.subplots_adjust(hspace=0.5, wspace=0.8)
+
+            if len(unique_n_list) == 1:
+                axs = [axs]
+
+            x_ticks_list = []
+
+            for i, n in enumerate(unique_n_list):
+                ax, lgnd = self.plotgen_speedups_one(n, reversed_text_order, ax=axs[i], hw=hw)
+                x_tick_texts = [tick.get_text() for tick in ax.get_xticklabels()]
+                x_ticks_list.append(x_tick_texts)
+
+            if all(x_ticks == x_ticks_list[0] for x_ticks in x_ticks_list):
+                # If all x-tick labels are the same, remove them from all but the last subplot
+                for i, ax in enumerate(axs[:-1]):
+                    ax.set_xticklabels([])  # Remove x-tick labels
+
+            # each subplot has its own legend
+            # save the figure with all the legends and subplots
+            plt.savefig(f"{self.dir_out}/speedup_all_N_{hw}_{reversed_text_order}.{FORMAT}", bbox_extra_artists=(lgnd,), bbox_inches='tight')
+
+
+    def plotgen_speedups_one(self, n: int, reversed_text_order=False, ax=None, hw: str=None):
+        if hw is None:
+            cond = self.proc_data_speedup['N'] == n
+        else:
+            cond = (self.proc_data_speedup['N'] == n) & (self.proc_data_speedup['hw'] == hw)
+
         # Extract the rows that have the specific N
-        masked_data = self.proc_data_speedup[
-            (self.proc_data_speedup['N'] == n)
-        ]
+        masked_data = self.proc_data_speedup[cond]
 
-        fig = plt.figure(figsize=(32, 32))
+        save_fig = False  # Track whether to save the figure
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(32, 32))
+            fig.subplots_adjust(bottom=0.5, right=0.8)
+            save_fig = True
 
         # reversed-text sorting
         if reversed_text_order:
@@ -533,6 +600,7 @@ class PlotSpeedUps:
             order = sorted(masked_data['benchId_hw_compiler_name_speeduptype'].unique())
 
         barplot = sns.barplot(
+            ax=ax,
             data=masked_data,
             x='benchId_hw_compiler_name_speeduptype',
             y='data_point',
@@ -547,7 +615,7 @@ class PlotSpeedUps:
         # Add text on top of each bar
         for p in barplot.patches:
             if p.get_height() > 0:
-                barplot.annotate(format(p.get_height(), '.3f'),
+                ax.annotate(format(p.get_height(), '.3f'),
                                  (p.get_x() + p.get_width() / 2., p.get_height()),
                                  ha='left', va='center',
                                  xytext=(-3, 15),
@@ -556,19 +624,24 @@ class PlotSpeedUps:
                                  fontsize=6)
 
         # Customize the plot
-        plt.title(f"Speedup for N={n}")
-        plt.xlabel("Group")
-        plt.xticks(rotation=90, fontsize=7)
-        plt.ylabel("Speedup")
-        lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.subplots_adjust(bottom=0.5, right=0.8)
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig(f"{self.dir_out}/speedup_N_{n}_{reversed_text_order}.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
+        ax.set_title(f"Speedup for N={n}")
+        ax.set_xlabel("Group")
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=7)
+        ax.set_ylabel("Speedup")
+        lgd = ax.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
 
-    def plotgen_speedups_over_N_all(self):
+        # Save figure only if we created it
+        if save_fig:
+            save_path = f"{self.dir_out}/speedup_N_{n}_{reversed_text_order}.{FORMAT}"
+            fig.savefig(save_path, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.close(fig)  # Avoid memory leak
+
+        return ax, lgd  # Return ax and legend for further customization
+
+    def plotgen_speedups_over_N_all_ORIG(self, hw_groups=[]):
         """
         Generate the plot of speedups_vv (the most sensible vv case) over N for all the benchmarks, hw, and compilers.
+        hw_groups is a list of lists, where each list contains the hw names that should be grouped together.
         """
 
         self.preprocess_data()
@@ -577,50 +650,127 @@ class PlotSpeedUps:
         speedups_over_N = self.proc_data_speedup.copy()
         speedups_over_N = speedups_over_N[0:0]  # clear the rows
 
-        for bench_id in self.proc_data_speedup['benchId'].unique():
-            for hw in self.proc_data_speedup['hw'].unique():
-                for compiler in self.proc_data_speedup['compiler'].unique():
-                    if bench_id in [7, 8, 5, 6]:
-                        # For these benchIds we only have 1 entry of speedup_vv, so we can just take any speed_vv entry.
-                        masked_data = self.proc_data_speedup[
-                            (self.proc_data_speedup['benchId'] == bench_id) &
-                            (self.proc_data_speedup['hw'] == hw) &
-                            (self.proc_data_speedup['compiler'] == compiler) &
-                            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
-                            ]
-                        speedups_over_N = pd.concat([speedups_over_N, masked_data], ignore_index=True)  # concat
-                    else:
-                        print(f"Skipping benchId={bench_id} for speedups_over_N.")
-                        continue
+        if len(hw_groups) == 0:
+            hw_groups.append(self.proc_data_speedup['hw'].unique())
 
-        fig = plt.figure(figsize=(32, 32))
-        lineplot = sns.lineplot(
-            data=speedups_over_N,
-            x='N',
-            y='data_point',
-            hue='benchId_hw',
-            style=speedups_over_N['compiler'].apply(
-                lambda x:
-                    'dashed' if 'g++' in x and '14' in x else
-                    'dotted' if 'g++' in x and '13' in x else
-                    'solid' if 'clang' in x and '18' in x else
-                    'dashdot' if 'clang' in x and '17' in x else
-                    'solid'
-            ),
-            palette='viridis',
-            ci="sd",  # Show std-deviation confidence intervals
-            markers=True,
-            dashes=True
-        )
-        plt.title("Speedup_vv Over N")
-        plt.xlabel("N")
-        plt.xticks(rotation=90, fontsize=7)
-        plt.ylabel("Speedup_vv")
-        lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.subplots_adjust(bottom=0.5, right=0.8)
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig(f"{self.dir_out}/speedup_vv_over_N.svg", bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+        for hw_group in hw_groups:
+            for bench_id in self.proc_data_speedup['benchId'].unique():
+                for hw in hw_group:
+                    for compiler in self.proc_data_speedup['compiler'].unique():
+                        if bench_id in [7, 8, 5, 6]:
+                            # For these benchIds we only have 1 entry of speedup_vv, so we can just take any speed_vv entry.
+                            masked_data = self.proc_data_speedup[
+                                (self.proc_data_speedup['benchId'] == bench_id) &
+                                (self.proc_data_speedup['hw'] == hw) &
+                                (self.proc_data_speedup['compiler'] == compiler) &
+                                (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
+                                ]
+                            speedups_over_N = pd.concat([speedups_over_N, masked_data], ignore_index=True)  # concat
+                        else:
+                            print(f"Skipping benchId={bench_id} for speedups_over_N.")
+                            continue
+
+            fig = plt.figure(figsize=(32, 32))
+            lineplot = sns.lineplot(
+                data=speedups_over_N,
+                x='N',
+                y='data_point',
+                hue='benchId_hw',
+                style=speedups_over_N['compiler'].apply(
+                    lambda x:
+                        'dashed' if 'G' in x and '14' in x else
+                        'dotted' if 'G' in x and '13' in x else
+                        'solid' if 'C' in x and '18' in x else
+                        'dashdot' if 'C' in x and '17' in x else
+                        'solid'
+                ),
+                palette='viridis',
+                ci="sd",  # Show std-deviation confidence intervals
+                markers=False,
+                dashes=True,
+                legend='full'
+            )
+            legend_elements = [
+                Line2D([0], [0], color='black', lw=2, linestyle='--', label='Dashed (G14)'),
+                Line2D([0], [0], color='black', lw=2, linestyle=':', label='Dotted (G13)'),
+                Line2D([0], [0], color='black', lw=2, linestyle='-', label='Solid (C18)'),
+                Line2D([0], [0], color='black', lw=2, linestyle='-.', label='Dashdot (C17)'),
+            ]
+            handles, labels = plt.gca().get_legend_handles_labels()
+            handles.extend(legend_elements)  # Directly extend with the Line2D objects
+            labels.extend([e.get_label() for e in legend_elements])  # Append the labels
+            lgd = plt.legend(handles=handles, labels=labels, title="Compiler Line Style", bbox_to_anchor=(1.05, 1),
+                             loc='upper left')
+
+            plt.title("Speedup_vv Over N")
+            plt.xlabel("N")
+            plt.xticks(rotation=90, fontsize=7)
+            plt.ylabel("Speedup_vv")
+            plt.subplots_adjust(bottom=0.5, right=0.8)
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+    def plotgen_speedups_over_N_all(self, hw_groups=[]):
+        """
+        Generate the plot of speedups_vv (the most sensible vv case) over N for all the benchmarks, hw, and compilers.
+        hw_groups is a list of lists, where each list contains the hw names that should be grouped together.
+        """
+
+        self.preprocess_data()
+
+
+
+        if len(hw_groups) == 0:
+            hw_groups.append(self.proc_data_speedup['hw'].unique())
+
+
+        for hw_group in hw_groups:
+
+            # Start with a fresh copy
+            speedups_over_N = self.proc_data_speedup.copy()
+            speedups_over_N = speedups_over_N[0:0]  # clear the rows
+
+            for bench_id in self.proc_data_speedup['benchId'].unique():
+                for hw in hw_group:
+                    for compiler in self.proc_data_speedup['compiler'].unique():
+                        if bench_id in [7, 8, 5, 6]:
+                            # For these benchIds we only have 1 entry of speedup_vv, so we can just take any speed_vv entry.
+                            masked_data = self.proc_data_speedup[
+                                (self.proc_data_speedup['benchId'] == bench_id) &
+                                (self.proc_data_speedup['hw'] == hw) &
+                                (self.proc_data_speedup['compiler'] == compiler) &
+                                (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
+                                ]
+                            speedups_over_N = pd.concat([speedups_over_N, masked_data], ignore_index=True)  # concat
+                        else:
+                            print(f"Skipping benchId={bench_id} for speedups_over_N.")
+                            continue
+
+            fig = plt.figure(figsize=(32, 32))
+            lineplot = sns.lineplot(
+                data=speedups_over_N,
+                x='N',
+                y='data_point',
+                hue='benchId_hw',
+                style='compiler',
+                palette='viridis',
+                ci="sd",  # Show std-deviation confidence intervals
+                markers=False,
+                dashes=True,
+                legend='full'
+            )
+            lgd = plt.legend(bbox_to_anchor=(1.05, 1),loc='upper left')
+
+            plt.title("Speedup_vv Over N")
+            plt.xlabel("N")
+            plt.xticks(rotation=90, fontsize=7)
+            plt.ylabel("Speedup_vv")
+            plt.subplots_adjust(bottom=0.5, right=0.8)
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
 if __name__ == '__main__':
@@ -648,17 +798,28 @@ if __name__ == '__main__':
 
     if args.s_from is not None:
         obj = PlotSpeedUps.deserialize(args.s_from)
-        obj.plotgen_runtimes_all(reversed_text_order=True)
-        obj.plotgen_speedups_all(reversed_text_order=True)
-        obj.plotgen_speedups_over_N_all()
     else:
         dumps = args.dumps
         obj = PlotSpeedUps(dumps, '/tmp')
-        obj.plotgen_runtimes_all(reversed_text_order=True)
-        obj.plotgen_speedups_all(reversed_text_order=True)
-        obj.plotgen_speedups_over_N_all()
-        obj.plotgen_runtimes_all(reversed_text_order=False)
-        obj.plotgen_speedups_all(reversed_text_order=False)
+
+    for order in [True, False]:
+        for per_hw in [True, False]:
+            obj.plotgen_runtimes_all(reversed_text_order=order, per_hw=per_hw)
+            obj.plotgen_speedups_all(reversed_text_order=order, per_hw=per_hw)
+            obj.plotgen_speedups_all_per_n_subplots(reversed_text_order=order, per_hw=per_hw)
+
+    obj.plotgen_speedups_over_N_all()
+
+    # 'Xeon5218' 'Xeon8260' 'Xeon8358' 'SpacemitK1'
+    obj.plotgen_speedups_over_N_all(
+        [
+            ['SpacemitK1'],             # SpacemitK1
+            ['Xeon8260', 'Xeon8358'],   # G100, Leonardo
+            ['Xeon8260'],               # G100
+            ['Xeon8358'],               # Leonardo
+            ['Xeon5218']                # Furore
+        ]
+    )
 
     if args.s_to is not None:
         obj.serialize(args.s_to)

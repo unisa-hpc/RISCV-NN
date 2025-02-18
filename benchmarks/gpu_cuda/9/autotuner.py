@@ -47,26 +47,49 @@ class MyKernelAutoTuner:
         self.args = None
 
         # ----------------------------------------
-        self.tune_params = dict()
-        self.tune_params["block_size_x"] = [32, 64, 128, 256, 512, 1024]
-        self.tune_params["block_size_y"] = [1]
-        self.tune_params["block_size_z"] = [1]
-        self.tune_params["pot_words_per_uint8"] = [self.pot_words_per_uint8] # dont modify this
-        self.tune_params["vBM"] = [64, 128, 256]
-        self.tune_params["vBN"] = [64, 128, 256]
-        self.tune_params["vBK"] = [8, 16]
-        self.tune_params["vTM"] = [2, 4, 8]
-        self.tune_params["vTN"] = [2, 4, 8]
-        self.tune_params["vUF0"] = [1, 2]
-        self.tune_params["vUF1"] = [1, 2]
-        self.tune_params["vUF2"] = [1, 2]
-        self.tune_params["vUF3"] = [1, 2]
-        self.tune_params["vUF4"] = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.tune_params["vUF5"] = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.tune_params["vUF6"] = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.tune_params["vUF7"] = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.tune_params["vUF8"] = [1, 2]
-        self.tune_params["vUF9"] = [1, 2]
+        dbg = False
+        if not dbg:
+            self.tune_params = dict()
+            self.tune_params["block_size_x"] = [32, 64, 128, 256, 512, 1024]
+            self.tune_params["block_size_y"] = [1]
+            self.tune_params["block_size_z"] = [1]
+            self.tune_params["pot_words_per_uint8"] = [self.pot_words_per_uint8] # dont modify this
+            self.tune_params["vBM"] = [64, 128, 256]
+            self.tune_params["vBN"] = [64, 128, 256]
+            self.tune_params["vBK"] = [8, 16]
+            self.tune_params["vTM"] = [2, 4, 8]
+            self.tune_params["vTN"] = [2, 4, 8]
+            self.tune_params["vUF0"] = [1, 2]
+            self.tune_params["vUF1"] = [1, 2]
+            self.tune_params["vUF2"] = [1, 2]
+            self.tune_params["vUF3"] = [1, 2]
+            self.tune_params["vUF4"] = [1, 2, 3, 4, 5, 6, 7, 8]
+            self.tune_params["vUF5"] = [1, 2, 3, 4, 5, 6, 7, 8]
+            self.tune_params["vUF6"] = [1, 2, 3, 4, 5, 6, 7, 8]
+            self.tune_params["vUF7"] = [1, 2, 3, 4, 5, 6, 7, 8]
+            self.tune_params["vUF8"] = [1, 2]
+            self.tune_params["vUF9"] = [1, 2]
+        else:
+            self.tune_params = dict()
+            self.tune_params["block_size_x"] = [256]
+            self.tune_params["block_size_y"] = [1]
+            self.tune_params["block_size_z"] = [1]
+            self.tune_params["pot_words_per_uint8"] = [self.pot_words_per_uint8]  # dont modify this
+            self.tune_params["vBM"] = [128, ]
+            self.tune_params["vBN"] = [128,]
+            self.tune_params["vBK"] = [8,]
+            self.tune_params["vTM"] = [4,8,]
+            self.tune_params["vTN"] = [4,8,]
+            self.tune_params["vUF0"] = [1,2]
+            self.tune_params["vUF1"] = [1,2]
+            self.tune_params["vUF2"] = [1,2]
+            self.tune_params["vUF3"] = [1,2]
+            self.tune_params["vUF4"] = [1,2]
+            self.tune_params["vUF5"] = [1,2]
+            self.tune_params["vUF6"] = [1,2]
+            self.tune_params["vUF7"] = [1,2]
+            self.tune_params["vUF8"] = [1,2]
+            self.tune_params["vUF9"] = [1,2]
         # ----------------------------------------
         self.results = {}
 
@@ -288,8 +311,6 @@ class MyKernelAutoTuner:
             cache=(pathlib.Path(self.dumps_dir) / pathlib.Path(f"cachefile__{self.kernel_file}__{self.kernel_name}__N{matrix_size}.json")).__str__(),
             simulation_mode=False, # Simulates opt from the existing cache file
         )
-        ##print("Finding the minimum time configuration...")
-        ##best = min(results_res, key=lambda x: x['time'])
 
         # Initialize the nested dictionary structure if it does not exist
         if self.kernel_file not in self.results:
@@ -298,10 +319,10 @@ class MyKernelAutoTuner:
             self.results[self.kernel_file][self.kernel_name] = {}
         if matrix_size not in self.results[self.kernel_file][self.kernel_name]:
             self.results[self.kernel_file][self.kernel_name][matrix_size] = {}
-        ##self.results[self.kernel_file][self.kernel_name][matrix_size]["best"] = best
+        self.results[self.kernel_file][self.kernel_name][matrix_size]["best"] = results_env['best_config']
         self.results[self.kernel_file][self.kernel_name][matrix_size]["env"] = results_env
         self.results[self.kernel_file][self.kernel_name][matrix_size]["all"] = results_res
-        ##print(f"Best configuration: {best}")
+        print(f"Best configuration: {results_env['best_config']}")
 
     def get_results_all(self):
         return self.results
@@ -402,7 +423,7 @@ if __name__ == "__main__":
     parser.add_argument("cc", type=str, help="cuda_capability, for example: 70 or 89")
 
     # args with default values
-    parser.add_argument("--maxiter", type=int, default=5000, help="Maximum number of iterations for each kernel configuration")
+    parser.add_argument("--maxiter", type=int, default=500000, help="Maximum number of iterations for each kernel configuration")
     parser.add_argument("--reps", type=int, default=7, help="Number of repetitions for each kernel configuration")
     parser.add_argument("--time", type=int, default=3600*3, help="Time limit in seconds for each kernel configuration")
 
@@ -424,10 +445,11 @@ if __name__ == "__main__":
     print(f"Unique dump directory: {sub_dump_dir}")
     print(f"CUDA capability: {args.cc}")
     print(f"Repetitions: {args.reps}")
+    print(f"Max iterations: {args.maxiter}")
     print(f"Time limit: {args.time}")
 
     autotuners = {}
-    for size in [1024]:
+    for size in [2048, 4096]:
         print(f"Generating input tensors for size: {size}")
         matrices = get_matrices_pot4bit_uint8(size)
         for is_pot in [False, True]:
@@ -456,5 +478,5 @@ if __name__ == "__main__":
                 print(f"Finished autotuning for {k_name},  size: {size}, took: {datetime.datetime.now() - now}")
 
     for autotuner in autotuners.values():
-        autotuner.plot_all_times()
         autotuner.save_results_all()
+        autotuner.plot_all_times()
