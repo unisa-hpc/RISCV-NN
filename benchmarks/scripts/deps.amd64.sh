@@ -78,10 +78,12 @@ if [ "$SKIP_CONDA_INSTALL" = false ]; then
         # --- Install Python Packages ---
         echo "Installing required Python packages in '$conda_env_name'..."
         # Install packages one by one to better handle failures
-        for package in pandas jq numpy seaborn matplotlib pathlib colorama openpyxl; do
+        for package in jq pathlib colorama; do
             echo "Installing $package..."
             "$conda_dir/bin/conda" run -n "$conda_env_name" conda install -y -c conda-forge "$package" || exit_on_error "Failed to install $package"
         done
+        # install these with pip in conda
+        "$conda_dir/bin/conda" run -n "$conda_env_name" pip install pandas numpy seaborn matplotlib openpyxl || exit_on_error "Failed to install pyyaml"
     else
         echo "Conda directory already exists, skipping installation..."
     fi
