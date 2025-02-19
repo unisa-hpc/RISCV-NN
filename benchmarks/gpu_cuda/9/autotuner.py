@@ -47,7 +47,7 @@ class MyKernelAutoTuner:
         self.args = None
 
         # ----------------------------------------
-        dbg = False
+        dbg = True
         if not dbg:
             self.tune_params = dict()
             self.tune_params["block_size_x"] = [32, 64, 128, 256, 512, 1024]
@@ -91,7 +91,8 @@ class MyKernelAutoTuner:
             self.tune_params["vUF8"] = [1,2]
             self.tune_params["vUF9"] = [1,2]
         # ----------------------------------------
-        self.results = {}
+        self.results = {}   # A huge json file
+        self.bests = {}     # A brief best only
 
     @staticmethod
     def validate_kernel_parameters(
@@ -315,19 +316,26 @@ class MyKernelAutoTuner:
         # Initialize the nested dictionary structure if it does not exist
         if self.kernel_file not in self.results:
             self.results[self.kernel_file] = {}
+            self.bests[self.kernel_file] = {}
         if self.kernel_name not in self.results[self.kernel_file]:
             self.results[self.kernel_file][self.kernel_name] = {}
+            self.bests[self.kernel_file][self.kernel_name] = {}
         if matrix_size not in self.results[self.kernel_file][self.kernel_name]:
             self.results[self.kernel_file][self.kernel_name][matrix_size] = {}
+            self.bests[self.kernel_file][self.kernel_name][matrix_size] = {}
         self.results[self.kernel_file][self.kernel_name][matrix_size]["best"] = results_env['best_config']
         self.results[self.kernel_file][self.kernel_name][matrix_size]["env"] = results_env
         self.results[self.kernel_file][self.kernel_name][matrix_size]["all"] = results_res
+        self.bests[self.kernel_file][self.kernel_name][matrix_size] = results_env['best_config']
         print(f"Best configuration: {results_env['best_config']}")
 
     def get_results_all(self):
         return self.results
 
     def save_results_all(self):
+        with open(pathlib.Path(self.dumps_dir) / pathlib.Path(
+                f"bests_all__{self.kernel_file}__{self.kernel_name}.json").__str__(), 'w') as fp:
+            json.dump(self.bests, fp)
         with open(pathlib.Path(self.dumps_dir) / pathlib.Path(
                 f"results_all__{self.kernel_file}__{self.kernel_name}.json").__str__(), 'w') as fp:
             json.dump(self.results, fp)
