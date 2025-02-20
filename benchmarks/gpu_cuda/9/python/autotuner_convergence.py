@@ -131,13 +131,19 @@ class GpuAutotunerConvergencePlotter:
             try :
                 y[i] = run['time']
             except:
-                y[i] = 0
+                y[i] = -1
 
 
         ax[subplot_idx].plot(x, y, label=f"{k_kernel} N={k_n} {self.data_aggr[k_file][k_kernel][k_n]['opt']['opt']}")
 
         # add legend
         ax[subplot_idx].legend()
+
+        # delete negative values for min/max calculation
+        y = y[y > 0]
+
+        # add title
+        ax[subplot_idx].set_title(f"{k_kernel} N={k_n}, [[Min: {min(y):.3f} ms]], Max: {max(y):.3f} ms")
 
 
     def get_count(self):
