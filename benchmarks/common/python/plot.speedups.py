@@ -14,6 +14,7 @@ import matplotlib as mpl
 
 FORMAT='png'
 FIG_WIDTH=8.27 # inches, A4 width=8.27
+FIG_HEIGHT1=3.5
 
 
 class PlotSpeedUps:
@@ -477,7 +478,7 @@ class PlotSpeedUps:
         unique_bars = masked_data['benchId_hw_compiler_name'].unique()
         unique_bars = sorted(unique_bars)
 
-        plt.figure(figsize=(FIG_WIDTH, 5))
+        plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT1))
 
         # reversed-text sorting
         if reversed_text_order:
@@ -587,7 +588,7 @@ class PlotSpeedUps:
 
         save_fig = False  # Track whether to save the figure
         if ax is None:
-            fig, ax = plt.subplots(figsize=(FIG_WIDTH, 5))
+            fig, ax = plt.subplots(figsize=(FIG_WIDTH, FIG_HEIGHT1))
             fig.subplots_adjust(bottom=0.5, right=0.8)
             save_fig = True
 
@@ -749,7 +750,7 @@ class PlotSpeedUps:
                             print(f"Skipping benchId={bench_id} for speedups_over_N.")
                             continue
 
-            fig = plt.figure(figsize=(FIG_WIDTH, 5))
+            fig = plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT1))
             lineplot = sns.lineplot(
                 data=speedups_over_N,
                 x='N',

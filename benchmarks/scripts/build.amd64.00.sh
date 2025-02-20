@@ -33,7 +33,7 @@ function set_compiler_flags() {
         echo "Using Clang++ compatible flags."
         flags_main="-O3 -march=native -ffast-math -fno-vectorize ${new_dump_dir}/libvec.a ${new_dump_dir}/libscalarvec.a ${new_dump_dir}/libscalarnovec.a -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_vec="-c -O3 -march=native -ffast-math -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
-        flags_scalar_vec="-c -O3 -march=native -ffast-math -DAUTOVEC -fvectorize -Rpass=loop-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
+        flags_scalar_vec="-c -O3 -march=native -ffast-math -DAUTOVEC -Rpass=loop-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
         flags_scalar_novec="-c -O3 -march=native -ffast-math -fno-vectorize -Wall -Wextra -v -I$script_dir/../../common $extra_flags"
     else
         echo "Error: Unrecognized compiler '$compiler_path'. Must be g++ or clang++ (with optional version number)"
