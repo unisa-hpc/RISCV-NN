@@ -13,6 +13,7 @@ from parsing.lamda_funcs import *
 import matplotlib as mpl
 
 FORMAT='png'
+FIG_WIDTH=8.27 # inches, A4 width=8.27
 
 
 class PlotSpeedUps:
@@ -476,7 +477,7 @@ class PlotSpeedUps:
         unique_bars = masked_data['benchId_hw_compiler_name'].unique()
         unique_bars = sorted(unique_bars)
 
-        plt.figure(figsize=(32, 32))
+        plt.figure(figsize=(FIG_WIDTH, 5))
 
         # reversed-text sorting
         if reversed_text_order:
@@ -517,7 +518,7 @@ class PlotSpeedUps:
         lgd = plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)  # Adjust the bottom margin
         # plt.show()
-        plt.savefig(f"{self.dir_out}/runtime_N_{n}_{reversed_text_order}_{hw}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(f"{self.dir_out}/runtime_N_{n}_{reversed_text_order}_{hw}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
 
     def plotgen_speedups_all(self, reversed_text_order=False, per_hw=False):
         """
@@ -552,7 +553,7 @@ class PlotSpeedUps:
                 unique_n_list = self.proc_data_speedup['N'].unique()
 
             # create a figure with multiple subplots
-            fig, axs = plt.subplots(len(unique_n_list), 1, figsize=(32, 32))
+            fig, axs = plt.subplots(len(unique_n_list), 1, figsize=(FIG_WIDTH, 32))
             fig.subplots_adjust(hspace=0.5, wspace=0.8)
 
             if len(unique_n_list) == 1:
@@ -572,7 +573,7 @@ class PlotSpeedUps:
 
             # each subplot has its own legend
             # save the figure with all the legends and subplots
-            plt.savefig(f"{self.dir_out}/speedup_all_N_{hw}_{reversed_text_order}.{FORMAT}", bbox_extra_artists=(lgnd,), bbox_inches='tight')
+            plt.savefig(f"{self.dir_out}/speedup_all_N_{hw}_{reversed_text_order}.{FORMAT}", bbox_extra_artists=(lgnd,), bbox_inches='tight', dpi=300)
 
 
     def plotgen_speedups_one(self, n: int, reversed_text_order=False, ax=None, hw: str=None):
@@ -586,7 +587,7 @@ class PlotSpeedUps:
 
         save_fig = False  # Track whether to save the figure
         if ax is None:
-            fig, ax = plt.subplots(figsize=(32, 32))
+            fig, ax = plt.subplots(figsize=(FIG_WIDTH, 5))
             fig.subplots_adjust(bottom=0.5, right=0.8)
             save_fig = True
 
@@ -633,7 +634,7 @@ class PlotSpeedUps:
         # Save figure only if we created it
         if save_fig:
             save_path = f"{self.dir_out}/speedup_N_{n}_{reversed_text_order}.{FORMAT}"
-            fig.savefig(save_path, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            fig.savefig(save_path, bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
             plt.close(fig)  # Avoid memory leak
 
         return ax, lgd  # Return ax and legend for further customization
@@ -671,7 +672,7 @@ class PlotSpeedUps:
                             print(f"Skipping benchId={bench_id} for speedups_over_N.")
                             continue
 
-            fig = plt.figure(figsize=(32, 32))
+            fig = plt.figure(figsize=(FIG_WIDTH, 32))
             lineplot = sns.lineplot(
                 data=speedups_over_N,
                 x='N',
@@ -710,7 +711,7 @@ class PlotSpeedUps:
             plt.subplots_adjust(bottom=0.5, right=0.8)
             plt.tight_layout()
             # plt.show()
-            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
 
     def plotgen_speedups_over_N_all(self, hw_groups=[]):
         """
@@ -748,7 +749,7 @@ class PlotSpeedUps:
                             print(f"Skipping benchId={bench_id} for speedups_over_N.")
                             continue
 
-            fig = plt.figure(figsize=(32, 32))
+            fig = plt.figure(figsize=(FIG_WIDTH, 5))
             lineplot = sns.lineplot(
                 data=speedups_over_N,
                 x='N',
@@ -770,7 +771,7 @@ class PlotSpeedUps:
             plt.subplots_adjust(bottom=0.5, right=0.8)
             plt.tight_layout()
             # plt.show()
-            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':
@@ -814,9 +815,8 @@ if __name__ == '__main__':
     obj.plotgen_speedups_over_N_all(
         [
             ['SpacemitK1'],             # SpacemitK1
-            ['Xeon8260', 'Xeon8358'],   # G100, Leonardo
+            ['Ryzen97950X'],            # Pagamp
             ['Xeon8260'],               # G100
-            ['Xeon8358'],               # Leonardo
             ['Xeon5218']                # Furore
         ]
     )

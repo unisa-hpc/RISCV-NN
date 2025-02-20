@@ -24,10 +24,16 @@ def formula(T:int):
     s = sp.expand(e_last)
     s = str(s)
     s = s.replace("H", "ste_binarize01")
-    s = s.replace("w", "self.weight_shifts(")
+    s = s.replace("w", "self.weight_shifts")
+    print("Code: ", s_last, "=", s)
+
+    s = sp.expand(e_last)
+    s = str(s)
+    s = s.replace("H", "\mathbb{1}")
+    s = s.replace("w", "w_")
     print("Code: ", s_last, "=", s)
 
 
 
 if __name__ == '__main__':
-    formula(3)
+    formula(7)

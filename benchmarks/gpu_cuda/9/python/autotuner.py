@@ -11,10 +11,13 @@ import argparse
 
 from exceptiongroup import catch
 
+from autotuner_convergence import GpuAutotunerConvergencePlotter
+
 
 class MyKernelAutoTuner:
     def __init__(
             self,
+            opt: str,
             cuda_capability: str,
             kernel_file: str,
             kernel_name: str,
@@ -25,6 +28,7 @@ class MyKernelAutoTuner:
             limit_iterations: int,
             dumps_dir: str
     ):
+        self.opt = opt
         self.cuda_capability = cuda_capability
         self.kernel_file = kernel_file
         self.kernel_name = kernel_name + "<vBM, vBN, vBK, vTM, vTN>"
@@ -47,28 +51,28 @@ class MyKernelAutoTuner:
         self.args = None
 
         # ----------------------------------------
-        dbg = True
+        dbg = False
         if not dbg:
             self.tune_params = dict()
             self.tune_params["block_size_x"] = [32, 64, 128, 256, 512, 1024]
             self.tune_params["block_size_y"] = [1]
             self.tune_params["block_size_z"] = [1]
             self.tune_params["pot_words_per_uint8"] = [self.pot_words_per_uint8] # dont modify this
-            self.tune_params["vBM"] = [64, 128, 256]
-            self.tune_params["vBN"] = [64, 128, 256]
+            self.tune_params["vBM"] = [64, 128, 256, 512]
+            self.tune_params["vBN"] = [64, 128, 256, 512]
             self.tune_params["vBK"] = [8, 16]
-            self.tune_params["vTM"] = [2, 4, 8]
-            self.tune_params["vTN"] = [2, 4, 8]
-            self.tune_params["vUF0"] = [1, 2]
-            self.tune_params["vUF1"] = [1, 2]
-            self.tune_params["vUF2"] = [1, 2]
-            self.tune_params["vUF3"] = [1, 2]
-            self.tune_params["vUF4"] = [1, 2, 3, 4, 5, 6, 7, 8]
-            self.tune_params["vUF5"] = [1, 2, 3, 4, 5, 6, 7, 8]
-            self.tune_params["vUF6"] = [1, 2, 3, 4, 5, 6, 7, 8]
-            self.tune_params["vUF7"] = [1, 2, 3, 4, 5, 6, 7, 8]
-            self.tune_params["vUF8"] = [1, 2]
-            self.tune_params["vUF9"] = [1, 2]
+            self.tune_params["vTM"] = [2, 4, 8, 16]
+            self.tune_params["vTN"] = [2, 4, 8, 16]
+            self.tune_params["vUF0"] = [1, 2, 4]
+            self.tune_params["vUF1"] = [1, 2, 4]
+            self.tune_params["vUF2"] = [1, 2, 4]
+            self.tune_params["vUF3"] = [1, 2, 4]
+            self.tune_params["vUF4"] = [8, 16, 32]
+            self.tune_params["vUF5"] = [8, 16, 32]
+            self.tune_params["vUF6"] = [8, 16, 32]
+            self.tune_params["vUF7"] = [8, 16, 32]
+            self.tune_params["vUF8"] = [1, 2, 4]
+            self.tune_params["vUF9"] = [1, 2, 4]
         else:
             self.tune_params = dict()
             self.tune_params["block_size_x"] = [256]
@@ -287,7 +291,7 @@ class MyKernelAutoTuner:
             grid_div_y=["vBM"],
 
             #strategy="bayes_opt",
-            strategy="pso",
+            strategy=self.opt,
             #strategy="bayes_opt",
 
 
@@ -326,6 +330,7 @@ class MyKernelAutoTuner:
         self.results[self.kernel_file][self.kernel_name][matrix_size]["best"] = results_env['best_config']
         self.results[self.kernel_file][self.kernel_name][matrix_size]["env"] = results_env
         self.results[self.kernel_file][self.kernel_name][matrix_size]["all"] = results_res
+        self.results[self.kernel_file][self.kernel_name][matrix_size]["opt"] = {'opt': self.opt, 'maxiter': self.limit_iterations, 'time_limit': self.limit_seconds}
         self.bests[self.kernel_file][self.kernel_name][matrix_size] = results_env['best_config']
         print(f"Best configuration: {results_env['best_config']}")
 
@@ -457,11 +462,11 @@ if __name__ == "__main__":
     print(f"Time limit: {args.time}")
 
     autotuners = {}
-    for size in [2048, 4096]:
+    for size in [4096]:
         print(f"Generating input tensors for size: {size}")
         matrices = get_matrices_pot4bit_uint8(size)
         for is_pot in [False, True]:
-            for words_per_uint8 in [2, 4]:
+            for words_per_uint8 in [2]:
                 # skip if is_pot is False and words_per_uint8 is 4, when is_pot is False, words_per_uint8 is set to 1 internally
                 # We don't want to tune the base kernel twice for the same size
                 if not is_pot and words_per_uint8 == 4:
@@ -469,6 +474,10 @@ if __name__ == "__main__":
                 k_name = f"KernelMatmulPotUint8Packed{words_per_uint8}" if is_pot else "KernelMatmulBase"
                 if k_name not in autotuners:
                     autotuners[k_name] = MyKernelAutoTuner(
+                        # basinhopping, bayes_opt, brute_force, minimize, dual annealing, diff_evo, firefly_algorithm,
+                        # genetic_algorithm, greedy_ils, greedy_mls, mls, ordered_greedy_mls, pso, random_sample,
+                        # simulated_annealing
+                        opt="genetic_algorithm",
                         cuda_capability=args.cc,
                         kernel_file="kernels.cu",
                         kernel_name=k_name,
@@ -479,6 +488,8 @@ if __name__ == "__main__":
                         limit_iterations=args.maxiter,
                         dumps_dir=pathlib.Path(sub_dump_dir).__str__()
                     )
+                    autotuners[k_name].save_results_all()
+                    GpuAutotunerConvergencePlotter(sub_dump_dir).plotgen_all()
 
                 print(f"Starting autotuning for {k_name}, size: {size}")
                 now = datetime.datetime.now()
@@ -487,4 +498,5 @@ if __name__ == "__main__":
 
     for autotuner in autotuners.values():
         autotuner.save_results_all()
-        autotuner.plot_all_times()
+        GpuAutotunerConvergencePlotter(sub_dump_dir).plotgen_all()
+        #autotuner.plot_all_times()
