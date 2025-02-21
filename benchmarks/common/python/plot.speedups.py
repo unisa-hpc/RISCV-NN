@@ -541,6 +541,7 @@ class PlotSpeedUps:
     def plotgen_speedups_all_per_n_subplots(self, reversed_text_order=False, per_hw=False):
         """
         Generate all the plots, as many as needed for the parsed data.
+        per_hw: If True, generate a separate plot for each hardware.
         """
         self.preprocess_data()
 
@@ -552,6 +553,9 @@ class PlotSpeedUps:
                 unique_n_list = sub['N'].unique()
             else:
                 unique_n_list = self.proc_data_speedup['N'].unique()
+
+            # Sort the unique Ns
+            unique_n_list.sort()
 
             # create a figure with multiple subplots
             fig, axs = plt.subplots(len(unique_n_list), 1, figsize=(FIG_WIDTH, 32))
@@ -818,7 +822,8 @@ if __name__ == '__main__':
             ['SpacemitK1'],             # SpacemitK1
             ['Ryzen97950X'],            # Pagamp
             ['Xeon8260'],               # G100
-            ['Xeon5218']                # Furore
+            ['Xeon5218'],               # Furore
+            ['Xeon5218', 'Xeon8260'],   # Furore, G100
         ]
     )
 

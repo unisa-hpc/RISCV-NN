@@ -115,8 +115,8 @@ class GpuAutotunerConvergencePlotter:
 
         # set labels and title
         for i, ax in enumerate(axs):
-            ax.set_xlabel('Iteration number')
-            ax.set_ylabel('Time (ms)')
+            ax.set_xlabel('Iteration')
+            ax.set_ylabel('Kernel Runtime (ms)')
 
         # save the plot in subdump directory
         plt.savefig(f"{self.subdumpdir}/autotuner_convergence.png")

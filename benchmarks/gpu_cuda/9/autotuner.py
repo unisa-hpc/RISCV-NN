@@ -54,7 +54,7 @@ class MyKernelAutoTuner:
         dbg = False
         if not dbg:
             self.tune_params = dict()
-            self.tune_params["block_size_x"] = [32, 64, 128, 256, 512, 1024]
+            self.tune_params["block_size_x"] = [128, 256, 512, 1024]
             self.tune_params["block_size_y"] = [1]
             self.tune_params["block_size_z"] = [1]
             self.tune_params["pot_words_per_uint8"] = [self.pot_words_per_uint8] # dont modify this
@@ -67,10 +67,10 @@ class MyKernelAutoTuner:
             self.tune_params["vUF1"] = [1, 2, 4]
             self.tune_params["vUF2"] = [1, 2, 4]
             self.tune_params["vUF3"] = [1, 2, 4]
-            self.tune_params["vUF4"] = [8, 16, 32]
-            self.tune_params["vUF5"] = [8, 16, 32]
-            self.tune_params["vUF6"] = [8, 16, 32]
-            self.tune_params["vUF7"] = [8, 16, 32]
+            self.tune_params["vUF4"] = [4, 8, 16, 32]
+            self.tune_params["vUF5"] = [4, 8, 16, 32]
+            self.tune_params["vUF6"] = [4, 8, 16, 32]
+            self.tune_params["vUF7"] = [4, 8, 16, 32]
             self.tune_params["vUF8"] = [1, 2, 4]
             self.tune_params["vUF9"] = [1, 2, 4]
         else:
