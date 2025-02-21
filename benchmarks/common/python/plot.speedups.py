@@ -39,6 +39,7 @@ class PlotSpeedUps:
         sns.set_theme(style="whitegrid")
         sns.color_palette("hls", 8)
         self.is_preprocessed = False
+        self.STYLE_BENCHID = "brief1"
 
     def serialize(self, filename):
         with open(filename, 'wb') as f:
@@ -55,6 +56,7 @@ class PlotSpeedUps:
         self.dumps_parser.parse_all()
         self.raw_data = self.dumps_parser.get_dataframe_merged()
         self.raw_data['compiler'] = translate_compiler_name_to(self.raw_data['compiler'])
+        self.raw_data['benchId'] = translate_benchId_to(self.raw_data['benchId'], self.STYLE_BENCHID)
         self.proc_data = self.raw_data.copy()
 
 
@@ -98,12 +100,12 @@ class PlotSpeedUps:
             self.proc_data['name']
 
         self.proc_data['benchId_hw_compiler'] = \
-            'BenchId' + self.proc_data['benchId'].astype(str) + ', ' + \
+            self.proc_data['benchId'].astype(str) + ', ' + \
             self.proc_data['hw'] + ', ' + \
             self.proc_data['compiler']
 
         self.proc_data['benchId_hw'] = \
-            'BenchId' + self.proc_data['benchId'].astype(str) + ', ' + \
+            self.proc_data['benchId'].astype(str) + ', ' + \
             self.proc_data['hw']
 
         """
@@ -113,7 +115,7 @@ class PlotSpeedUps:
         - Speedup_vs: Vectorized / Scalar: scalar no autovec base with avx2 uut, scalar no autovec base with avx512 uut
         - Speedup_ss: Scalar / Scalar: scalar no autovec base with scalar autovec base
         """
-        unique_bids = self.proc_data['benchId'].unique()
+        unique_bids = [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in self.proc_data['benchId'].unique()]
         for bench_id in unique_bids:
             if bench_id == 0 or bench_id == 2 or bench_id == 3:
                 print(f"NYI: Preprocessing data for benchID={bench_id}")
@@ -661,13 +663,13 @@ class PlotSpeedUps:
 
 
         for hw_group in hw_groups:
-            for bench_id in self.proc_data_speedup['benchId'].unique():
+            for bench_id in [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in self.proc_data_speedup['benchId'].unique()]:
                 for hw in hw_group:
                     for compiler in self.proc_data_speedup['compiler'].unique():
                         if bench_id in [7, 8, 5, 6]:
                             # For these benchIds we only have 1 entry of speedup_vv, so we can just take any speed_vv entry.
                             masked_data = self.proc_data_speedup[
-                                (self.proc_data_speedup['benchId'] == bench_id) &
+                                (self.proc_data_speedup['benchId'] == translate_str_benchId_to(bench_id, self.STYLE_BENCHID)) &
                                 (self.proc_data_speedup['hw'] == hw) &
                                 (self.proc_data_speedup['compiler'] == compiler) &
                                 (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
@@ -738,13 +740,13 @@ class PlotSpeedUps:
             speedups_over_N = self.proc_data_speedup.copy()
             speedups_over_N = speedups_over_N[0:0]  # clear the rows
 
-            for bench_id in self.proc_data_speedup['benchId'].unique():
+            for bench_id in [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in self.proc_data_speedup['benchId'].unique()]:
                 for hw in hw_group:
                     for compiler in self.proc_data_speedup['compiler'].unique():
                         if bench_id in [7, 8, 5, 6]:
                             # For these benchIds we only have 1 entry of speedup_vv, so we can just take any speed_vv entry.
                             masked_data = self.proc_data_speedup[
-                                (self.proc_data_speedup['benchId'] == bench_id) &
+                                (self.proc_data_speedup['benchId'] == translate_str_benchId_to(bench_id, self.STYLE_BENCHID)) &
                                 (self.proc_data_speedup['hw'] == hw) &
                                 (self.proc_data_speedup['compiler'] == compiler) &
                                 (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry

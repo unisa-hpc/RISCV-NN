@@ -213,3 +213,38 @@ def translate_str_compiler_name_to(compiler_name: str, to_style: str) -> str:
 
 def translate_compiler_name_to(series: pd.Series, to_style: str = 'brief1') -> pd.Series:
     return series.apply(lambda x: translate_str_compiler_name_to(x, to_style))
+
+def translate_str_benchId_to(benchId: str, to_style: str, reverse=False) -> str:
+    ret_val = ""
+
+    if not (to_style == 'long1' or to_style == 'brief1'):
+        print("Invalid to_style: " + to_style)
+        return None
+
+    if to_style == 'long1':
+        raise NotImplementedError("Not implemented yet")
+
+    if to_style == 'brief1':
+        if not reverse:
+            ret_val = \
+                "FPoT W/ Permute" if benchId == 7 else \
+                "FPoT W/O Permute" if benchId == 8 else \
+                "FXPoT" if benchId == 2 else \
+                "FPoT Packed2" if benchId == 5 else \
+                "FXPoT Packed4" if benchId == 6 else \
+                "FXPoT" if benchId == 1 else \
+                None
+        else:
+            ret_val = \
+                7 if benchId == "FPoT W/ Permute" else \
+                8 if benchId == "FPoT W/O Permute" else \
+                2 if benchId == "FXPoT" else \
+                5 if benchId == "FPoT Packed2" else \
+                6 if benchId == "FXPoT Packed4" else \
+                1 if benchId == "FXPoT" else \
+                None
+
+    return ret_val
+
+def translate_benchId_to(series: pd.Series, to_style: str = 'brief1') -> pd.Series:
+    return series.apply(lambda x: translate_str_benchId_to(x, to_style))

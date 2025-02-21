@@ -83,7 +83,7 @@ if [ "$SKIP_CONDA_INSTALL" = false ]; then
             "$conda_dir/bin/conda" run -n "$conda_env_name" conda install -y -c conda-forge "$package" || exit_on_error "Failed to install $package"
         done
         # install these with pip in conda
-        "$conda_dir/bin/conda" run -n "$conda_env_name" pip install pandas numpy seaborn matplotlib openpyxl kernel_tuner orjson exceptiongroup || exit_on_error "Failed to install pyyaml"
+        "$conda_dir/bin/conda" run -n "$conda_env_name" pip install pandas numpy seaborn matplotlib openpyxl kernel_tuner orjson exceptiongroup pycuda || exit_on_error "Failed to install pyyaml"
     else
         echo "Conda directory already exists, skipping installation..."
     fi
