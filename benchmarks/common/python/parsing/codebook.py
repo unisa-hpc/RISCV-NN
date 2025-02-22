@@ -211,7 +211,7 @@ def translate_str_compiler_name_to(compiler_name: str, to_style: str) -> str:
 
     return ret_val
 
-def translate_compiler_name_to(series: pd.Series, to_style: str = 'brief1') -> pd.Series:
+def translate_compiler_name_to(series: pd.Series, to_style: str = 'long1') -> pd.Series:
     return series.apply(lambda x: translate_str_compiler_name_to(x, to_style))
 
 def translate_str_benchId_to(benchId: str, to_style: str, reverse=False) -> str:

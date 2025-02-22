@@ -15,6 +15,7 @@ import matplotlib as mpl
 FORMAT='png'
 FIG_WIDTH=8.27 # inches, A4 width=8.27
 FIG_HEIGHT1=3.5
+FIG_HEIGHT2=3.0
 
 
 class PlotSpeedUps:
@@ -646,93 +647,15 @@ class PlotSpeedUps:
 
         return ax, lgd  # Return ax and legend for further customization
 
-    def plotgen_speedups_over_N_all_ORIG(self, hw_groups=[]):
+    def plotgen_speedups_over_N_all_multilines_in_single_plot(self, hw_groups=[]):
         """
         Generate the plot of speedups_vv (the most sensible vv case) over N for all the benchmarks, hw, and compilers.
         hw_groups is a list of lists, where each list contains the hw names that should be grouped together.
         """
-
         self.preprocess_data()
-
-        # Prepare the dataframe for the plot
-        speedups_over_N = self.proc_data_speedup.copy()
-        speedups_over_N = speedups_over_N[0:0]  # clear the rows
 
         if len(hw_groups) == 0:
             hw_groups.append(self.proc_data_speedup['hw'].unique())
-
-
-        for hw_group in hw_groups:
-            for bench_id in [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in self.proc_data_speedup['benchId'].unique()]:
-                for hw in hw_group:
-                    for compiler in self.proc_data_speedup['compiler'].unique():
-                        if bench_id in [7, 8, 5, 6]:
-                            # For these benchIds we only have 1 entry of speedup_vv, so we can just take any speed_vv entry.
-                            masked_data = self.proc_data_speedup[
-                                (self.proc_data_speedup['benchId'] == translate_str_benchId_to(bench_id, self.STYLE_BENCHID)) &
-                                (self.proc_data_speedup['hw'] == hw) &
-                                (self.proc_data_speedup['compiler'] == compiler) &
-                                (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
-                                ]
-                            speedups_over_N = pd.concat([speedups_over_N, masked_data], ignore_index=True)  # concat
-                        else:
-                            print(f"Skipping benchId={bench_id} for speedups_over_N.")
-                            continue
-
-            fig = plt.figure(figsize=(FIG_WIDTH, 32))
-            lineplot = sns.lineplot(
-                data=speedups_over_N,
-                x='N',
-                y='data_point',
-                hue='benchId_hw',
-                style=speedups_over_N['compiler'].apply(
-                    lambda x:
-                        'dashed' if 'G' in x and '14' in x else
-                        'dotted' if 'G' in x and '13' in x else
-                        'solid' if 'C' in x and '18' in x else
-                        'dashdot' if 'C' in x and '17' in x else
-                        'solid'
-                ),
-                palette='viridis',
-                ci="sd",  # Show std-deviation confidence intervals
-                markers=False,
-                dashes=True,
-                legend='full'
-            )
-            legend_elements = [
-                Line2D([0], [0], color='black', lw=2, linestyle='--', label='Dashed (G14)'),
-                Line2D([0], [0], color='black', lw=2, linestyle=':', label='Dotted (G13)'),
-                Line2D([0], [0], color='black', lw=2, linestyle='-', label='Solid (C18)'),
-                Line2D([0], [0], color='black', lw=2, linestyle='-.', label='Dashdot (C17)'),
-            ]
-            handles, labels = plt.gca().get_legend_handles_labels()
-            handles.extend(legend_elements)  # Directly extend with the Line2D objects
-            labels.extend([e.get_label() for e in legend_elements])  # Append the labels
-            lgd = plt.legend(handles=handles, labels=labels, title="Compiler Line Style", bbox_to_anchor=(1.05, 1),
-                             loc='upper left')
-
-            plt.title("Speedup_vv Over N")
-            plt.xlabel("N")
-            plt.xticks(rotation=90, fontsize=7)
-            plt.ylabel("Speedup_vv")
-            plt.subplots_adjust(bottom=0.5, right=0.8)
-            plt.tight_layout()
-            # plt.show()
-            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
-
-    def plotgen_speedups_over_N_all(self, hw_groups=[]):
-        """
-        Generate the plot of speedups_vv (the most sensible vv case) over N for all the benchmarks, hw, and compilers.
-        hw_groups is a list of lists, where each list contains the hw names that should be grouped together.
-        """
-
-        self.preprocess_data()
-
-
-
-        if len(hw_groups) == 0:
-            hw_groups.append(self.proc_data_speedup['hw'].unique())
-
 
         for hw_group in hw_groups:
 
@@ -780,6 +703,93 @@ class PlotSpeedUps:
             # plt.show()
             plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
 
+    def plotgen_speedups_over_N_all_as_subfigures(self, hw_list=[]):
+        """
+        Generate the plot of speedups_vv (the most sensible vv case) over N for all the benchmarks, hw, and compilers.
+        hw_groups is a list of lists, where each list contains the hw names that should be grouped together.
+        """
+
+        self.preprocess_data()
+
+        if len(hw_list) == 0:
+            hw_list.append(self.proc_data_speedup['hw'].unique())
+
+        # Create a figure with multiple subplots
+        fig, axs = plt.subplots(len(hw_list), 1, figsize=(FIG_WIDTH, len(hw_list) * FIG_HEIGHT2))
+        fig.subplots_adjust(hspace=0.15)
+
+        if len(hw_list) == 1:
+            axs = [axs]
+
+        for i, hw in enumerate(hw_list):
+            masked_data = self.proc_data_speedup[
+                (self.proc_data_speedup['hw'] == hw) &
+                (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
+            ]
+            lineplot = sns.lineplot(
+                ax=axs[i],
+                data=masked_data,
+                x='N',
+                y='data_point',
+                hue='benchId_hw',
+                style='compiler',
+                palette='viridis',
+                ci="sd",  # Show std-deviation confidence intervals
+                markers=False,
+                dashes=True,
+                legend='full'
+            )
+            lgd = axs[i].legend(bbox_to_anchor=(1.05, 1),loc='upper left')
+
+            ############################################################################
+            # Add  a zoomed-in inset to top-left corner
+            zommed_data = masked_data[(masked_data['N'] >= 64) & (masked_data['N'] <= 256)]
+            axins = axs[i].inset_axes([0.1, .7, 0.3, 0.4])
+            #axins.set_yscale('log')
+            sns.lineplot(
+                ax=axins,
+                # 64<=N<=512
+                data=zommed_data,
+                x='N',
+                y='data_point',
+                hue='benchId_hw',
+                style='compiler',
+                palette='viridis',
+                ci="sd",  # Show std-deviation confidence intervals
+                markers=False,
+                dashes=True,
+                legend=False,
+            )
+
+            axins.set_xticks(zommed_data['N'].unique())
+            axins.set_xticklabels(zommed_data['N'].unique(), rotation=90, fontsize=6)
+            axins.grid(True)
+            axins.set_xlabel("Square Matrix Size (N)")
+            axins.set_ylabel("")
+
+            # set color for border and ticks
+            for spine in axins.spines.values():
+                spine.set_edgecolor('blue')
+            axins.tick_params(axis='x', colors='blue')
+            axins.tick_params(axis='y', colors='blue')
+            ############################################################################
+
+            # if i==0: axs[i].set_title("Speedup_vv Over N")
+            if i==len(hw_list)-1:
+                axs[i].set_xlabel("N")
+            else:
+                axs[i].set_xlabel("")
+
+            axs[i].set_xticks(masked_data['N'].unique())
+            if i!=len(hw_list)-1:
+                # hide x-tick labels only, keep grid
+                axs[i].set_xticklabels([])
+            axs[i].tick_params(axis='x', rotation=90, labelsize=6)
+            axs[i].set_ylabel("Speedup") # Explain in the caption of the figure that this is speedup_vv
+            axs[i].grid(True)
+
+        fig.savefig(f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
+
 
 if __name__ == '__main__':
     # accept multiple instances of --dumps arguments
@@ -810,22 +820,36 @@ if __name__ == '__main__':
         dumps = args.dumps
         obj = PlotSpeedUps(dumps, '/tmp')
 
+    """
     for order in [True, False]:
         for per_hw in [True, False]:
             obj.plotgen_runtimes_all(reversed_text_order=order, per_hw=per_hw)
             obj.plotgen_speedups_all(reversed_text_order=order, per_hw=per_hw)
             obj.plotgen_speedups_all_per_n_subplots(reversed_text_order=order, per_hw=per_hw)
 
-    obj.plotgen_speedups_over_N_all()
+    obj.plotgen_speedups_over_N_all_multilines_in_single_plot()
 
     # 'Xeon5218' 'Xeon8260' 'Xeon8358' 'SpacemitK1'
-    obj.plotgen_speedups_over_N_all(
+    obj.plotgen_speedups_over_N_all_multilines_in_single_plot(
         [
             ['SpacemitK1'],             # SpacemitK1
             ['Ryzen97950X'],            # Pagamp
             ['Xeon8260'],               # G100
             ['Xeon5218'],               # Furore
             ['Xeon5218', 'Xeon8260'],   # Furore, G100
+        ]
+    )
+    """
+    obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
+        [
+            'Ryzen97950X',
+            'Xeon8260',
+            'Xeon5218',
+        ]
+    )
+    obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
+        [
+            'SpacemitK1',
         ]
     )
 
