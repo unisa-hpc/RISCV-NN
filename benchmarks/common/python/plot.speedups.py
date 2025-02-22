@@ -739,11 +739,11 @@ class PlotSpeedUps:
                 dashes=True,
                 legend='full'
             )
-            lgd = axs[i].legend(bbox_to_anchor=(1.05, 1),loc='upper left')
+
 
             ############################################################################
             # Add  a zoomed-in inset to top-left corner
-            zommed_data = masked_data[(masked_data['N'] >= 64) & (masked_data['N'] <= 256)]
+            zommed_data = masked_data[(masked_data['N'] >= 128) & (masked_data['N'] <= 512)]
             axins = axs[i].inset_axes([0.1, .7, 0.3, 0.4])
             #axins.set_yscale('log')
             sns.lineplot(
@@ -764,7 +764,6 @@ class PlotSpeedUps:
             axins.set_xticks(zommed_data['N'].unique())
             axins.set_xticklabels(zommed_data['N'].unique(), rotation=90, fontsize=6)
             axins.grid(True)
-            axins.set_xlabel("Square Matrix Size (N)")
             axins.set_ylabel("")
 
             # set color for border and ticks
@@ -776,7 +775,7 @@ class PlotSpeedUps:
 
             # if i==0: axs[i].set_title("Speedup_vv Over N")
             if i==len(hw_list)-1:
-                axs[i].set_xlabel("N")
+                axs[i].set_xlabel("Square Matrix Size (N)")
             else:
                 axs[i].set_xlabel("")
 
@@ -787,6 +786,18 @@ class PlotSpeedUps:
             axs[i].tick_params(axis='x', rotation=90, labelsize=6)
             axs[i].set_ylabel("Speedup") # Explain in the caption of the figure that this is speedup_vv
             axs[i].grid(True)
+
+            # Modify the legend manually without touching the dataframe
+            new_labels = {'benchId_hw': 'Kernel:', 'compiler': 'Compiler:'}
+            def omit_hw(s):
+                return s.split(',')[0]
+
+            handles, labels = axs[i].get_legend_handles_labels()
+            lgd = axs[i].legend(handles, [omit_hw(label) if label not in new_labels else new_labels[label] for label in labels], bbox_to_anchor=(1.05, 1), loc='upper left')
+
+            # Add bold text to bottom right corner of each subplot to indicate the hardware
+            # We dont want to put the HW name in the legend!
+            axs[i].text(0.95, 0.05, hw, fontsize=8, fontweight='bold', transform=axs[i].transAxes, ha='right')
 
         fig.savefig(f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
 
