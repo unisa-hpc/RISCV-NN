@@ -153,7 +153,6 @@ void LaunchKernelMatmulBase(
     float* __restrict__ tnC) {
     const size_t M = matrix_size;
     const size_t N = matrix_size;
-    const size_t K = matrix_size;
 
     const uint BK = 8;
     const uint TM = 8;
@@ -182,10 +181,10 @@ void LaunchKernelMatmulBase(
 // =================================================================================================
 
 __constant__ uint32_t lut_pot_uint8_packed2[16] = {
-    (0 << 23), (1 << 23), (2 << 23), (3 << 23),
-    (4 << 23), (5 << 23), (6 << 23), (7 << 23),
-    (256 << 23), ((256 + 1) << 23), ((256 + 2) << 23), ((256 + 3) << 23),
-    ((256 + 4) << 23), ((256 + 5) << 23), ((256 + 6) << 23), ((256 + 7) << 23)
+    (0u << 23), (1u << 23), (2u << 23), (3u << 23),
+    (4u << 23), (5u << 23), (6u << 23), (7u << 23),
+    (256u << 23), ((256u + 1u) << 23), ((256u + 2u) << 23), ((256u + 3u) << 23),
+    ((256u + 4u) << 23), ((256u + 5u) << 23), ((256u + 6u) << 23), ((256u + 7u) << 23)
 };
 
 template <int BM, int BN, int BK, int TM, int TN>
@@ -316,7 +315,6 @@ void LaunchKernelMatmulPotUint8Packed2(
     float* __restrict__ tnC) {
     const size_t M = matrix_size;
     const size_t N = matrix_size;
-    const size_t K = matrix_size;
 
     const uint BK = 8;
     const uint TM = 8;
@@ -354,10 +352,10 @@ void LaunchKernelMatmulPotUint8Packed2(
 
 // Lookup table for 2-bit values (4 possible values)
 __constant__ uint32_t lut_pot_uint8_packed4[4] = {
-    (0 << 23),         // 00
-    (1 << 23),         // 01
-    (256 << 23),       // 10
-    ((256 + 1) << 23)  // 11
+    (0u << 23),         // 00
+    (1u << 23),         // 01
+    (256u << 23),       // 10
+    ((256u + 1) << 23)  // 11
 };
 
 template <const int BM, const int BN, const int BK, const int TM, const int TN>
@@ -384,7 +382,7 @@ __global__ void KernelMatmulPotUint8Packed4(
     const uint tid_x = threadIdx.x % ((BN/4)/TN);
     const uint tid_y = threadIdx.x / ((BN/4)/TN);
 
-    __shared__ uint32_t As[BK * BM];  
+    __shared__ uint32_t As[BK * BM];
     constexpr int extraCols = 5;
     __shared__ uint8_t Bs[BK * (BN/4 + extraCols)];
 
@@ -481,7 +479,6 @@ void LaunchKernelMatmulPotUint8Packed4(
     float* __restrict__ tnC) {
     const size_t M = matrix_size;
     const size_t N = matrix_size;
-    const size_t K = matrix_size;
 
     const uint BK = 8;
     const uint TM = 8;

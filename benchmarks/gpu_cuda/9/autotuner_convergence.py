@@ -121,26 +121,47 @@ class GpuAutotunerConvergencePlotter:
         # save the plot in subdump directory
         plt.savefig(f"{self.subdumpdir}/autotuner_convergence.png")
 
+    def extract_pareto_runtime(self, data_x, data_y):
+        assert len(data_x) == len(data_y)
+        # lets just work on data_y
+        # we should generate a ndarray of the same size as data_y but with pareto points
+        pareto = np.inf
+        y_pareto = np.zeros(len(data_y))
+        for i in range(len(data_y)):
+            if data_y[i] < pareto and data_y[i] > 0:
+                pareto = data_y[i]
+            y_pareto[i] = pareto
+        return y_pareto
+
     def plotgen_one(self, k_file, k_kernel, k_n, ax, fig, subplot_idx):
         kernel = self.data_aggr[k_file][k_kernel][k_n]
         # x-axis: iteration number in 'all' list
         # y-axis: time in 'all' list
         x = np.arange(len(kernel['all']))
         y = np.zeros(len(kernel['all']))
+
         for i, run in enumerate(kernel['all']):
             try :
                 y[i] = run['time']
             except:
                 y[i] = -1
 
+        y = self.extract_pareto_runtime(x, y)
 
         ax[subplot_idx].plot(x, y, label=f"{k_kernel} N={k_n} {self.data_aggr[k_file][k_kernel][k_n]['opt']['opt']}")
+        # Limit y-axis range to min(y) - 10% and min(y) + 20%
 
         # add legend
         ax[subplot_idx].legend()
 
         # delete negative values for min/max calculation
         y = y[y > 0]
+
+        y_min = min(y)
+        ax[subplot_idx].set_ylim(y_min - 0.02 * y_min, y_min + 0.5 * y_min)
+
+        # log scale
+        #ax[subplot_idx].set_yscale('log')
 
         # add title
         ax[subplot_idx].set_title(f"{k_kernel} N={k_n}, [[Min: {min(y):.3f} ms]], Max: {max(y):.3f} ms")

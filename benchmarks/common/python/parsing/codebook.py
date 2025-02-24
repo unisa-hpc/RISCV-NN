@@ -227,8 +227,8 @@ def translate_str_benchId_to(benchId: str, to_style: str, reverse=False) -> str:
     if to_style == 'brief1':
         if not reverse:
             ret_val = \
-                "FPoT W/ Permute" if benchId == 7 else \
-                "FPoT W/O Permute" if benchId == 8 else \
+                "FPoT W/O Permute" if benchId == 7 else \
+                "FPoT W/ Permute" if benchId == 8 else \
                 "FXPoT" if benchId == 2 else \
                 "FPoT Packed2" if benchId == 5 else \
                 "FXPoT Packed4" if benchId == 6 else \
@@ -236,8 +236,8 @@ def translate_str_benchId_to(benchId: str, to_style: str, reverse=False) -> str:
                 None
         else:
             ret_val = \
-                7 if benchId == "FPoT W/ Permute" else \
-                8 if benchId == "FPoT W/O Permute" else \
+                7 if benchId == "FPoT W/O Permute" else \
+                8 if benchId == "FPoT W/ Permute" else \
                 2 if benchId == "FXPoT" else \
                 5 if benchId == "FPoT Packed2" else \
                 6 if benchId == "FXPoT Packed4" else \

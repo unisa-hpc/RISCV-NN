@@ -12,7 +12,7 @@ from parsing.codebook import *
 from parsing.lamda_funcs import *
 import matplotlib as mpl
 
-FORMAT='png'
+FORMAT='svg'
 FIG_WIDTH=8.27 # inches, A4 width=8.27
 FIG_HEIGHT1=3.5
 FIG_HEIGHT2=3.0
@@ -743,34 +743,36 @@ class PlotSpeedUps:
 
             ############################################################################
             # Add  a zoomed-in inset to top-left corner
-            zommed_data = masked_data[(masked_data['N'] >= 128) & (masked_data['N'] <= 512)]
-            axins = axs[i].inset_axes([0.1, .7, 0.3, 0.4])
-            #axins.set_yscale('log')
-            sns.lineplot(
-                ax=axins,
-                # 64<=N<=512
-                data=zommed_data,
-                x='N',
-                y='data_point',
-                hue='benchId_hw',
-                style='compiler',
-                palette='viridis',
-                ci="sd",  # Show std-deviation confidence intervals
-                markers=False,
-                dashes=True,
-                legend=False,
-            )
+            # If there is only one subfigure, we dont need to add a zoomed-in inset
+            if len(hw_list) != 1:
+                zommed_data = masked_data[(masked_data['N'] >= 128) & (masked_data['N'] <= 512)]
+                axins = axs[i].inset_axes([0.1, .7, 0.3, 0.4])
+                #axins.set_yscale('log')
+                sns.lineplot(
+                    ax=axins,
+                    # 64<=N<=512
+                    data=zommed_data,
+                    x='N',
+                    y='data_point',
+                    hue='benchId_hw',
+                    style='compiler',
+                    palette='viridis',
+                    ci="sd",  # Show std-deviation confidence intervals
+                    markers=False,
+                    dashes=True,
+                    legend=False,
+                )
 
-            axins.set_xticks(zommed_data['N'].unique())
-            axins.set_xticklabels(zommed_data['N'].unique(), rotation=90, fontsize=6)
-            axins.grid(True)
-            axins.set_ylabel("")
+                axins.set_xticks(zommed_data['N'].unique())
+                axins.set_xticklabels(zommed_data['N'].unique(), rotation=90, fontsize=6)
+                axins.grid(True)
+                axins.set_ylabel("")
 
-            # set color for border and ticks
-            for spine in axins.spines.values():
-                spine.set_edgecolor('blue')
-            axins.tick_params(axis='x', colors='blue')
-            axins.tick_params(axis='y', colors='blue')
+                # set color for border and ticks
+                for spine in axins.spines.values():
+                    spine.set_edgecolor('blue')
+                axins.tick_params(axis='x', colors='blue')
+                axins.tick_params(axis='y', colors='blue')
             ############################################################################
 
             # if i==0: axs[i].set_title("Speedup_vv Over N")
@@ -853,9 +855,9 @@ if __name__ == '__main__':
     """
     obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
         [
-            'Ryzen97950X',
-            'Xeon8260',
             'Xeon5218',
+            'Xeon8260',
+            'Ryzen97950X',
         ]
     )
     obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=

@@ -9,7 +9,7 @@
 
 #include <cuda_runtime.h>
 
-constexpr size_t N = 1024;
+constexpr size_t N = 4096;
 constexpr unsigned RUNS = 5;
 #define INCLUDE_2BIT_POT
 
