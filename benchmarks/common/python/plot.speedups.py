@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from IPython.core.pylabtools import figsize
+from click import style
 from matplotlib.lines import Line2D
 from parsing.parse import DumpsParser
 from parsing.codebook import *
@@ -443,6 +444,10 @@ class PlotSpeedUps:
             self.proc_data_speedup['compiler'] + ';;' + \
             self.proc_data_speedup['speedup_type']
 
+        self.proc_data_speedup['benchId_speeduptype'] = \
+            self.proc_data_speedup['benchId'].astype(str) + ', ' + \
+            self.proc_data_speedup['speedup_type']
+
     def plotgen_runtimes_all(self, reversed_text_order=False, per_hw=False):
         """
         Generate all the plots, as many as needed for the parsed data.
@@ -540,6 +545,20 @@ class PlotSpeedUps:
                 unique_n_list = self.proc_data_speedup['N'].unique()
                 for n in unique_n_list:
                     self.plotgen_speedups_one(n, reversed_text_order, hw=hw)
+
+    def plotgen_speedups_type2_all(self, reversed_text_order=False, hw: [str]=None):
+        """
+        Generate all the speedup plots (type2)
+        """
+        self.preprocess_data()
+
+
+        unique_n_list = self.proc_data_speedup['N'].unique()
+        unique_compiler_list = self.proc_data_speedup['compiler'].unique()
+        for n in unique_n_list:
+            for c in unique_compiler_list:
+                self.plotgen_speedups_type2_one(n, c, reversed_text_order, hw=hw)
+
 
     def plotgen_speedups_all_per_n_subplots(self, reversed_text_order=False, per_hw=False):
         """
@@ -646,6 +665,97 @@ class PlotSpeedUps:
             plt.close(fig)  # Avoid memory leak
 
         return ax, lgd  # Return ax and legend for further customization
+
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    def plotgen_speedups_type2_one(self, fixed_N: int, fixed_compiler: str, reversed_text_order=False, ax=None,
+                                   hw: [str] = None):
+        if hw is None:
+            cond = (self.proc_data_speedup['N'] == fixed_N) & (self.proc_data_speedup['compiler'] == fixed_compiler)
+        else:
+            cond = (self.proc_data_speedup['N'] == fixed_N) & (self.proc_data_speedup['compiler'] == fixed_compiler) & (
+                self.proc_data_speedup['hw'].isin(hw))
+
+        # Sort hw
+        hw = sorted(hw)
+
+        # Extract the filtered data
+        masked_data = self.proc_data_speedup[cond]
+
+        # Delete autotuning_gain column
+        masked_data = masked_data[masked_data['speedup_type'] != 'autotuning_gain']
+
+        save_fig = False  # Track whether to save the figure
+        if ax is None:
+            save_fig = True
+
+        # Sorting benchmark names
+        unique_benchmarks = masked_data['benchId_speeduptype'].unique()
+        if reversed_text_order:
+            order = sorted(unique_benchmarks, key=lambda x: x[::-1])  # Sort by reversed string
+        else:
+            order = sorted(unique_benchmarks)
+
+        # Skip if masked_data is empty
+        if masked_data.empty:
+            print(f"Skipping N={fixed_N} for compiler={fixed_compiler} due to empty masked_data.")
+            return None, None
+
+        # Create the seaborn catplot (FacetGrid)
+        catplot = sns.catplot(
+            data=masked_data,
+            order=order,
+            col_order=hw,
+            kind="bar",
+            x="benchId_speeduptype",
+            y="data_point",
+            col="hw",
+            hue="speedup_type",
+            height=5,
+            aspect=2,
+        )
+
+        # Adjust the legend position outside the plot
+        catplot._legend.set_bbox_to_anchor((0.95, 1.0))
+        catplot._legend.set_loc("upper left")
+        catplot._legend.set_title("Speedup Type")
+        catplot._legend.set_frame_on(True)  # Enable legend box
+
+        # Rotate x-ticks labels for each subplot
+        for ax in catplot.axes.flat:
+            ax.set_xlabel("")  # Remove x-axis label
+            x_lbls = ax.get_xticklabels()
+            # change the strings of the Text objects
+            x_lbls_short = [x.get_text().split(',')[0] for x in x_lbls]
+            ax.set_xticklabels(x_lbls_short, rotation=90, fontsize=7)
+
+        for ax in catplot.axes.flat:  # Loop through all subplots
+            for p in ax.patches:  # Loop through each bar
+                height = p.get_height()
+                if height > 0:
+                    ax.annotate(f'{height:.3f}',  # Format to 3 decimal places
+                                (p.get_x() + p.get_width() / 2., height),  # Position at the top of the bar
+                                ha='center', va='bottom',  # Center align
+                                xytext=(0, 5),  # Offset a bit above the bar
+                                textcoords='offset points',
+                                fontsize=6, rotation=90)  # Rotate 90 degrees
+
+        # Set title for the entire plot
+        catplot.fig.set_size_inches(9, 5)
+        catplot.fig.suptitle(f"Speedup for N={fixed_N} and \nCompiler={fixed_compiler}", fontsize=12)
+
+        # Move "hw=xxxx" titles higher
+        catplot.set_titles("{col_name}", size=10, y=1.30)
+        # Adjust layout using tight_layout to leave space for suptitle
+        catplot.fig.tight_layout(rect=[0, 0, 1, 1.1])
+
+        # Save figure if it was created inside this function
+        if save_fig:
+            save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_{reversed_text_order}.{FORMAT}"
+            catplot.savefig(save_path, bbox_inches='tight', dpi=300)
+            plt.close(catplot.fig)  # Avoid memory leaks
+
+        return catplot, catplot._legend  # Return catplot object and legend for further customization
 
     def plotgen_speedups_over_N_all_multilines_in_single_plot(self, hw_groups=[]):
         """
@@ -834,14 +944,24 @@ if __name__ == '__main__':
         obj = PlotSpeedUps(dumps, '/tmp')
 
     """
+    # Temp. disabled to speedup debugging.
+    
     for order in [True, False]:
         for per_hw in [True, False]:
-            obj.plotgen_runtimes_all(reversed_text_order=order, per_hw=per_hw)
-            obj.plotgen_speedups_all(reversed_text_order=order, per_hw=per_hw)
-            obj.plotgen_speedups_all_per_n_subplots(reversed_text_order=order, per_hw=per_hw)
+            # These work, but we no longer need them
+            #obj.plotgen_runtimes_all(reversed_text_order=order, per_hw=per_hw)
+            #obj.plotgen_speedups_all(reversed_text_order=order, per_hw=per_hw)
+            #obj.plotgen_speedups_all_per_n_subplots(reversed_text_order=order, per_hw=per_hw)
+        obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']) # or hw=['cpu1', 'cpu2']
+        obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['SpacemitK1']) # or hw=['cpu1', 'cpu2']
+    """
+    obj.plotgen_speedups_type2_all(reversed_text_order=False,
+                                   hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X'])  # or hw=['cpu1', 'cpu2']
 
+    """
+    # These work, but we dont need them anymore.
+    
     obj.plotgen_speedups_over_N_all_multilines_in_single_plot()
-
     # 'Xeon5218' 'Xeon8260' 'Xeon8358' 'SpacemitK1'
     obj.plotgen_speedups_over_N_all_multilines_in_single_plot(
         [
@@ -853,6 +973,7 @@ if __name__ == '__main__':
         ]
     )
     """
+
     obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
         [
             'Xeon5218',
