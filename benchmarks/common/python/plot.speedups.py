@@ -557,9 +557,9 @@ class PlotSpeedUps:
         unique_compiler_list = self.proc_data_speedup['compiler'].unique()
         for n in unique_n_list:
             for c in unique_compiler_list:
-                self.plotgen_speedups_type2_one(n, c, reversed_text_order, hw=hw)
+                self.plotgen_speedups_type2_one_multi(n, c, reversed_text_order, hw=hw)
 
-    def plotgen_speedups_type3_sidebysidecompilers_for_all_N(
+    def plotgen_speedups_type2_sidebysidecompilers_for_all_N(
             self,
             reversed_text_order=False,
             hw: [str] = None,
@@ -575,8 +575,12 @@ class PlotSpeedUps:
 
         unique_n_list = self.proc_data_speedup['N'].unique()
         for n in unique_n_list:
-            for c in compilers:
-                self.plotgen_speedups_type2_one(n, c, reversed_text_order, hw=hw, y_axis_range=y_range)
+            if len(hw)>1:
+                self.plotgen_speedups_type2_one_multi(n, compilers[0], reversed_text_order, hw=hw, y_axis_range=y_range, hide_legend=True)
+                self.plotgen_speedups_type2_one_multi(n, compilers[1], reversed_text_order, hw=hw, y_axis_range=y_range, hide_legend=False)
+            else:
+                self.plotgen_speedups_type2_one_single(n, compilers[0], reversed_text_order, hw=hw, y_axis_range=y_range, hide_legend=True)
+                self.plotgen_speedups_type2_one_single(n, compilers[1], reversed_text_order, hw=hw, y_axis_range=y_range, hide_legend=False)
 
     def plotgen_speedups_all_per_n_subplots(self, reversed_text_order=False, per_hw=False):
         """
@@ -684,8 +688,16 @@ class PlotSpeedUps:
 
         return ax, lgd  # Return ax and legend for further customization
 
-    def plotgen_speedups_type2_one(self, fixed_N: int, fixed_compiler: str, reversed_text_order=False, ax=None,
-                                   hw: [str] = None, y_axis_range: tuple[int, int] = None):
+    def plotgen_speedups_type2_one_multi(
+            self,
+            fixed_N: int,
+            fixed_compiler: str,
+            reversed_text_order=False,
+            ax=None,
+            hw: [str] = None,
+            y_axis_range: tuple[int, int] = None,
+            hide_legend=False
+    ):
         if hw is None:
             cond = (self.proc_data_speedup['N'] == fixed_N) & (self.proc_data_speedup['compiler'] == fixed_compiler)
         else:
@@ -727,8 +739,8 @@ class PlotSpeedUps:
             y="data_point",
             col="hw",
             hue="speedup_type",
-            height=5,
-            aspect=2,
+            height=FIG_HEIGHT1,
+            aspect=1,
         )
 
         # Set y-axis range if provided
@@ -736,18 +748,21 @@ class PlotSpeedUps:
             catplot.set(ylim=y_axis_range)
 
         # Adjust the legend position outside the plot
-        catplot._legend.set_bbox_to_anchor((1.1, 1.05))
+        catplot._legend.set_bbox_to_anchor((0,0,1.4,1.4)) # (left, bottom, right, top)
         catplot._legend.set_loc("upper right")
+        catplot._legend.set
+
         catplot._legend.set_title("Speedup Type")
         catplot._legend.set_frame_on(True)  # Enable legend box
+
 
         # Rotate x-ticks labels for each subplot
         for ax in catplot.axes.flat:
             ax.set_xlabel("")  # Remove x-axis label
             x_lbls = ax.get_xticklabels()
             # change the strings of the Text objects
-            x_lbls_short = [x.get_text().split(',')[0] for x in x_lbls]
-            ax.set_xticklabels(x_lbls_short, rotation=90, fontsize=7)
+            x_lbls_short = [x.get_text().split(',')[0].replace('FPoT', '') for x in x_lbls]
+            ax.set_xticklabels(x_lbls_short, rotation=90, fontsize=9)
 
         for ax in catplot.axes.flat:  # Loop through all subplots
             for p in ax.patches:  # Loop through each bar
@@ -756,27 +771,150 @@ class PlotSpeedUps:
                     ax.annotate(f'{height:.3f}',  # Format to 3 decimal places
                                 (p.get_x() + p.get_width() / 2., height),  # Position at the top of the bar
                                 ha='center', va='bottom',  # Center align
-                                xytext=(0, 5),  # Offset a bit above the bar
+                                xytext=(0, FIG_HEIGHT1),  # Offset a bit above the bar
                                 textcoords='offset points',
-                                fontsize=6, rotation=90)  # Rotate 90 degrees
+                                fontsize=9, rotation=90)  # Rotate 90 degrees
 
         # Set title for the entire plot
-        catplot.fig.set_size_inches(10, 5)
+        catplot.fig.set_size_inches(FIG_WIDTH/2, FIG_HEIGHT1)
         catplot.fig.suptitle(f"Speedup for N={fixed_N} and Compiler={fixed_compiler}", fontsize=10, y=1.15)
 
         # Move "hw=xxxx" titles higher
-        catplot.set_titles("{col_name}", size=10, y=1.10)
+        catplot.set_titles("{col_name}", size=9, y=1.10)
         # Adjust layout using tight_layout to leave space for suptitle
-        catplot.fig.tight_layout(rect=[0, 0, 1, 1.2])
+        catplot.fig.tight_layout(rect=[0, 0, 1.5, 1.2]) # (left, bottom, right, top) # does not affect the legend pos
         # set y-label
         catplot.set_ylabels("Speedup")
+
+        if hide_legend:
+            catplot._legend.remove()
+        else:
+            # also remove the y-axis label
+            for ax in catplot.axes.flat:
+                ax.set_ylabel("")
 
         # Save figure if it was created inside this function
         if save_fig:
             if y_axis_range is None:
-                save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_{reversed_text_order}.{FORMAT}"
+                save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_hw{hw}_reverse{reversed_text_order}.{FORMAT}"
             else:
-                save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_{reversed_text_order}_yrange_{y_axis_range[0]}_{y_axis_range[1]}.{FORMAT}"
+                save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_hw{hw}_yrange_{y_axis_range}_legend{hide_legend}_reverse{reversed_text_order}.{FORMAT}"
+            catplot.savefig(save_path, bbox_inches='tight', dpi=300)
+            plt.close(catplot.fig)  # Avoid memory leaks
+
+        return catplot, catplot._legend  # Return catplot object and legend for further customization
+
+    def plotgen_speedups_type2_one_single(
+            self,
+            fixed_N: int,
+            fixed_compiler: str,
+            reversed_text_order=False,
+            ax=None,
+            hw: [str] = None,
+            y_axis_range: tuple[int, int] = None,
+            hide_legend=False
+    ):
+        if hw is None:
+            cond = (self.proc_data_speedup['N'] == fixed_N) & (self.proc_data_speedup['compiler'] == fixed_compiler)
+        else:
+            cond = (self.proc_data_speedup['N'] == fixed_N) & (self.proc_data_speedup['compiler'] == fixed_compiler) & (
+                self.proc_data_speedup['hw'].isin(hw))
+
+        # Sort hw
+        hw = sorted(hw)
+
+        # Extract the filtered data
+        masked_data = self.proc_data_speedup[cond]
+
+        # Delete autotuning_gain column
+        masked_data = masked_data[masked_data['speedup_type'] != 'autotuning_gain']
+
+        save_fig = False  # Track whether to save the figure
+        if ax is None:
+            save_fig = True
+
+        # Sorting benchmark names
+        unique_benchmarks = masked_data['benchId_speeduptype'].unique()
+        if reversed_text_order:
+            order = sorted(unique_benchmarks, key=lambda x: x[::-1])  # Sort by reversed string
+        else:
+            order = sorted(unique_benchmarks)
+
+        # Skip if masked_data is empty
+        if masked_data.empty:
+            print(f"Skipping N={fixed_N} for compiler={fixed_compiler} due to empty masked_data.")
+            return None, None
+
+        # Create the seaborn catplot (FacetGrid)
+        catplot = sns.catplot(
+            data=masked_data,
+            order=order,
+            col_order=hw,
+            kind="bar",
+            x="benchId_speeduptype",
+            y="data_point",
+            col="hw",
+            hue="speedup_type",
+            height=FIG_HEIGHT1/3 * 2,
+            aspect=1,
+        )
+
+        # Set y-axis range if provided
+        if y_axis_range is not None:
+            catplot.set(ylim=y_axis_range)
+
+        # Adjust the legend position outside the plot
+        catplot._legend.set_bbox_to_anchor((0,0,1.3,0.9)) # (left, bottom, right, top)
+        catplot._legend.set_loc("upper right")
+        catplot._legend.set
+
+        catplot._legend.set_title("Speedup Type")
+        catplot._legend.set_frame_on(True)  # Enable legend box
+
+
+        # Rotate x-ticks labels for each subplot
+        for ax in catplot.axes.flat:
+            ax.set_xlabel("")  # Remove x-axis label
+            x_lbls = ax.get_xticklabels()
+            # change the strings of the Text objects
+            x_lbls_short = [x.get_text().split(',')[0].replace('FPoT', '') for x in x_lbls]
+            ax.set_xticklabels(x_lbls_short, rotation=90, fontsize=9)
+
+        for ax in catplot.axes.flat:  # Loop through all subplots
+            for p in ax.patches:  # Loop through each bar
+                height = p.get_height()
+                if height > 0:
+                    ax.annotate(f'{height:.3f}',  # Format to 3 decimal places
+                                (p.get_x() + p.get_width() / 2., height),  # Position at the top of the bar
+                                ha='center', va='bottom',  # Center align
+                                xytext=(0, FIG_HEIGHT1),  # Offset a bit above the bar
+                                textcoords='offset points',
+                                fontsize=9, rotation=90)  # Rotate 90 degrees
+
+        # Set title for the entire plot
+        catplot.fig.set_size_inches(FIG_WIDTH/4, FIG_HEIGHT1)
+        catplot.fig.suptitle(f"Speedup for N={fixed_N} and\nCompiler={fixed_compiler}", fontsize=10, x=0.25 , y=1.15, ha='left')
+
+        # Move "hw=xxxx" titles higher
+        catplot.set_titles("{col_name}", size=9, y=1.10)
+        # Adjust layout using tight_layout to leave space for suptitle
+        catplot.fig.tight_layout(rect=[0, 0, 1.5, 1.2]) # (left, bottom, right, top) # does not affect the legend pos
+        # set y-label
+        catplot.set_ylabels("Speedup")
+
+        if hide_legend:
+            catplot._legend.remove()
+        else:
+            # also remove the y-axis label
+            for ax in catplot.axes.flat:
+                ax.set_ylabel("")
+
+        # Save figure if it was created inside this function
+        if save_fig:
+            if y_axis_range is None:
+                save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_hw{hw}_reverse{reversed_text_order}.{FORMAT}"
+            else:
+                save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_hw{hw}_yrange_{y_axis_range}_legend{hide_legend}_reverse{reversed_text_order}.{FORMAT}"
             catplot.savefig(save_path, bbox_inches='tight', dpi=300)
             plt.close(catplot.fig)  # Avoid memory leaks
 
@@ -994,13 +1132,25 @@ if __name__ == '__main__':
     obj.plotgen_speedups_type2_all(
         reversed_text_order=False,
         hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']
-    )  # or hw=['cpu1', 'cpu2']
+    )
 
-    obj.plotgen_speedups_type3_sidebysidecompilers_for_all_N(
+    obj.plotgen_speedups_type2_all(
+        reversed_text_order=False,
+        hw=['SpacemitK1']
+    )
+
+    obj.plotgen_speedups_type2_sidebysidecompilers_for_all_N(
         reversed_text_order=False,
         hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X'],
         compilers=['LLVM18', 'GCC14.2'],
-        y_range=(0, 10)
+        y_range=(0, 12)
+    )
+
+    obj.plotgen_speedups_type2_sidebysidecompilers_for_all_N(
+        reversed_text_order=False,
+        hw=['SpacemitK1'],
+        compilers=['LLVM18', 'GCC14.2'],
+        y_range=(0, 12)
     )
 
     """
