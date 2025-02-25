@@ -13,10 +13,10 @@ from parsing.codebook import *
 from parsing.lamda_funcs import *
 import matplotlib as mpl
 
-FORMAT='svg'
-FIG_WIDTH=8.27 # inches, A4 width=8.27
-FIG_HEIGHT1=3.5
-FIG_HEIGHT2=3.0
+FORMAT = 'svg'
+FIG_WIDTH = 8.27  # inches, A4 width=8.27
+FIG_HEIGHT1 = 3.5
+FIG_HEIGHT2 = 3.0
 
 
 class PlotSpeedUps:
@@ -60,7 +60,6 @@ class PlotSpeedUps:
         self.raw_data['compiler'] = translate_compiler_name_to(self.raw_data['compiler'])
         self.raw_data['benchId'] = translate_benchId_to(self.raw_data['benchId'], self.STYLE_BENCHID)
         self.proc_data = self.raw_data.copy()
-
 
     def preprocess_data(self, export_to_excel=False):
         """
@@ -117,7 +116,8 @@ class PlotSpeedUps:
         - Speedup_vs: Vectorized / Scalar: scalar no autovec base with avx2 uut, scalar no autovec base with avx512 uut
         - Speedup_ss: Scalar / Scalar: scalar no autovec base with scalar autovec base
         """
-        unique_bids = [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in self.proc_data['benchId'].unique()]
+        unique_bids = [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in
+                       self.proc_data['benchId'].unique()]
         for bench_id in unique_bids:
             if bench_id == 0 or bench_id == 2 or bench_id == 3:
                 print(f"NYI: Preprocessing data for benchID={bench_id}")
@@ -464,7 +464,7 @@ class PlotSpeedUps:
                 for n in unique_n_list:
                     self.plotgen_runtimes_one(n, reversed_text_order, hw)
 
-    def plotgen_runtimes_one(self, n: int, reversed_text_order=False, hw: str=None):
+    def plotgen_runtimes_one(self, n: int, reversed_text_order=False, hw: str = None):
         """
         Generate a plot for a specific N.
         """
@@ -527,7 +527,8 @@ class PlotSpeedUps:
         lgd = plt.legend(title="Name", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.subplots_adjust(bottom=0.5, right=0.8)  # Adjust the bottom margin
         # plt.show()
-        plt.savefig(f"{self.dir_out}/runtime_N_{n}_{reversed_text_order}_{hw}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
+        plt.savefig(f"{self.dir_out}/runtime_N_{n}_{reversed_text_order}_{hw}.{FORMAT}", bbox_extra_artists=(lgd,),
+                    bbox_inches='tight', dpi=300)
 
     def plotgen_speedups_all(self, reversed_text_order=False, per_hw=False):
         """
@@ -546,12 +547,11 @@ class PlotSpeedUps:
                 for n in unique_n_list:
                     self.plotgen_speedups_one(n, reversed_text_order, hw=hw)
 
-    def plotgen_speedups_type2_all(self, reversed_text_order=False, hw: [str]=None):
+    def plotgen_speedups_type2_all(self, reversed_text_order=False, hw: [str] = None):
         """
         Generate all the speedup plots (type2)
         """
         self.preprocess_data()
-
 
         unique_n_list = self.proc_data_speedup['N'].unique()
         unique_compiler_list = self.proc_data_speedup['compiler'].unique()
@@ -559,6 +559,24 @@ class PlotSpeedUps:
             for c in unique_compiler_list:
                 self.plotgen_speedups_type2_one(n, c, reversed_text_order, hw=hw)
 
+    def plotgen_speedups_type3_sidebysidecompilers_for_all_N(
+            self,
+            reversed_text_order=False,
+            hw: [str] = None,
+            compilers=[str],
+            y_range=None
+    ):
+        """
+        Generate all the speedup plots (type2)
+        """
+        self.preprocess_data()
+
+        assert len(compilers) == 2, "Only two compilers are supported for this plot."
+
+        unique_n_list = self.proc_data_speedup['N'].unique()
+        for n in unique_n_list:
+            for c in compilers:
+                self.plotgen_speedups_type2_one(n, c, reversed_text_order, hw=hw, y_axis_range=y_range)
 
     def plotgen_speedups_all_per_n_subplots(self, reversed_text_order=False, per_hw=False):
         """
@@ -571,7 +589,7 @@ class PlotSpeedUps:
 
         for hw in unique_hw_list:
             if per_hw:
-                sub = self.proc_data_speedup[self.proc_data_speedup['hw']==hw]
+                sub = self.proc_data_speedup[self.proc_data_speedup['hw'] == hw]
                 unique_n_list = sub['N'].unique()
             else:
                 unique_n_list = self.proc_data_speedup['N'].unique()
@@ -600,10 +618,10 @@ class PlotSpeedUps:
 
             # each subplot has its own legend
             # save the figure with all the legends and subplots
-            plt.savefig(f"{self.dir_out}/speedup_all_N_{hw}_{reversed_text_order}.{FORMAT}", bbox_extra_artists=(lgnd,), bbox_inches='tight', dpi=300)
+            plt.savefig(f"{self.dir_out}/speedup_all_N_{hw}_{reversed_text_order}.{FORMAT}", bbox_extra_artists=(lgnd,),
+                        bbox_inches='tight', dpi=300)
 
-
-    def plotgen_speedups_one(self, n: int, reversed_text_order=False, ax=None, hw: str=None):
+    def plotgen_speedups_one(self, n: int, reversed_text_order=False, ax=None, hw: str = None):
         if hw is None:
             cond = self.proc_data_speedup['N'] == n
         else:
@@ -644,12 +662,12 @@ class PlotSpeedUps:
         for p in barplot.patches:
             if p.get_height() > 0:
                 ax.annotate(format(p.get_height(), '.3f'),
-                                 (p.get_x() + p.get_width() / 2., p.get_height()),
-                                 ha='left', va='center',
-                                 xytext=(-3, 15),
-                                 textcoords='offset points',
-                                 rotation=90,
-                                 fontsize=6)
+                            (p.get_x() + p.get_width() / 2., p.get_height()),
+                            ha='left', va='center',
+                            xytext=(-3, 15),
+                            textcoords='offset points',
+                            rotation=90,
+                            fontsize=6)
 
         # Customize the plot
         ax.set_title(f"Speedup for N={n}")
@@ -666,10 +684,8 @@ class PlotSpeedUps:
 
         return ax, lgd  # Return ax and legend for further customization
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
     def plotgen_speedups_type2_one(self, fixed_N: int, fixed_compiler: str, reversed_text_order=False, ax=None,
-                                   hw: [str] = None):
+                                   hw: [str] = None, y_axis_range: tuple[int, int] = None):
         if hw is None:
             cond = (self.proc_data_speedup['N'] == fixed_N) & (self.proc_data_speedup['compiler'] == fixed_compiler)
         else:
@@ -715,9 +731,13 @@ class PlotSpeedUps:
             aspect=2,
         )
 
+        # Set y-axis range if provided
+        if y_axis_range is not None:
+            catplot.set(ylim=y_axis_range)
+
         # Adjust the legend position outside the plot
-        catplot._legend.set_bbox_to_anchor((0.95, 1.0))
-        catplot._legend.set_loc("upper left")
+        catplot._legend.set_bbox_to_anchor((1.1, 1.05))
+        catplot._legend.set_loc("upper right")
         catplot._legend.set_title("Speedup Type")
         catplot._legend.set_frame_on(True)  # Enable legend box
 
@@ -741,17 +761,22 @@ class PlotSpeedUps:
                                 fontsize=6, rotation=90)  # Rotate 90 degrees
 
         # Set title for the entire plot
-        catplot.fig.set_size_inches(9, 5)
-        catplot.fig.suptitle(f"Speedup for N={fixed_N} and \nCompiler={fixed_compiler}", fontsize=12)
+        catplot.fig.set_size_inches(10, 5)
+        catplot.fig.suptitle(f"Speedup for N={fixed_N} and Compiler={fixed_compiler}", fontsize=10, y=1.15)
 
         # Move "hw=xxxx" titles higher
-        catplot.set_titles("{col_name}", size=10, y=1.30)
+        catplot.set_titles("{col_name}", size=10, y=1.10)
         # Adjust layout using tight_layout to leave space for suptitle
-        catplot.fig.tight_layout(rect=[0, 0, 1, 1.1])
+        catplot.fig.tight_layout(rect=[0, 0, 1, 1.2])
+        # set y-label
+        catplot.set_ylabels("Speedup")
 
         # Save figure if it was created inside this function
         if save_fig:
-            save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_{reversed_text_order}.{FORMAT}"
+            if y_axis_range is None:
+                save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_{reversed_text_order}.{FORMAT}"
+            else:
+                save_path = f"{self.dir_out}/speedup_type2_N={fixed_N}_compiler={fixed_compiler}_{reversed_text_order}_yrange_{y_axis_range[0]}_{y_axis_range[1]}.{FORMAT}"
             catplot.savefig(save_path, bbox_inches='tight', dpi=300)
             plt.close(catplot.fig)  # Avoid memory leaks
 
@@ -773,13 +798,15 @@ class PlotSpeedUps:
             speedups_over_N = self.proc_data_speedup.copy()
             speedups_over_N = speedups_over_N[0:0]  # clear the rows
 
-            for bench_id in [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in self.proc_data_speedup['benchId'].unique()]:
+            for bench_id in [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in
+                             self.proc_data_speedup['benchId'].unique()]:
                 for hw in hw_group:
                     for compiler in self.proc_data_speedup['compiler'].unique():
                         if bench_id in [7, 8, 5, 6]:
                             # For these benchIds we only have 1 entry of speedup_vv, so we can just take any speed_vv entry.
                             masked_data = self.proc_data_speedup[
-                                (self.proc_data_speedup['benchId'] == translate_str_benchId_to(bench_id, self.STYLE_BENCHID)) &
+                                (self.proc_data_speedup['benchId'] == translate_str_benchId_to(bench_id,
+                                                                                               self.STYLE_BENCHID)) &
                                 (self.proc_data_speedup['hw'] == hw) &
                                 (self.proc_data_speedup['compiler'] == compiler) &
                                 (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
@@ -802,7 +829,7 @@ class PlotSpeedUps:
                 dashes=True,
                 legend='full'
             )
-            lgd = plt.legend(bbox_to_anchor=(1.05, 1),loc='upper left')
+            lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
             plt.title("Speedup_vv Over N")
             plt.xlabel("N")
@@ -811,7 +838,8 @@ class PlotSpeedUps:
             plt.subplots_adjust(bottom=0.5, right=0.8)
             plt.tight_layout()
             # plt.show()
-            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
+            plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,),
+                        bbox_inches='tight', dpi=300)
 
     def plotgen_speedups_over_N_all_as_subfigures(self, hw_list=[]):
         """
@@ -835,7 +863,7 @@ class PlotSpeedUps:
             masked_data = self.proc_data_speedup[
                 (self.proc_data_speedup['hw'] == hw) &
                 (self.proc_data_speedup['speedup_type'] == 'speedup_vv')  # <----- any speed_vv entry
-            ]
+                ]
             lineplot = sns.lineplot(
                 ax=axs[i],
                 data=masked_data,
@@ -850,14 +878,13 @@ class PlotSpeedUps:
                 legend='full'
             )
 
-
             ############################################################################
             # Add  a zoomed-in inset to top-left corner
             # If there is only one subfigure, we dont need to add a zoomed-in inset
             if len(hw_list) != 1:
                 zommed_data = masked_data[(masked_data['N'] >= 128) & (masked_data['N'] <= 512)]
-                axins = axs[i].inset_axes([0.1, .7, 0.3, 0.4])
-                #axins.set_yscale('log')
+                axins = axs[i].inset_axes([0.05, .6, 0.3, 0.4])
+                # axins.set_yscale('log')
                 sns.lineplot(
                     ax=axins,
                     # 64<=N<=512
@@ -875,7 +902,12 @@ class PlotSpeedUps:
 
                 axins.set_xticks(zommed_data['N'].unique())
                 axins.set_xticklabels(zommed_data['N'].unique(), rotation=90, fontsize=6)
+
+                # set y tick labels font size only
+                axins.tick_params(axis='y', labelsize=6)
+
                 axins.grid(True)
+                axins.set_xlabel("")
                 axins.set_ylabel("")
 
                 # set color for border and ticks
@@ -886,32 +918,36 @@ class PlotSpeedUps:
             ############################################################################
 
             # if i==0: axs[i].set_title("Speedup_vv Over N")
-            if i==len(hw_list)-1:
+            if i == len(hw_list) - 1:
                 axs[i].set_xlabel("Square Matrix Size (N)")
             else:
                 axs[i].set_xlabel("")
 
             axs[i].set_xticks(masked_data['N'].unique())
-            if i!=len(hw_list)-1:
+            if i != len(hw_list) - 1:
                 # hide x-tick labels only, keep grid
                 axs[i].set_xticklabels([])
             axs[i].tick_params(axis='x', rotation=90, labelsize=6)
-            axs[i].set_ylabel("Speedup") # Explain in the caption of the figure that this is speedup_vv
+            axs[i].set_ylabel("Speedup")  # Explain in the caption of the figure that this is speedup_vv
             axs[i].grid(True)
 
             # Modify the legend manually without touching the dataframe
             new_labels = {'benchId_hw': 'Kernel:', 'compiler': 'Compiler:'}
+
             def omit_hw(s):
                 return s.split(',')[0]
 
             handles, labels = axs[i].get_legend_handles_labels()
-            lgd = axs[i].legend(handles, [omit_hw(label) if label not in new_labels else new_labels[label] for label in labels], bbox_to_anchor=(1.05, 1), loc='upper left')
+            lgd = axs[i].legend(handles,
+                                [omit_hw(label) if label not in new_labels else new_labels[label] for label in labels],
+                                bbox_to_anchor=(1.05, 1), loc='upper left')
 
             # Add bold text to bottom right corner of each subplot to indicate the hardware
             # We dont want to put the HW name in the legend!
             axs[i].text(0.95, 0.05, hw, fontsize=8, fontweight='bold', transform=axs[i].transAxes, ha='right')
 
-        fig.savefig(f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}", bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=300)
+        fig.savefig(f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}", bbox_extra_artists=(lgd,),
+                    bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':
@@ -955,8 +991,17 @@ if __name__ == '__main__':
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']) # or hw=['cpu1', 'cpu2']
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['SpacemitK1']) # or hw=['cpu1', 'cpu2']
     """
-    obj.plotgen_speedups_type2_all(reversed_text_order=False,
-                                   hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X'])  # or hw=['cpu1', 'cpu2']
+    obj.plotgen_speedups_type2_all(
+        reversed_text_order=False,
+        hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']
+    )  # or hw=['cpu1', 'cpu2']
+
+    obj.plotgen_speedups_type3_sidebysidecompilers_for_all_N(
+        reversed_text_order=False,
+        hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X'],
+        compilers=['LLVM18', 'GCC14.2'],
+        y_range=(0, 10)
+    )
 
     """
     # These work, but we dont need them anymore.
@@ -975,16 +1020,16 @@ if __name__ == '__main__':
     """
 
     obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
-        [
-            'Xeon5218',
-            'Xeon8260',
-            'Ryzen97950X',
-        ]
+    [
+        'Xeon5218',
+        'Xeon8260',
+        'Ryzen97950X',
+    ]
     )
     obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
-        [
-            'SpacemitK1',
-        ]
+    [
+        'SpacemitK1',
+    ]
     )
 
     if args.s_to is not None:

@@ -195,10 +195,10 @@ def translate_str_compiler_name_to(compiler_name: str, to_style: str) -> str:
 
     if to_style == 'long1':
         ret_val = \
-            "G++13.3" if "g++" in compiler_name and "13" in compiler_name else \
-            "G++14.2" if "g++" in compiler_name and "14" in compiler_name else \
-            "Clang17" if "clang" in compiler_name and "17" in compiler_name else \
-            "Clang18" if "clang" in compiler_name and "18" in compiler_name else \
+            "GCC13.3" if "g++" in compiler_name and "13" in compiler_name else \
+            "GCC14.2" if "g++" in compiler_name and "14" in compiler_name else \
+            "LLVM17" if "clang" in compiler_name and "17" in compiler_name else \
+            "LLVM18" if "clang" in compiler_name and "18" in compiler_name else \
             None
 
     if to_style == 'brief1':
