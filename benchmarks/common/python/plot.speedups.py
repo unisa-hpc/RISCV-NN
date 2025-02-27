@@ -705,7 +705,7 @@ class PlotSpeedUps:
                 self.proc_data_speedup['hw'].isin(hw))
 
         # Sort hw
-        hw = sorted(hw)
+        #hw = sorted(hw)
 
         # Extract the filtered data
         masked_data = self.proc_data_speedup[cond]
@@ -979,7 +979,7 @@ class PlotSpeedUps:
             plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,),
                         bbox_inches='tight', dpi=300)
 
-    def plotgen_speedups_over_N_all_as_subfigures(self, hw_list=[]):
+    def plotgen_speedups_over_N_all_as_subfigures(self, hw_list=[], inset_zoom=False):
         """
         Generate the plot of speedups_vv (the most sensible vv case) over N for all the benchmarks, hw, and compilers.
         hw_groups is a list of lists, where each list contains the hw names that should be grouped together.
@@ -1016,44 +1016,45 @@ class PlotSpeedUps:
                 legend='full'
             )
 
-            ############################################################################
-            # Add  a zoomed-in inset to top-left corner
-            # If there is only one subfigure, we dont need to add a zoomed-in inset
-            if len(hw_list) != 1:
-                zommed_data = masked_data[(masked_data['N'] >= 128) & (masked_data['N'] <= 512)]
-                axins = axs[i].inset_axes([0.05, .6, 0.3, 0.4])
-                # axins.set_yscale('log')
-                sns.lineplot(
-                    ax=axins,
-                    # 64<=N<=512
-                    data=zommed_data,
-                    x='N',
-                    y='data_point',
-                    hue='benchId_hw',
-                    style='compiler',
-                    palette='viridis',
-                    ci="sd",  # Show std-deviation confidence intervals
-                    markers=False,
-                    dashes=True,
-                    legend=False,
-                )
+            if inset_zoom:
+                ############################################################################
+                # Add  a zoomed-in inset to top-left corner
+                # If there is only one subfigure, we dont need to add a zoomed-in inset
+                if len(hw_list) != 1:
+                    zommed_data = masked_data[(masked_data['N'] >= 128) & (masked_data['N'] <= 512)]
+                    axins = axs[i].inset_axes([0.05, .6, 0.3, 0.4])
+                    # axins.set_yscale('log')
+                    sns.lineplot(
+                        ax=axins,
+                        # 64<=N<=512
+                        data=zommed_data,
+                        x='N',
+                        y='data_point',
+                        hue='benchId_hw',
+                        style='compiler',
+                        palette='viridis',
+                        ci="sd",  # Show std-deviation confidence intervals
+                        markers=False,
+                        dashes=True,
+                        legend=False,
+                    )
 
-                axins.set_xticks(zommed_data['N'].unique())
-                axins.set_xticklabels(zommed_data['N'].unique(), rotation=90, fontsize=6)
+                    axins.set_xticks(zommed_data['N'].unique())
+                    axins.set_xticklabels(zommed_data['N'].unique(), rotation=90, fontsize=6)
 
-                # set y tick labels font size only
-                axins.tick_params(axis='y', labelsize=6)
+                    # set y tick labels font size only
+                    axins.tick_params(axis='y', labelsize=6)
 
-                axins.grid(True)
-                axins.set_xlabel("")
-                axins.set_ylabel("")
+                    axins.grid(True)
+                    axins.set_xlabel("")
+                    axins.set_ylabel("")
 
-                # set color for border and ticks
-                for spine in axins.spines.values():
-                    spine.set_edgecolor('blue')
-                axins.tick_params(axis='x', colors='blue')
-                axins.tick_params(axis='y', colors='blue')
-            ############################################################################
+                    # set color for border and ticks
+                    for spine in axins.spines.values():
+                        spine.set_edgecolor('blue')
+                    axins.tick_params(axis='x', colors='blue')
+                    axins.tick_params(axis='y', colors='blue')
+                ############################################################################
 
             # if i==0: axs[i].set_title("Speedup_vv Over N")
             if i == len(hw_list) - 1:
@@ -1173,7 +1174,7 @@ if __name__ == '__main__':
     [
         'Xeon5218',
         'Xeon8260',
-        'Ryzen97950X',
+        'Ryzen97950X'
     ]
     )
     obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
