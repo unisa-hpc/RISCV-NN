@@ -10,10 +10,29 @@
 #include <cuda_runtime.h>
 
 constexpr size_t N = 4096;
-constexpr unsigned RUNS = 5;
+constexpr unsigned RUNS = 7;
 #define INCLUDE_2BIT_POT
 
 int main(int argc, char *argv[]) {
+    // Check to see if one argument is passed.
+    if (argc != 2 && argc != 1) {
+        std::cout << "Usage: " << argv[0] << " <Kernel Index To Launch>" << std::endl;
+        std::cout << "0: ALL" << std::endl;
+        std::cout << "1: Base" << std::endl;
+        std::cout << "2: PoT F32:U8:Pack2" << std::endl;
+        std::cout << "3: PoT F32:U8:Pack4" << std::endl;
+        return 1;
+    }
+    int launch_mode;
+    if (argc == 2) {
+        launch_mode = std::stoi(argv[1]);
+        std::cout << "Launching only kernel index "<< launch_mode <<"." << std::endl;
+    } else {
+        launch_mode = 0;
+        std::cout << "Launching all kernels." << std::endl;
+    }
+
+
     CTensor<float> tnA({N, N});
     CTensor<float> tnB({N, N});
     CTensor<uint8_t> tnB_pot({N, N});
@@ -105,7 +124,7 @@ int main(int argc, char *argv[]) {
     cudaDeviceSynchronize();
 
     // This is our golden reference. We won't be using CPU kernel since that will be super slow for large N values.
-    {
+    if (launch_mode == 0 || launch_mode == 1) {
         timer_stats stats("LaunchKernelMatmulBase");
         for (volatile int i = 0; i < RUNS; ++i) {
             timer_scope_cuda timer(stats, stream);
@@ -117,7 +136,7 @@ int main(int argc, char *argv[]) {
     }
 
     cudaDeviceSynchronize();
-    {
+    if (launch_mode == 0 || launch_mode == 2) {
         timer_stats stats("LaunchKernelMatmulPotUint8Packed2");
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.
@@ -136,7 +155,7 @@ int main(int argc, char *argv[]) {
         tnC.Wipe(); // wiping to avoid any false-match in the next comparison.
     }
 
-    {
+    if (launch_mode == 0 || launch_mode == 3) {
         timer_stats stats("LaunchKernelMatmulPotUint8Packed4");
         for (volatile int i = 0; i < RUNS; ++i) {
             // This is a blocking measurement.

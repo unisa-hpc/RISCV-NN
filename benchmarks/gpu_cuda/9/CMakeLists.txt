@@ -53,6 +53,11 @@ target_compile_definitions(
         PRIVATE
         TARGETNAME=\"${target_name}\"
         TARGETKERNEL=\"${kernel_version}\"
+
+        vBK=8
+        vTM=16
+        vTN=4
+
         vUF0=1
         vUF1=1
         vUF2=1

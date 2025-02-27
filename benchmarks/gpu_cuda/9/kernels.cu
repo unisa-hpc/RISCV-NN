@@ -154,14 +154,15 @@ void LaunchKernelMatmulBase(
     const size_t M = matrix_size;
     const size_t N = matrix_size;
 
-    const uint BK = 8;
-    const uint TM = 8;
-    const uint TN = 8;
+    const uint BK = vBK;
+    const uint TM = vTM;
+    const uint TN = vTN;
     if (M >= 128 and N >= 128) {
         const uint BM = 128;
         const uint BN = 128;
         dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
         dim3 blockDim((BM * BN) / (TM * TN));
+        std::cout << "Launching KernelMatmulBase with BM" << BM << " BN" << BN <<  " BK" << BK << " TM" << TM << " TN" << TN << " BlockDim: " << blockDim.x << " GridDimX-Y: " << gridDim.x << "-" << gridDim.y << std::endl;
         KernelMatmulBase<BM, BN, BK, TM, TN>
             <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
@@ -172,6 +173,7 @@ void LaunchKernelMatmulBase(
         const uint BN = 64;
         dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
         dim3 blockDim((BM * BN) / (TM * TN));
+        std::cout << "Launching KernelMatmulBase with BM" << BM << " BN" << BN <<  " BK" << BK << " TM" << TM << " TN" << TN << " BlockDim: " << blockDim.x << " GridDimX-Y: " << gridDim.x << "-" << gridDim.y << std::endl;
         KernelMatmulBase<BM, BN, BK, TM, TN>
             <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
@@ -316,17 +318,15 @@ void LaunchKernelMatmulPotUint8Packed2(
     const size_t M = matrix_size;
     const size_t N = matrix_size;
 
-    const uint BK = 8;
-    const uint TM = 8;
-    const uint TN = 8;
+    const uint BK = vBK;
+    const uint TM = vTM;
+    const uint TN = vTN;
     if (M >= 128 and N >= 128) {
         const uint BM = 128;
         const uint BN = 128;
         dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
         dim3 blockDim((BM * BN) / (TM * TN) / 2);
-        std::cout << "Launching KernelMatMul08_PoT4bits with BM=128, BN=128" << std::endl;
-        std::cout << "gridDim: " << gridDim.x << " " << gridDim.y << std::endl;
-        std::cout << "blockDim: " << blockDim.x << std::endl;
+        std::cout << "Launching KernelMatmulPotUint8Packed2 with BM" << BM << " BN" << BN <<  " BK" << BK << " TM" << TM << " TN" << TN << " BlockDim: " << blockDim.x << " GridDimX-Y: " << gridDim.x << "-" << gridDim.y << std::endl;
         //KernelMatMul08_PoT4bits_As_Colmajor_vecloadstore_fixing_zero_vecstore<BM, BN, BK, TM, TN>
         KernelMatmulPotUint8Packed2<BM, BN, BK, TM, TN>
             <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
@@ -338,9 +338,7 @@ void LaunchKernelMatmulPotUint8Packed2(
         const uint BN = 64;
         dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
         dim3 blockDim((BM * BN) / (TM * TN) / 2);
-        std::cout << "Launching KernelMatMul08_PoT4bits with BM=128, BN=128" << std::endl;
-        std::cout << "gridDim: " << gridDim.x << " " << gridDim.y << std::endl;
-        std::cout << "blockDim: " << blockDim.x << std::endl;
+        std::cout << "Launching KernelMatmulPotUint8Packed2 with BM" << BM << " BN" << BN <<  " BK" << BK << " TM" << TM << " TN" << TN << " BlockDim: " << blockDim.x << " GridDimX-Y: " << gridDim.x << "-" << gridDim.y << std::endl;
         //KernelMatMul08_PoT4bits_As_Colmajor_vecloadstore_fixing_zero_vecstore<BM, BN, BK, TM, TN>
         KernelMatmulPotUint8Packed2<BM, BN, BK, TM, TN>
             <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
@@ -480,18 +478,15 @@ void LaunchKernelMatmulPotUint8Packed4(
     const size_t M = matrix_size;
     const size_t N = matrix_size;
 
-    const uint BK = 8;
-    const uint TM = 8;
-    const uint TN = 4; // when this is 8, we end up with a compiled kernel with too many registers because of regN.
+    const uint BK = vBK;
+    const uint TM = vTM;
+    const uint TN = vTN; // when this is 8, we end up with a compiled kernel with too many registers because of regN.
     if (M >= 128 and N >= 128) {
         const uint BM = 128;
         const uint BN = 128;
         dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
         dim3 blockDim((BM * BN) / (TM * TN) / 4);
-        std::cout << "Launching KernelMatMul08_PoT2bits with BM=128, BN=128" << std::endl;
-        std::cout << "gridDim: " << gridDim.x << " " << gridDim.y << std::endl;
-        std::cout << "blockDim: " << blockDim.x << std::endl;
-        //KernelMatMul08_PoT2bits_fixed<BM, BN, BK, TM, TN>
+        std::cout << "Launching KernelMatmulPotUint8Packed4 with BM" << BM << " BN" << BN <<  " BK" << BK << " TM" << TM << " TN" << TN << " BlockDim: " << blockDim.x << " GridDimX-Y: " << gridDim.x << "-" << gridDim.y << std::endl;
         KernelMatmulPotUint8Packed4<BM, BN, BK, TM, TN>
             <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
@@ -502,10 +497,7 @@ void LaunchKernelMatmulPotUint8Packed4(
         const uint BN = 64;
         dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
         dim3 blockDim((BM * BN) / (TM * TN) / 4);
-        std::cout << "Launching KernelMatMul08_PoT42its with BM=128, BN=128" << std::endl;
-        std::cout << "gridDim: " << gridDim.x << " " << gridDim.y << std::endl;
-        std::cout << "blockDim: " << blockDim.x << std::endl;
-        //KernelMatMul08_PoT2bits_fixed<BM, BN, BK, TM, TN>
+        std::cout << "Launching KernelMatmulPotUint8Packed4 with BM" << BM << " BN" << BN <<  " BK" << BK << " TM" << TM << " TN" << TN << " BlockDim: " << blockDim.x << " GridDimX-Y: " << gridDim.x << "-" << gridDim.y << std::endl;
         KernelMatmulPotUint8Packed4<BM, BN, BK, TM, TN>
             <<<gridDim, blockDim>>>(matrix_size, tnA, tnB, tnC);
     }
