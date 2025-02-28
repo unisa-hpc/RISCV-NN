@@ -54,25 +54,25 @@ class MyKernelAutoTuner:
         dbg = False
         if not dbg:
             self.tune_params = dict()
-            self.tune_params["block_size_x"] = [128, 256, 512, 1024]
+            self.tune_params["block_size_x"] = [128, 256, 512]
             self.tune_params["block_size_y"] = [1]
             self.tune_params["block_size_z"] = [1]
             self.tune_params["pot_words_per_uint8"] = [self.pot_words_per_uint8] # dont modify this
-            self.tune_params["vBM"] = [64, 128, 256, 512]
-            self.tune_params["vBN"] = [64, 128, 256, 512]
-            self.tune_params["vBK"] = [8, 16]
-            self.tune_params["vTM"] = [2, 4, 8, 16]
-            self.tune_params["vTN"] = [2, 4, 8, 16]
-            self.tune_params["vUF0"] = [1, 2, 4]
-            self.tune_params["vUF1"] = [1, 2, 4]
-            self.tune_params["vUF2"] = [1, 2, 4]
-            self.tune_params["vUF3"] = [1, 2, 4]
-            self.tune_params["vUF4"] = [4, 8, 16, 32]
-            self.tune_params["vUF5"] = [4, 8, 16, 32]
-            self.tune_params["vUF6"] = [4, 8, 16, 32]
-            self.tune_params["vUF7"] = [4, 8, 16, 32]
-            self.tune_params["vUF8"] = [1, 2, 4]
-            self.tune_params["vUF9"] = [1, 2, 4]
+            self.tune_params["vBM"] = [128]
+            self.tune_params["vBN"] = [128]
+            self.tune_params["vBK"] = [8]
+            self.tune_params["vTM"] = [8, 16, 32]
+            self.tune_params["vTN"] = [4]
+            self.tune_params["vUF0"] = [1]
+            self.tune_params["vUF1"] = [1]
+            self.tune_params["vUF2"] = [1]
+            self.tune_params["vUF3"] = [1]
+            self.tune_params["vUF4"] = [1, 4, 8, 16, 32, 64, 128]
+            self.tune_params["vUF5"] = [1, 4, 8, 16, 32, 64, 128]
+            self.tune_params["vUF6"] = [1, 4, 8, 16, 32, 64, 128]
+            self.tune_params["vUF7"] = [1, 4, 8, 16, 32, 64, 128]
+            self.tune_params["vUF8"] = [1, 4, 8, 16, 32, 64, 128]
+            self.tune_params["vUF9"] = [1, 4, 8, 16, 32, 64, 128]
         else:
             self.tune_params = dict()
             self.tune_params["block_size_x"] = [256]
@@ -456,17 +456,22 @@ if __name__ == "__main__":
 
     # Print info
     print(f"Unique dump directory: {sub_dump_dir}")
-    print(f"CUDA capability: {args.cc}")
+    import pycuda.driver as cuda
+    cuda.init()
+    device = cuda.Device(0)
+    print("CUDA Available Capability:", device.compute_capability())
+    print(f"CUDA Requested Capability: {args.cc}")
     print(f"Repetitions: {args.reps}")
     print(f"Max iterations: {args.maxiter}")
     print(f"Time limit: {args.time}")
 
+
     autotuners = {}
-    for size in [4096]:
+    for size in [1024,2048,4096]:
         print(f"Generating input tensors for size: {size}")
         matrices = get_matrices_pot4bit_uint8(size)
         for is_pot in [False, True]:
-            for words_per_uint8 in [2]:
+            for words_per_uint8 in [2, 4]:
                 # skip if is_pot is False and words_per_uint8 is 4, when is_pot is False, words_per_uint8 is set to 1 internally
                 # We don't want to tune the base kernel twice for the same size
                 if not is_pot and words_per_uint8 == 4:
@@ -477,7 +482,7 @@ if __name__ == "__main__":
                         # basinhopping, bayes_opt, brute_force, minimize, dual annealing, diff_evo, firefly_algorithm,
                         # genetic_algorithm, greedy_ils, greedy_mls, mls, ordered_greedy_mls, pso, random_sample,
                         # simulated_annealing
-                        opt="genetic_algorithm",
+                        opt="firefly_algorithm",
                         cuda_capability=args.cc,
                         kernel_file="kernels.cu",
                         kernel_name=k_name,
