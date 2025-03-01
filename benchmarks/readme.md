@@ -4,7 +4,7 @@
 |---------|--------------|---------|----------------------------|-----------------------|----------------|------------|-----------|--------------------------------|
 | 00      | AVX2         | N       | -                          | -                     | -              | -          | -         | Inline Assembly, MUL vs. Shift |
 | 01      | RVV-1.0      | Y       | Int32                      | Int32                 | 1              | N          | -         |                                |
-| 02      | AVX2         | Y       | Int32                      | Int32                 | 1              | N          | -         |                                |
+| 02      | AVX512      | Y       | Int32                      | Int32                 | 1              | N          | -         |                                |
 | 03      | AVX2         | N       | -                          | -                     | -              | N          | -         | Conv2D, Int32, NoPack          |
 | 04      | CUDA         | Y       | Float32, Float32 as Uint32 | Float32, Uint16 Uint8 | Mixed          | Y          | Directly  | -                              |
 | 05      | RVV-1.0      | Y       | Float32                    | Uint8                 | 1              | Y          | MagicNum  | -                              |

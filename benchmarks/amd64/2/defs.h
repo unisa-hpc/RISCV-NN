@@ -14,8 +14,6 @@
 
 constexpr int BENCH_ID = 2;
 constexpr size_t RUNS = 75;
-constexpr int VECTOR_SIZE = 256;
-constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
 
 constexpr int UNROLL_FACTOR0_DEFAULT = 1;
 constexpr int UNROLL_FACTOR1_DEFAULT = 1;
