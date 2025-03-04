@@ -477,7 +477,7 @@ if __name__ == "__main__":
                         dumps_dir=pathlib.Path(sub_dump_dir).__str__()
                     )
                     autotuners[k_name].save_results_all()
-                    GpuAutotunerConvergencePlotter(sub_dump_dir).plotgen_all()
+                    GpuAutotunerConvergencePlotter([sub_dump_dir.__str__()], output_dir=sub_dump_dir.__str__()).plotgen_all()
 
                 print(f"Starting autotuning for {k_name}, size: {size}")
                 now = datetime.datetime.now()

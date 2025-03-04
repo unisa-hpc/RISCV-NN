@@ -9,10 +9,14 @@ import pathlib
 
 
 class GpuAutotunerConvergencePlotter:
-    def __init__(self, subdumpdir):
-        self.subdumpdir = subdumpdir
+    def __init__(self, subdumpdirs: [str], output_dir: str):
+        self.FILE_FORMAT = 'svg'
+        self.subdumpdirs = subdumpdirs
+        self.output_dir = output_dir
         self.file_paths = self.get_all_json_files()
         self.data_raw = {}
+        self.data_aggr = {}
+        self.df = pd.DataFrame(columns=['Iteration', 'Kernel', 'N', 'GPU', 'Algorithm', 'Min Time', 'Min Time Global'])
 
         # file -> kernel -> N -> {
         #                   'best': [..., times:[...], time: 000],
@@ -20,11 +24,10 @@ class GpuAutotunerConvergencePlotter:
         #                   'all': [..., times:[...], time: 000],
         #                   'opt': {'opt: str, 'maxiter': int, 'time_limit': int}
         #                   }
-        self.data_aggr = {}
 
         self.load_data()
         self.aggregate_raw_data()
-        print(self.data_raw.keys().__str__())
+        self.preprocess_data()
 
     def load_data(self):
         # open json files and parse them with orjson with try except
@@ -32,7 +35,7 @@ class GpuAutotunerConvergencePlotter:
             with open(file, 'r') as f:
                 try:
                     data = orjson.loads(f.read())
-                    self.data_raw[pathlib.Path(file).name] = data
+                    self.data_raw[pathlib.Path(file).__str__()] = data
                 except Exception as e:
                     print(f"Error reading file {file}: {e}")
 
@@ -40,15 +43,15 @@ class GpuAutotunerConvergencePlotter:
         for file, data in self.data_raw.items():
             for kernel_file, kernels in data.items():  # `kernels` contains multiple kernel names
                 if kernel_file not in self.data_aggr:
-                    self.data_aggr[kernel_file] = {}
+                    self.data_aggr[file] = {}
 
                 for kernel_name, kernel_data in kernels.items():  # Iterate through kernel names
-                    if kernel_name not in self.data_aggr[kernel_file]:
-                        self.data_aggr[kernel_file][kernel_name] = {}
+                    if kernel_name not in self.data_aggr[file]:
+                        self.data_aggr[file][kernel_name] = {}
 
                     for N, results in kernel_data.items():  # Iterate through N values
-                        if N not in self.data_aggr[kernel_file][kernel_name]:
-                            self.data_aggr[kernel_file][kernel_name][N] = {
+                        if N not in self.data_aggr[file][kernel_name]:
+                            self.data_aggr[file][kernel_name][N] = {
                                 'best': [],
                                 'env': None,
                                 'all': [],
@@ -63,36 +66,97 @@ class GpuAutotunerConvergencePlotter:
 
                         # Ensure 'best' and 'all' are lists before extending
                         if isinstance(best_results, list):
-                            self.data_aggr[kernel_file][kernel_name][N]['best'].extend(best_results)
+                            self.data_aggr[file][kernel_name][N]['best'].extend(best_results)
                         else:
-                            self.data_aggr[kernel_file][kernel_name][N]['best'].append(best_results)
+                            self.data_aggr[file][kernel_name][N]['best'].append(best_results)
 
                         if isinstance(all_results, list):
-                            self.data_aggr[kernel_file][kernel_name][N]['all'].extend(all_results)
+                            self.data_aggr[file][kernel_name][N]['all'].extend(all_results)
                         else:
-                            self.data_aggr[kernel_file][kernel_name][N]['all'].append(all_results)
+                            self.data_aggr[file][kernel_name][N]['all'].append(all_results)
 
                         # Handle 'env' - store only if consistent, otherwise raise a warning
-                        if self.data_aggr[kernel_file][kernel_name][N]['env'] is None:
-                            self.data_aggr[kernel_file][kernel_name][N]['env'] = env_value
-                        elif self.data_aggr[kernel_file][kernel_name][N]['env'] != env_value and env_value is not None:
+                        if self.data_aggr[file][kernel_name][N]['env'] is None:
+                            self.data_aggr[file][kernel_name][N]['env'] = env_value
+                        elif self.data_aggr[file][kernel_name][N]['env'] != env_value and env_value is not None:
                             print(f"Warning: Inconsistent 'env' values for kernel {kernel_file}/{kernel_name}, N={N}")
 
                         # Handle 'opt' - store only if consistent, otherwise raise a warning
-                        if self.data_aggr[kernel_file][kernel_name][N]['opt'] is None:
-                            self.data_aggr[kernel_file][kernel_name][N]['opt'] = opt_value
-                        elif self.data_aggr[kernel_file][kernel_name][N]['opt'] != opt_value and opt_value is not None:
+                        if self.data_aggr[file][kernel_name][N]['opt'] is None:
+                            self.data_aggr[file][kernel_name][N]['opt'] = opt_value
+                        elif self.data_aggr[file][kernel_name][N]['opt'] != opt_value and opt_value is not None:
                             print(f"Warning: Inconsistent 'opt' values for kernel {kernel_file}/{kernel_name}, N={N}")
+
+    def preprocess_data(self):
+        """
+        Preprocesses the data to be used in plotting.
+        Constructs the pandas dataframe from self.data_aggr, supporting:
+        - Multiple GPUs
+        - Multiple Algorithms
+        - Multiple Kernels
+        - Multiple N values
+
+        self.data_aggr: file -> kernel -> N -> {
+                            'best': [..., times:[...], time: 000],
+                            'env',
+                            'all': [..., times:[...], time: 000],
+                            'opt': {'opt: str, 'maxiter': int, 'time_limit': int}
+                            }
+
+        """
+        # Construct the dataframe from self.data_aggr
+        for file, kernels in self.data_aggr.items():
+            for kernel, N_values in kernels.items():
+                for N, data in N_values.items():
+                    print(f"Processing {file}/{kernel} for N={N}")
+                    x = np.arange(len(data['all']))
+                    y = np.zeros(len(data['all']))
+
+                    for i, run in enumerate(data['all']):
+                        try:
+                            y[i] = run['time']
+                        except:
+                            y[i] = -1
+
+                    y = self.extract_pareto_runtime(x, y)
+                    for i in range(len(x)):
+                        row = {
+                            'Iteration': int(x[i]),
+                            'Kernel': kernel,
+                            'N': int(N),
+                            'GPU': data['env']['device_name'],
+                            'Algorithm': data['opt']['opt'],
+                            'Min Time': y[i],
+                            'Min Time Global': min(y)
+                        }
+                        # add row to dataframe
+                        self.df = pd.concat([self.df, pd.DataFrame([row])], ignore_index=True)
+        print("Preprocessing done.")
 
     def get_all_json_files(self):
         json_files = []
-        for root, dirs, files in os.walk(self.subdumpdir):
-            for file in files:
-                if file.endswith('.json') and file.startswith('results_all'):
-                    json_files.append(os.path.join(root, file))
+        for subdumpdir in self.subdumpdirs:
+            for root, dirs, files in os.walk(subdumpdir):
+                for file in files:
+                    if file.endswith('.json') and file.startswith('results_all'):
+                        json_files.append(os.path.join(root, file))
         return json_files
 
-    def plotgen_all(self):
+    def plotgen_all_in_one_figure2(self):
+        # Plots all data in self.df in one figure without any subplots
+        fig = plt.figure(figsize=(15, 10))
+
+        unique_N = self.df['N'].unique()
+
+        sns.lineplot(data=self.df, x='Iteration', y='Min Time', hue='Kernel', style='N', markers=False, )
+        # logaritmic scale y
+        plt.yscale('log')
+        plt.title('Autotuner Convergence')
+        plt.xlabel('Iteration')
+        plt.ylabel('Min. Kernel Runtime (ms)')
+        plt.savefig(f"{self.output_dir}/autotuner_convergence_all_in_one2.{self.FILE_FORMAT}")
+
+    def plotgen_old_detailed_convergence(self):
         cnt = self.get_count()
         if cnt == 0:
             print("No data to plot.")
@@ -119,7 +183,13 @@ class GpuAutotunerConvergencePlotter:
             ax.set_ylabel('Kernel Runtime (ms)')
 
         # save the plot in subdump directory
-        plt.savefig(f"{self.subdumpdir}/autotuner_convergence.png")
+        plt.savefig(f"{self.output_dir}/autotuner_convergence.{self.FILE_FORMAT}")
+
+    def plotgen_all(self):
+        self.plotgen_old_detailed_convergence()
+        for N in self.df['N'].unique():
+            self.plotgen2_convergence(fixed_N=N)
+        self.plotgen2_compare_best()
 
     def extract_pareto_runtime(self, data_x, data_y):
         assert len(data_x) == len(data_y)
@@ -141,7 +211,7 @@ class GpuAutotunerConvergencePlotter:
         y = np.zeros(len(kernel['all']))
 
         for i, run in enumerate(kernel['all']):
-            try :
+            try:
                 y[i] = run['time']
             except:
                 y[i] = -1
@@ -161,11 +231,23 @@ class GpuAutotunerConvergencePlotter:
         ax[subplot_idx].set_ylim(y_min - 0.02 * y_min, y_min + 0.5 * y_min)
 
         # log scale
-        #ax[subplot_idx].set_yscale('log')
+        # ax[subplot_idx].set_yscale('log')
 
         # add title
         ax[subplot_idx].set_title(f"{k_kernel} N={k_n}, [[Min: {min(y):.3f} ms]], Max: {max(y):.3f} ms")
 
+        for i in range(len(x)):
+            row = {
+                'Iteration': x[i],
+                'Kernel': k_kernel,
+                'N': k_n,
+                'GPU': kernel['env']['device_name'],
+                'Algorithm': self.data_aggr[k_file][k_kernel][k_n]['opt']['opt'],
+                'Min Time': y[i],
+                'Min Time Global': min(y)
+            }
+            # add row to dataframe AttributeError: 'DataFrame' object has no attribute 'append'
+            self.df = pd.concat([self.df, pd.DataFrame([row])], ignore_index=True)
 
     def get_count(self):
         cnt = 0
@@ -175,12 +257,129 @@ class GpuAutotunerConvergencePlotter:
                     cnt += 1
         return cnt
 
+    def plotgen2_convergence(self, fixed_N: int):
+        """
+        Plots one figure with Q subfigures, Q being the number of GPUs.
+        Each subfigure contains all the kernels, and algorithms for a specific GPU.
+        N is fixed.
+        """
+        Ns = self.df['N'].unique()
+        if fixed_N not in Ns:
+            print(f"Error: N={fixed_N} not found in the dataset.")
+            print(f"Available N values: {Ns}")
+            return
 
+        # Create a figure with Q subplots, Q being the number of GPUs
+        Q = len(self.df['GPU'].unique())
+        fig, axs = plt.subplots(nrows=Q, ncols=1, figsize=(10, 2 * Q))
+        fig.tight_layout(pad=3.0)
+
+        # Get unique GPUs
+        unique_GPUs = self.df['GPU'].unique()
+
+        fig.subplots_adjust(top=0.75)
+
+        # Iterate over unique GPUs
+        for gpu in unique_GPUs:
+            masked_df = self.df[(self.df['GPU'] == gpu) & (self.df['N'] == fixed_N)]
+            sns.lineplot(data=masked_df, x='Iteration', y='Min Time',
+                         hue='Kernel', style='Algorithm', markers=False, ax=axs[unique_GPUs.tolist().index(gpu)]
+            )
+            axs[unique_GPUs.tolist().index(gpu)].set_title(f"GPU: {gpu}, N={fixed_N}")
+            axs[unique_GPUs.tolist().index(gpu)].set_xlabel('Iteration')
+            axs[unique_GPUs.tolist().index(gpu)].set_ylabel('Min Kernel Runtime (ms)')
+            axs[unique_GPUs.tolist().index(gpu)].legend()
+            # logaritmic scale y
+            #axs[unique_GPUs.tolist().index(gpu)].set_yscale('log')
+
+        # remove legend from all subplots
+        for ax in axs:
+            ax.get_legend().remove()
+
+        # add common legend to the figure
+        handles, labels = axs[0].get_legend_handles_labels()
+        fig.legend(handles, labels, loc='upper center', ncol=4, fontsize='small')
+
+        # remove x axis label from the first subplot
+        axs[0].set_xlabel('')
+        axs[0].set_ylabel('')
+        axs[1].set_ylabel('')
+
+        # use the same x-axis range for all subplots (union)
+        x_min = self.df['Iteration'].min()
+        x_max = self.df['Iteration'].max()
+
+        _ = self.df[(self.df['N'] == fixed_N)&(self.df['Iteration'] >10)]
+        y_min = _['Min Time'].min()
+        y_max = _['Min Time'].max()
+        for ax in axs:
+            ax.set_xlim(x_min, x_max)
+            ax.set_ylim(y_min, y_max)
+
+        fig.text(0.02, 0.5, 'Min. Kernel Runtime (ms)', va='center', rotation='vertical')
+        fig.savefig(f"{self.output_dir}/autotuner_convergence_fixed_N_{fixed_N}.{self.FILE_FORMAT}")
+
+    def plotgen2_compare_best(self):
+        """
+        Plots one figure with Q subfigures, Q being the number of GPUs.
+        Each subfigure contains all the kernels, and algorithms for a specific GPU.
+        N is fixed.
+        """
+        # Create a figure with Q subplots, Q being the number of GPUs
+        Q = len(self.df['GPU'].unique())
+        fig, axs = plt.subplots(nrows=Q, ncols=1, figsize=(10, 2 * Q))
+        fig.tight_layout(pad=3.0)
+
+        # Get unique GPUs
+        unique_GPUs = self.df['GPU'].unique()
+
+        fig.subplots_adjust(top=0.75)
+
+        # Iterate over unique GPUs
+        for gpu in unique_GPUs:
+            masked_df = self.df[self.df['GPU'] == gpu]
+            sns.lineplot(data=masked_df, x='N', y='Min Time Global',
+                         hue='Kernel', style='Algorithm', markers=False, ax=axs[unique_GPUs.tolist().index(gpu)]
+                         )
+            axs[unique_GPUs.tolist().index(gpu)].set_title(f"GPU: {gpu}")
+            axs[unique_GPUs.tolist().index(gpu)].set_xlabel('Iteration')
+            axs[unique_GPUs.tolist().index(gpu)].set_ylabel('Autotuned Kernel Runtime (ms)')
+            axs[unique_GPUs.tolist().index(gpu)].legend()
+            # logaritmic scale y
+            # axs[unique_GPUs.tolist().index(gpu)].set_yscale('log')
+
+        # remove legend from all subplots
+        for ax in axs:
+            ax.get_legend().remove()
+
+        # add common legend to the figure
+        handles, labels = axs[0].get_legend_handles_labels()
+        fig.legend(handles, labels, loc='upper center', ncol=4, fontsize='small')
+
+        # remove x axis label from the first subplot
+        axs[0].set_xlabel('')
+        axs[0].set_ylabel('')
+        axs[1].set_ylabel('')
+
+
+        # only have x-ticks on unique Ns
+        xticks = self.df['N'].unique()
+        for ax in axs:
+            ax.set_xticks(np.asarray(xticks, dtype=np.float32))
+            # add grid
+            ax.grid()
+
+        fig.text(0.02, 0.5, 'Autotuned Kernel Runtime (ms)', va='center', rotation='vertical')
+        fig.savefig(f"{self.output_dir}/autotuner_comparison.{self.FILE_FORMAT}")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--subdump', type=str, required=True)
+    # allow multiple subdump directories
+    parser.add_argument('--subdump', type=str, required=False, action='append',
+                        help='One sub-dump directory that belongs to a gpu_cuda run')
+    parser.add_argument('--output', type=str, required=False, default='/tmp', help='Output directory for the plot')
+
     args = parser.parse_args()
-    plotter = GpuAutotunerConvergencePlotter(args.subdump)
+    plotter = GpuAutotunerConvergencePlotter(args.subdump, args.output)
     plotter.plotgen_all()
