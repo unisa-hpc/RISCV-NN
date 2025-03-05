@@ -189,7 +189,9 @@ class GpuAutotunerConvergencePlotter:
         self.plotgen_old_detailed_convergence()
         for N in self.df['N'].unique():
             self.plotgen2_convergence(fixed_N=N)
+            self.plotgen2_convergence2(fixed_N=N)
         self.plotgen2_compare_best()
+        self.plotgen2_compare_best2()
 
     def extract_pareto_runtime(self, data_x, data_y):
         assert len(data_x) == len(data_y)
@@ -329,6 +331,84 @@ class GpuAutotunerConvergencePlotter:
         fig.text(0.02, 0.5, 'Min. Kernel Runtime (ms)', va='center', rotation='vertical')
         fig.savefig(f"{self.output_dir}/autotuner_convergence_fixed_N_{fixed_N}.{self.FILE_FORMAT}")
 
+    def plotgen2_convergence2(self, fixed_N: int):
+        """
+        Plots one figure with Q subfigures, Q being the number of GPUs.
+        Each subfigure contains all the kernels, and algorithms for a specific GPU.
+        N is fixed.
+        """
+        Ns = self.df['N'].unique()
+        if fixed_N not in Ns:
+            print(f"Error: N={fixed_N} not found in the dataset.")
+            print(f"Available N values: {Ns}")
+            return
+
+        # Create a figure with Q subplots, Q being the number of GPUs
+        Q = len(self.df['GPU'].unique())
+        fig, axs = plt.subplots(nrows=1, ncols=Q, figsize=(2 * Q, 3))
+        fig.tight_layout(pad=3.0)
+
+        # Get unique GPUs
+        unique_GPUs = self.df['GPU'].unique()
+
+        fig.subplots_adjust(top=0.75)
+        sns.set_theme(font_scale=0.75)
+
+        # Iterate over unique GPUs
+        for gpu in unique_GPUs:
+            masked_df = self.df[(self.df['GPU'] == gpu) & (self.df['N'] == fixed_N)]
+            sns.lineplot(data=masked_df, x='Iteration', y='Min Time',
+                         hue='Kernel', style='Algorithm', markers=False, ax=axs[unique_GPUs.tolist().index(gpu)]
+            )
+            gpu_short = ''
+            if gpu.find('V100S') != -1:
+                gpu_short = 'V100s'
+            if gpu.find('Orin') != -1:
+                gpu_short = 'Orin Nano'
+            axs[unique_GPUs.tolist().index(gpu)].set_title(f"GPU: {gpu_short}, N={fixed_N}")
+            axs[unique_GPUs.tolist().index(gpu)].set_xlabel('Iteration')
+            axs[unique_GPUs.tolist().index(gpu)].set_ylabel('Min Kernel Runtime (ms)')
+            axs[unique_GPUs.tolist().index(gpu)].legend()
+            # logaritmic scale y
+            #axs[unique_GPUs.tolist().index(gpu)].set_yscale('log')
+
+        # remove legend from all subplots
+        for ax in axs:
+            ax.get_legend().remove()
+
+        # add common legend to the figure
+        handles, labels = axs[0].get_legend_handles_labels()
+
+        # Manually change text of the legend entries
+        for i, label in enumerate(labels):
+            if label.find('Kernel') != -1:
+                if label.find('Base') != -1:
+                    labels[i] = 'BaseMatmul'
+                if label.find('Packed2') != -1:
+                    labels[i] = 'FPoT F32:U8:Pack2'
+                if label.find('Packed4') != -1:
+                    labels[i] = 'FPoT F32:U8:Pack4'
+        fig.legend(handles, labels, loc='upper center', ncol=3, fontsize='small')
+
+        # remove x axis label from the first subplot
+        axs[0].set_xlabel('')
+        axs[0].set_ylabel('')
+        axs[1].set_ylabel('')
+
+        # use the same x-axis range for all subplots (union)
+        x_min = self.df['Iteration'].min()
+        x_max = 1000 #self.df['Iteration'].max()
+
+        _ = self.df[(self.df['N'] == fixed_N)&(self.df['Iteration'] >10)]
+        y_min = _['Min Time'].min()
+        y_max = _['Min Time'].max()
+        for ax in axs:
+            ax.set_xlim(x_min, x_max)
+            ax.set_ylim(y_min, y_max)
+
+        fig.text(0.02, 0.5, 'Min. Kernel Runtime (ms)', va='center', rotation='vertical')
+        fig.savefig(f"{self.output_dir}/autotuner_convergence2_fixed_N_{fixed_N}.{self.FILE_FORMAT}")
+
     def plotgen2_compare_best(self):
         """
         Plots one figure with Q subfigures, Q being the number of GPUs.
@@ -391,6 +471,61 @@ class GpuAutotunerConvergencePlotter:
 
         fig.text(0.02, 0.5, 'Autotuned Kernel Runtime (ms)', va='center', rotation='vertical')
         fig.savefig(f"{self.output_dir}/autotuner_comparison.{self.FILE_FORMAT}")
+
+    def plotgen2_compare_best2(self):
+        sns.set_theme(font_scale=0.75)
+
+        g = sns.catplot(
+            data=self.df, x='N', y='Min Time Global', kind='bar',
+            col='GPU', hue='Kernel', height=3, aspect=0.5
+        )
+
+        g.fig.set_size_inches(3, 3)
+        g.set(yscale='log')
+
+        # change suptitle fontsize
+        g.fig.suptitle('Autotuned Kernel Run-times')
+
+        # Adjust layout to reduce white space
+        g.fig.subplots_adjust(left=0.2, right=0.90, top=0.85, bottom=0.23)
+
+        # Rotate x-axis labels
+        for ax in g.axes.flat:
+            ax.set_xlabel('')  # Ensure xlabel is empty before adding manually
+            for label in ax.get_xticklabels():
+                label.set_rotation(90)
+
+        # Set correct GPU titles
+        for ax in g.axes.flat:
+            t = ax.get_title()
+            if 'V100S' in t:
+                ax.set_title("V100s")
+            elif 'Orin' in t:
+                ax.set_title("Orin Nano")
+
+        # Fix legend positioning outside plot
+        #lgd = g.fig.legend(
+        #    loc='upper right', bbox_to_anchor=(1.1, 1), ncol=1, fontsize='small'
+        #)
+        ## Update legend labels
+        #for text in lgd.get_texts():
+        #    label = text.get_text()
+        #    if 'Base' in label:
+        #        text.set_text('BaseMatmul')
+        #    elif 'Packed2' in label:
+        #        text.set_text('FPoT F32:U8:Pack2')
+        #    elif 'Packed4' in label:
+        #        text.set_text('FPoT F32:U8:Pack4')
+        g._legend.remove()  # Remove default legend
+
+        # set y-axis label
+        g.set_ylabels('Runtime (ms)')
+
+        # Add x-axis label centrally
+        g.fig.text(0.5, 0.02, 'Square Matrix Size (N)', va='center', ha='center')
+
+        # Save plot
+        g.fig.savefig(f"{self.output_dir}/autotuner_comparison2.{self.FILE_FORMAT}")
 
 
 if __name__ == '__main__':

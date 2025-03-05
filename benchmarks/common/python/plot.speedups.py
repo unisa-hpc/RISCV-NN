@@ -1098,6 +1098,7 @@ if __name__ == '__main__':
     parser.add_argument('--s-to', type=str, required=False, help='Save the class state to a pickle file.')
 
     args = parser.parse_args()
+    sns.set_theme(font_scale=1)
 
     # dumps and s-from are mutually exclusive
     if args.dumps is None and args.s_from is None:
