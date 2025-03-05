@@ -271,7 +271,7 @@ class GpuAutotunerConvergencePlotter:
 
         # Create a figure with Q subplots, Q being the number of GPUs
         Q = len(self.df['GPU'].unique())
-        fig, axs = plt.subplots(nrows=Q, ncols=1, figsize=(10, 2 * Q))
+        fig, axs = plt.subplots(nrows=Q, ncols=1, figsize=(5, 2 * Q))
         fig.tight_layout(pad=3.0)
 
         # Get unique GPUs
@@ -298,7 +298,17 @@ class GpuAutotunerConvergencePlotter:
 
         # add common legend to the figure
         handles, labels = axs[0].get_legend_handles_labels()
-        fig.legend(handles, labels, loc='upper center', ncol=4, fontsize='small')
+
+        # Manually change text of the legend entries
+        for i, label in enumerate(labels):
+            if label.find('Kernel') != -1:
+                if label.find('Base') != -1:
+                    labels[i] = 'BaseMatmul'
+                if label.find('Packed2') != -1:
+                    labels[i] = 'FPoT F32:U8:Pack2'
+                if label.find('Packed4') != -1:
+                    labels[i] = 'FPoT F32:U8:Pack4'
+        fig.legend(handles, labels, loc='upper center', ncol=3, fontsize='small')
 
         # remove x axis label from the first subplot
         axs[0].set_xlabel('')
@@ -307,7 +317,7 @@ class GpuAutotunerConvergencePlotter:
 
         # use the same x-axis range for all subplots (union)
         x_min = self.df['Iteration'].min()
-        x_max = self.df['Iteration'].max()
+        x_max = 1000 #self.df['Iteration'].max()
 
         _ = self.df[(self.df['N'] == fixed_N)&(self.df['Iteration'] >10)]
         y_min = _['Min Time'].min()
@@ -327,7 +337,7 @@ class GpuAutotunerConvergencePlotter:
         """
         # Create a figure with Q subplots, Q being the number of GPUs
         Q = len(self.df['GPU'].unique())
-        fig, axs = plt.subplots(nrows=Q, ncols=1, figsize=(10, 2 * Q))
+        fig, axs = plt.subplots(nrows=Q, ncols=1, figsize=(5, 2 * Q))
         fig.tight_layout(pad=3.0)
 
         # Get unique GPUs
@@ -342,7 +352,7 @@ class GpuAutotunerConvergencePlotter:
                          hue='Kernel', style='Algorithm', markers=False, ax=axs[unique_GPUs.tolist().index(gpu)]
                          )
             axs[unique_GPUs.tolist().index(gpu)].set_title(f"GPU: {gpu}")
-            axs[unique_GPUs.tolist().index(gpu)].set_xlabel('Iteration')
+            axs[unique_GPUs.tolist().index(gpu)].set_xlabel('Square Matrix Size (N)')
             axs[unique_GPUs.tolist().index(gpu)].set_ylabel('Autotuned Kernel Runtime (ms)')
             axs[unique_GPUs.tolist().index(gpu)].legend()
             # logaritmic scale y
@@ -354,7 +364,17 @@ class GpuAutotunerConvergencePlotter:
 
         # add common legend to the figure
         handles, labels = axs[0].get_legend_handles_labels()
-        fig.legend(handles, labels, loc='upper center', ncol=4, fontsize='small')
+
+        # Manually change text of the legend entries
+        for i, label in enumerate(labels):
+            if label.find('Kernel') != -1:
+                if label.find('Base') != -1:
+                    labels[i] = 'BaseMatmul'
+                if label.find('Packed2') != -1:
+                    labels[i] = 'FPoT F32:U8:Pack2'
+                if label.find('Packed4') != -1:
+                    labels[i] = 'FPoT F32:U8:Pack4'
+        fig.legend(handles, labels, loc='upper center', ncol=3, fontsize='small')
 
         # remove x axis label from the first subplot
         axs[0].set_xlabel('')
