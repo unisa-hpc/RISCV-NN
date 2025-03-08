@@ -96,14 +96,14 @@ void avx512_matmul_mul_nopack_float(
     }
 }
 
-__mmask16 is_infinity(__m512 x)
+__mmask16 is_not_infinity(__m512 x)
 {
     const __m512 SIGN_MASK = _mm512_set1_ps(-0.0);
     const __m512 INF = _mm512_set1_ps(std::numeric_limits<float>::infinity());
 
     x = _mm512_andnot_ps(SIGN_MASK, x);
-    x = _mm512_cmp_ps(x, INF, _CMP_EQ_OQ);
-    return x;
+    const auto mask = _mm512_cmp_ps_mask(x, INF, _CMP_NEQ_OQ);
+    return mask;
 }
 
 // Handling negative numbers using the magic number
