@@ -139,7 +139,7 @@ void avx512_matmul_floatbitmanipu_nopack_float_uint8(
                     // 1st Pass
                     const float *ptr_a = a + j * N + k + 16 * t; // `a` is row major
                     __m512 vec_a = _mm512_load_ps(reinterpret_cast<const __m512i *>(ptr_a));
-                    const auto infinity_mask = is_infinity(vec_a);
+                    const auto infinity_mask = is_not_infinity(vec_a);
                     auto vec_a_int = _mm512_castps_si512(vec_a);
                     auto negative_mask = _mm512_cmpgt_epi32_mask(b1, negative_detection);
                     b1 = _mm512_mask_sub_epi32(b1, negative_mask, b1, sign_removal);

@@ -61,7 +61,13 @@ int main(int argc, char **argv)
     c_tensor_scalar.wipe();
     c_tensor_avx5_mul.wipe();
     a_tensor.initialize(aligned_tensor<float>::init_type::random, -10000.f, 10000.f);
-    a_tensor.initialize(aligned_tensor<float>::init_type::random, -10000.f, 10000.f);
+
+    for
+        int(i = 0 : i < a_tensor.size; i++)
+        {
+            if (i % 2)
+                a_tensor.data()[i] = std::numeric_limits<float>::infinity();
+        }
 
     auto *a_ptr = a_tensor.data_t();
     auto *b_ptr = b_tensor.data_t();
