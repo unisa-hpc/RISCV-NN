@@ -54,25 +54,25 @@ class MyKernelAutoTuner:
         dbg = False
         if not dbg:
             self.tune_params = dict()
-            self.tune_params["block_size_x"] = [128, 256, 512]
+            self.tune_params["block_size_x"] = [128, 256, 512, 1024]
             self.tune_params["block_size_y"] = [1]
             self.tune_params["block_size_z"] = [1]
             self.tune_params["pot_words_per_uint8"] = [self.pot_words_per_uint8] # dont modify this
-            self.tune_params["vBM"] = [128]
-            self.tune_params["vBN"] = [128]
-            self.tune_params["vBK"] = [8]
-            self.tune_params["vTM"] = [8, 16, 32]
-            self.tune_params["vTN"] = [4]
-            self.tune_params["vUF0"] = [1]
-            self.tune_params["vUF1"] = [1]
-            self.tune_params["vUF2"] = [1]
-            self.tune_params["vUF3"] = [1]
-            self.tune_params["vUF4"] = [1, 4, 8, 16, 32, 64, 128]
-            self.tune_params["vUF5"] = [1, 4, 8, 16, 32, 64, 128]
-            self.tune_params["vUF6"] = [1, 4, 8, 16, 32, 64, 128]
-            self.tune_params["vUF7"] = [1, 4, 8, 16, 32, 64, 128]
-            self.tune_params["vUF8"] = [1, 4, 8, 16, 32, 64, 128]
-            self.tune_params["vUF9"] = [1, 4, 8, 16, 32, 64, 128]
+            self.tune_params["vBM"] = [32, 64, 128]
+            self.tune_params["vBN"] = [32, 64, 128]
+            self.tune_params["vBK"] = [4]
+            self.tune_params["vTM"] = [1,2,4,8]
+            self.tune_params["vTN"] = [4,8]
+            self.tune_params["vUF0"] = [1,2,4]
+            self.tune_params["vUF1"] = [1,2,4,8,32]
+            self.tune_params["vUF2"] = [1,2,4,8,32]
+            self.tune_params["vUF3"] = [1,2,4]
+            self.tune_params["vUF4"] = [1,2,4,8]
+            self.tune_params["vUF5"] = [1,2,4,8]
+            self.tune_params["vUF6"] = [1,2,4,8]
+            self.tune_params["vUF7"] = [1,2,4,8]
+            self.tune_params["vUF8"] = [1,2,4,8]
+            self.tune_params["vUF9"] = [1,2,4,8]
         else:
             self.tune_params = dict()
             self.tune_params["block_size_x"] = [256]
@@ -115,15 +115,9 @@ class MyKernelAutoTuner:
 
         errors = []
 
-        # 1. Basic size constraints
         if matrix_size <= 0:
             errors.append("matrix_size must be positive")
 
-        # 2. Fixed parameter constraints
-        if BK != 8:
-            errors.append("BK must be 8 (fixed in launcher code)")
-
-        # 3. Block size constraints
         if BM <= 0 or BN <= 0:
             errors.append("BM and BN must be positive")
 
@@ -133,7 +127,6 @@ class MyKernelAutoTuner:
         if not (BN & (BN - 1) == 0):
             errors.append("BN should be a power of 2 for optimal performance")
 
-        # 4. Thread tile constraints
         if not (TM & (TM - 1) == 0):
             errors.append("TM should be a power of 2 for optimal performance")
 
@@ -143,7 +136,6 @@ class MyKernelAutoTuner:
         if not (TN % 4 == 0):
             errors.append("TN should be divisible by 4 for vectorized loads/stores from each thread")
 
-        # 5. Divisibility constraints (from kernel implementation)
         if BN % 2 != 0:
             errors.append("BN must be divisible by 2 (kernel uses BN/2)")
 
@@ -156,11 +148,9 @@ class MyKernelAutoTuner:
         if BK % 4 != 0:
             errors.append("BK must be divisible by 4 (kernel loads 4 elements at a time)")
 
-        # 6. Vector load/store constraints
         if BN % 8 != 0:
             errors.append("BN must be divisible by 8 for float4 vectorized loads/stores")
 
-        # 7. Thread block size constraints
         threads_per_block = (BM * BN) // (TM * TN) // pot_words_per_uint8
         if threads_per_block > 1024:
             errors.append(
@@ -168,23 +158,14 @@ class MyKernelAutoTuner:
         if threads_per_block < 32:
             errors.append("Total threads per block should be at least 32 (one warp) for efficiency")
 
-        # 8. Shared memory constraints
-        # shared_mem_size = (BK * BM) * 4  # As[] array (4 bytes per uint32_t)
-        # shared_mem_size += BK * (BN // self.pot_words_per_uint8 + 5)  # Bs[] array (1 byte per uint8_t)
-        # if shared_mem_size > 48 * 1024:  # 48KB is typical max shared memory per block
-        #     errors.append(f"Shared memory usage ({shared_mem_size} bytes) exceeds 48KB")
-
-        # 9. Matrix size constraints
         if matrix_size < BM or matrix_size < BN:
             errors.append(f"matrix_size ({matrix_size}) must be >= BM ({BM}) and >= BN ({BN})")
 
-        # 10. Minimum size constraints for vectorized operations
         if BM < 8:
             errors.append("BM must be at least 8 for efficient memory access")
         if BN < 8:
             errors.append("BN must be at least 8 for efficient memory access")
 
-        # 11. Thread tile size constraints
         if TM < 1 or TN < 1:
             errors.append("TM and TN must be positive")
         if TM > BM:
@@ -194,6 +175,8 @@ class MyKernelAutoTuner:
 
         if block_size_flat != (BM * BN) // (TM * TN) // pot_words_per_uint8:
             errors.append(f"block_size_x must be equal to (BM * BN) // (TM * TN) // {pot_words_per_uint8}")
+
+        # print(errors)
 
         return len(errors) == 0, errors
 
@@ -494,7 +477,7 @@ if __name__ == "__main__":
                         dumps_dir=pathlib.Path(sub_dump_dir).__str__()
                     )
                     autotuners[k_name].save_results_all()
-                    GpuAutotunerConvergencePlotter(sub_dump_dir).plotgen_all()
+                    GpuAutotunerConvergencePlotter([sub_dump_dir.__str__()], output_dir=sub_dump_dir.__str__()).plotgen_all()
 
                 print(f"Starting autotuning for {k_name}, size: {size}")
                 now = datetime.datetime.now()

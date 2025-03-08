@@ -19,7 +19,7 @@ extern void vector_matmul_scalar_noautovec (
 
 extern void vector_matmul_shift(
     const int32_t* __restrict__ a,
-    const int32_t* __restrict__ b,
+    const uint32_t* __restrict__ b,
     int32_t* __restrict__ c
 );
 
@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
 
     auto* a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
     auto* b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
+    auto* bp_ptr = aligned_alloc_array<uint32_t>(N*N, ALIGNMENT);;
     auto* c_scalar_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
     auto* c_avx_mul_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
     auto* c_avx_shift_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);
@@ -85,7 +86,11 @@ int main(int argc, char** argv) {
     for (size_t j = 0; j < N; j++) {
         for (size_t i = 0; i < N; i++) {
             a_ptr[j * N + i] = static_cast<int32_t>(19); // `a` is row major
-            b_ptr[i * N + j] = static_cast<int32_t>(std::pow(2, 14)); // `b` is col major
+            // random >positive< integer between 0 and 10
+            int r = rand();
+            r = r % 10;
+            b_ptr[i * N + j] = static_cast<int32_t>(std::pow(2, r)); // `b` is col major
+            bp_ptr[i * N + j] = static_cast<uint32_t>(r); // `b` is col major
         }
     }
 
@@ -139,15 +144,6 @@ int main(int argc, char** argv) {
     }
     if (RUN_BASELINES) verify_results(c_scalar_ptr, c_avx_mul_ptr);
 
-    // parse the B array to make it contain logs over actual powers of 2
-    for (size_t i = 0; i < N * N; i++) {
-        const auto v = static_cast<int32_t>(std::log2(b_ptr[i]));
-        if (std::pow(2, v) != b_ptr[i]) {
-            std::cerr << "Error: " << b_ptr[i] << " is not a power of 2" << std::endl;
-            return 1;
-        }
-        b_ptr[i] = v;
-    }
     {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::AVX2, false, 0), //"AVX Matmul With Shift",
@@ -161,7 +157,7 @@ int main(int argc, char** argv) {
         );
         for (volatile size_t i = 0; i < RUNS; i++) {
             timer_scope ts(tp);
-            vector_matmul_shift(a_ptr, b_ptr, c_avx_shift_ptr);
+            vector_matmul_shift(a_ptr, bp_ptr, c_avx_shift_ptr);
         }
     }
     if (RUN_BASELINES) verify_results(c_scalar_ptr, c_avx_shift_ptr);
