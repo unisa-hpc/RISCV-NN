@@ -12,7 +12,7 @@
 #include <cmath>
 #include "common01.h"
 
-constexpr int BENCH_ID = 7;
+constexpr int BENCH_ID = 10;
 constexpr size_t RUNS = 75;
 constexpr int VECTOR_SIZE = 256;
 constexpr size_t VECTOR_ELEMENTS = VECTOR_SIZE / (8 * sizeof(int32_t));
