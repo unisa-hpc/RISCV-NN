@@ -65,3 +65,9 @@ constexpr int UNROLL_FACTOR2_DEFAULT = 1;
 #else
 #define RUN_BASELINES 0
 #endif
+
+#ifndef DONT_RUN_SCALARS
+#define RUN_SCALARS 1
+#else
+#define RUN_SCALARS 0
+#endif

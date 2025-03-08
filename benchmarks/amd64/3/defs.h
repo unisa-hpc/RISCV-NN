@@ -99,6 +99,12 @@ constexpr int S_Y_DEFAULT = 1;
 #define RUN_BASELINES 0
 #endif
 
+#ifndef DONT_RUN_SCALARS
+#define RUN_SCALARS 1
+#else
+#define RUN_SCALARS 0
+#endif
+
 // do not change these values
 constexpr int input_height = I_H;
 constexpr int input_width = I_W;

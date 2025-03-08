@@ -71,6 +71,7 @@ int main(int argc, char** argv) {
     std::cout << "AUTOTUNE_BASELINE_KERNELS: NO" << std::endl;
     #endif
     std::cout << "RUN_BASELINES: " << RUN_BASELINES << std::endl;
+    std::cout << "RUN_SCALARS: " << RUN_SCALARS << std::endl;
 
     auto* a_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
     auto* b_ptr = aligned_alloc_array<int32_t>(N*N, ALIGNMENT);;
@@ -94,7 +95,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (RUN_BASELINES) {
+    if (RUN_BASELINES && RUN_SCALARS) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarNoAutoVec, true, 0), //"Scalar Matmul With Mul NoAutovec",
             {
@@ -110,7 +111,7 @@ int main(int argc, char** argv) {
             vector_matmul_scalar_noautovec(a_ptr, b_ptr, c_scalar_ptr);
         }
     }
-    if (RUN_BASELINES) {
+    if (RUN_BASELINES && RUN_SCALARS) {
         timer_stats tp(
             get_code_name(BENCH_ID, kernel_kind::ScalarAutoVec, true, 0), //"Scalar Matmul With Mul Autovec",
             {
@@ -142,7 +143,7 @@ int main(int argc, char** argv) {
             vector_matmul_avx(a_ptr, b_ptr, c_avx_mul_ptr);
         }
     }
-    if (RUN_BASELINES) verify_results(c_scalar_ptr, c_avx_mul_ptr);
+    if (RUN_BASELINES && RUN_SCALARS) verify_results(c_scalar_ptr, c_avx_mul_ptr);
 
     {
         timer_stats tp(
@@ -160,7 +161,7 @@ int main(int argc, char** argv) {
             vector_matmul_shift(a_ptr, bp_ptr, c_avx_shift_ptr);
         }
     }
-    if (RUN_BASELINES) verify_results(c_scalar_ptr, c_avx_shift_ptr);
+    if (RUN_BASELINES && RUN_SCALARS) verify_results(c_scalar_ptr, c_avx_shift_ptr);
 
     return 0;
 }

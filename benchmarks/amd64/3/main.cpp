@@ -405,6 +405,7 @@ int main(int argc, char** argv) {
     std::cout << "AUTOTUNE_BASELINE_KERNELS: NO" << std::endl;
     #endif
     std::cout << "RUN_BASELINES: " << RUN_BASELINES << std::endl;
+    std::cout << "RUN_SCALARS: " << RUN_SCALARS << std::endl;
 
     const size_t _out_height = GetOutHeight(input_height, kernel_height, stride_y);
     const size_t _out_width = GetOutWidth(input_width, kernel_width, stride_x);
