@@ -137,7 +137,7 @@ void avx512_matmul_floatbitmanipu_nopack_float_uint8(
                     // start the splitting process. 4 vectors of 128 bits each, converted to 4 vectors of 512bits each
                     auto b1 = _mm512_cvtepi8_epi32(_mm512_extracti64x2_epi64(vec_b, t));
                     // 1st Pass
-                    const float *ptr_a = a + j * N + k + 16 * i; // `a` is row major
+                    const float *ptr_a = a + j * N + k + 16 * t; // `a` is row major
                     __m512 vec_a = _mm512_load_ps(reinterpret_cast<const __m512i *>(ptr_a));
                     const auto infinity_mask = is_infinity(vec_a);
                     auto vec_a_int = _mm512_castps_si512(vec_a);
