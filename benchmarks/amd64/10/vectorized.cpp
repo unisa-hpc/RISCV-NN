@@ -96,7 +96,7 @@ void avx512_matmul_mul_nopack_float(
     }
 }
 
-const __m512 SIGN_MASK = _mm512_set1_ps(-0.0);
+const __m512 SIGN_MASK = _mm512_set1_ps(0b100000000111111111111111111111111);
 const __m512 INF = _mm512_set1_ps(std::numeric_limits<float>::infinity());
 
 __mmask16 is_not_infinity(__m512 x)
