@@ -51,7 +51,7 @@ void wipe(int32_t* p, size_t len) {
 }
 
 int main(int argc, char** argv) {
-    constexpr size_t ALIGNMENT = 32; // 32-byte alignment
+    constexpr size_t ALIGNMENT = 64; // 64-byte alignment
     const int RUNS_SCALAR = RUNS<=7 ? RUNS : 7;
 
     std::cout << "N: " << N << std::endl;
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
     }
     if (RUN_BASELINES) {
         timer_stats tp(
-            get_code_name(BENCH_ID, kernel_kind::AVX2, true, 0), //"AVX Matmul With Mul",
+            get_code_name(BENCH_ID, kernel_kind::AVX512, true, 0), //"AVX Matmul With Mul",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0_BASELINE},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1_BASELINE},
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
 
     {
         timer_stats tp(
-            get_code_name(BENCH_ID, kernel_kind::AVX2, false, 0), //"AVX Matmul With Shift",
+            get_code_name(BENCH_ID, kernel_kind::AVX512, false, 0), //"AVX Matmul With Shift",
             {
                 {"UNROLL_FACTOR0", UNROLL_FACTOR0},
                 {"UNROLL_FACTOR1", UNROLL_FACTOR1},
