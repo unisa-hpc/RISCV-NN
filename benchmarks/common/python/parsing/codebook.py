@@ -54,7 +54,7 @@ def translate_str_codename_to(codename: str, to_style: str) -> str:
                 "Scalar Matmul With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
                 "AVX2 F32:F32 Matmul With MUL" if is_base and kind == "AVX2" and kind_index==0 else \
                 "AVX512 F32:F32 Matmul With MUL" if is_base and kind == "AVX512" and kind_index==0 else \
-                "AVX512 F32:U8 NoPack Matmul With PoT - W/O permutexvar" if (not is_base) and kind == "AVX512" and kind_index==0 else \
+                "AVX512 F32:U8 NoPack Matmul With PoT - Unpack1" if (not is_base) and kind == "AVX512" and kind_index==0 else \
                 None
         elif bench_id == 8:
             ret_val = \
@@ -62,7 +62,7 @@ def translate_str_codename_to(codename: str, to_style: str) -> str:
                 "Scalar Matmul With MUL (AutoVec)" if is_base and kind == "SAV" and kind_index==0 else \
                 "AVX2 F32:F32 Matmul With MUL" if is_base and kind == "AVX2" and kind_index==0 else \
                 "AVX512 F32:F32 Matmul With MUL" if is_base and kind == "AVX512" and kind_index==0 else \
-                "AVX512 F32:U8 NoPack Matmul With PoT - permutexvar" if (not is_base) and kind == "AVX512" and kind_index==0 else \
+                "AVX512 F32:U8 NoPack Matmul With PoT - Unpack2" if (not is_base) and kind == "AVX512" and kind_index==0 else \
                 None
         elif bench_id == 4:
             ret_val = \
@@ -227,20 +227,20 @@ def translate_str_benchId_to(benchId: str, to_style: str, reverse=False) -> str:
     if to_style == 'brief1':
         if not reverse:
             ret_val = \
-                "FPoT W/O Permute" if benchId == 7 else \
-                "FPoT W/ Permute" if benchId == 8 else \
+                "FPoT Unpack1" if benchId == 7 else \
+                "FPoT Unpack2" if benchId == 8 else \
                 "FXPoT" if benchId == 2 else \
-                "FPoT Packed2" if benchId == 5 else \
-                "FPoT Packed4" if benchId == 6 else \
+                "FPoT U8:P2" if benchId == 5 else \
+                "FPoT U8:P4" if benchId == 6 else \
                 "FXPoT" if benchId == 1 else \
                 None
         else:
             ret_val = \
-                7 if benchId == "FPoT W/O Permute" else \
-                8 if benchId == "FPoT W/ Permute" else \
+                7 if benchId == "FPoT Unpack1" else \
+                8 if benchId == "FPoT Unpack2" else \
                 2 if benchId == "FXPoT" else \
-                5 if benchId == "FPoT Packed2" else \
-                6 if benchId == "FPoT Packed4" else \
+                5 if benchId == "FPoT U8:P2" else \
+                6 if benchId == "FPoT U8:P4" else \
                 1 if benchId == "FXPoT" else \
                 None
 
