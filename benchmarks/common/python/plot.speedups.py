@@ -16,7 +16,7 @@ import matplotlib as mpl
 FORMAT = 'svg'
 FIG_WIDTH = 8.27  # inches, A4 width=8.27
 FIG_HEIGHT1 = 3.5
-FIG_HEIGHT2 = 3.0
+FIG_HEIGHT2 = 2
 
 
 class PlotSpeedUps:
@@ -979,7 +979,7 @@ class PlotSpeedUps:
             plt.savefig(f"{self.dir_out}/speedup_vv_over_N__{str(hw_group)}.{FORMAT}", bbox_extra_artists=(lgd,),
                         bbox_inches='tight', dpi=300)
 
-    def plotgen_speedups_over_N_all_as_subfigures(self, hw_list=[], inset_zoom=False):
+    def plotgen_speedups_over_N_all_as_subfigures(self, hw_list=[], inset_zoom=False, just_one_legend=True):
         """
         Generate the plot of speedups_vv (the most sensible vv case) over N for all the benchmarks, hw, and compilers.
         hw_groups is a list of lists, where each list contains the hw names that should be grouped together.
@@ -1076,17 +1076,30 @@ class PlotSpeedUps:
             def omit_hw(s):
                 return s.split(',')[0]
 
-            handles, labels = axs[i].get_legend_handles_labels()
-            lgd = axs[i].legend(handles,
-                                [omit_hw(label) if label not in new_labels else new_labels[label] for label in labels],
-                                bbox_to_anchor=(1.05, 1), loc='upper left')
+            if not just_one_legend:
+                handles, labels = axs[i].get_legend_handles_labels()
+                lgd = axs[i].legend(handles,
+                                    [omit_hw(label) if label not in new_labels else new_labels[label] for label in labels],
+                                    bbox_to_anchor=(1.05, 1), loc='upper left')
 
             # Add bold text to bottom right corner of each subplot to indicate the hardware
             # We dont want to put the HW name in the legend!
             axs[i].text(0.95, 0.05, hw, fontsize=8, fontweight='bold', transform=axs[i].transAxes, ha='right')
 
-        fig.savefig(f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}", bbox_extra_artists=(lgd,),
-                    bbox_inches='tight', dpi=300)
+        if just_one_legend:
+            # remove all legends and add a single legend at the bottom
+            for ax in axs:
+                ax.get_legend().remove()
+            # Add only one legend at the top of the first subplot, wide, with multiple legend columns
+            handles, labels = axs[0].get_legend_handles_labels()
+            lgd = axs[0].legend(handles, labels, bbox_to_anchor=(0.5, 1.7), loc='upper center', ncol=3)
+
+        fig.savefig(
+            f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}",
+            bbox_extra_artists=(lgd,),
+            bbox_inches='tight',
+            dpi=300
+        )
 
 
 if __name__ == '__main__':
@@ -1186,3 +1199,15 @@ if __name__ == '__main__':
 
     if args.s_to is not None:
         obj.serialize(args.s_to)
+
+    print(R"""
+====================================================================================================================
+rm -rf /tmp/publish
+mkdir -p /tmp/publish
+cp /tmp/'speedup_type2_N=5120_compiler=GCC14.2_hw['\''SpacemitK1'\'']_yrange_(0, 12)_legendFalse_reverseFalse.svg' /tmp/publish/
+cp /tmp/'speedup_type2_N=5120_compiler=GCC14.2_hw['\''Xeon5218'\'', '\''Xeon8260'\'', '\''Ryzen97950X'\'']_yrange_(0, 12)_legendFalse_reverseFalse.svg' /tmp/publish/
+cp /tmp/'speedup_type2_N=5120_compiler=LLVM18_hw['\''SpacemitK1'\'']_yrange_(0, 12)_legendTrue_reverseFalse.svg' /tmp/publish/
+cp /tmp/'speedup_type2_N=5120_compiler=LLVM18_hw['\''Xeon5218'\'', '\''Xeon8260'\'', '\''Ryzen97950X'\'']_yrange_(0, 12)_legendTrue_reverseFalse.svg' /tmp/publish/
+cp /tmp/'speedup_vv_over_N_subfig__['\''SpacemitK1'\''].svg' /tmp/publish/
+cp /tmp/'speedup_vv_over_N_subfig__['\''Xeon5218'\'', '\''Xeon8260'\'', '\''Ryzen97950X'\''].svg' /tmp/publish/
+    """)
