@@ -121,7 +121,7 @@ class PlotSpeedUps:
         for bench_id in unique_bids:
             if bench_id == 0 or bench_id == 2 or bench_id == 3:
                 print(f"NYI: Preprocessing data for benchID={bench_id}")
-            elif bench_id == 7 or bench_id == 8:
+            elif bench_id == 7 or bench_id == 8 or bench_id == 10:
                 print(f"Preprocessing data for benchID={bench_id}")
                 cols = list(self.proc_data.columns)
                 cols.append('speedup_type')
@@ -1101,6 +1101,83 @@ class PlotSpeedUps:
             dpi=300
         )
 
+    def plotgen_fpot_inf_nan_handling(self):
+        # Extract the rows that are benchId=10 and speedup_type=vv
+        masked_data = self.proc_data_speedup[
+            (self.proc_data_speedup['benchId'] == translate_str_benchId_to(10, self.STYLE_BENCHID)) &
+            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
+        ]
+
+        # Create a figure, just one plot is enough
+        fig, ax = plt.subplots(figsize=(FIG_WIDTH/2, FIG_HEIGHT1))
+        fig.subplots_adjust(bottom=0.5, right=0.8)
+
+        # Create the seaborn lineplot
+        lineplot = sns.lineplot(
+            data=masked_data,
+            x='N',
+            y='data_point',
+            hue='benchId_hw',
+            style='compiler',
+            palette='viridis',
+            ci="sd",  # Show std-deviation confidence intervals
+            markers=False,
+            dashes=True,
+            legend='full'
+        )
+
+        # Add legend
+        lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+        # x-axis and y-axis labels
+        plt.xlabel("N")
+        plt.xticks(rotation=90, fontsize=7)
+        plt.ylabel("Speedup_vv")
+
+        # Save the figure
+        plt.savefig(f"{self.dir_out}/speedup_vv_over_N__inf_nan_amd.{FORMAT}", bbox_extra_artists=(lgd,),
+                    bbox_inches='tight', dpi=300)
+
+    def plotgen_fxpot(self):
+        # Extract the rows that are benchId=10 and speedup_type=vv
+        masked_data = self.proc_data_speedup[
+            (
+                    (self.proc_data_speedup['benchId'] == translate_str_benchId_to(2, self.STYLE_BENCHID)) |
+                    (self.proc_data_speedup['benchId'] == translate_str_benchId_to(1, self.STYLE_BENCHID))
+            ) &
+            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
+            ]
+
+        # Create a figure, just one plot is enough
+        fig, ax = plt.subplots(figsize=(FIG_WIDTH/2, FIG_HEIGHT1))
+        fig.subplots_adjust(bottom=0.5, right=0.8)
+
+        # Create the seaborn lineplot
+        lineplot = sns.lineplot(
+            data=masked_data,
+            x='N',
+            y='data_point',
+            hue='benchId_hw',
+            style='compiler',
+            palette='viridis',
+            ci="sd",  # Show std-deviation confidence intervals
+            markers=False,
+            dashes=True,
+            legend='full'
+        )
+
+        # Add legend
+        lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+        # x-axis and y-axis labels
+        plt.xlabel("N")
+        plt.xticks(rotation=90, fontsize=7)
+        plt.ylabel("Speedup_vv")
+
+        # Save the figure
+        plt.savefig(f"{self.dir_out}/speedup_vv_over_N__fxpot_amd_rvv.{FORMAT}", bbox_extra_artists=(lgd,),
+                    bbox_inches='tight', dpi=300)
+
 
 if __name__ == '__main__':
     # accept multiple instances of --dumps arguments
@@ -1197,6 +1274,9 @@ if __name__ == '__main__':
     ]
     )
 
+    obj.plotgen_fpot_inf_nan_handling()
+    obj.plotgen_fxpot()
+
     if args.s_to is not None:
         obj.serialize(args.s_to)
 
@@ -1210,4 +1290,6 @@ cp /tmp/'speedup_type2_N=5120_compiler=LLVM18_hw['\''SpacemitK1'\'']_yrange_(0, 
 cp /tmp/'speedup_type2_N=5120_compiler=LLVM18_hw['\''Xeon5218'\'', '\''Xeon8260'\'', '\''Ryzen97950X'\'']_yrange_(0, 12)_legendTrue_reverseFalse.svg' /tmp/publish/
 cp /tmp/'speedup_vv_over_N_subfig__['\''SpacemitK1'\''].svg' /tmp/publish/
 cp /tmp/'speedup_vv_over_N_subfig__['\''Xeon5218'\'', '\''Xeon8260'\'', '\''Ryzen97950X'\''].svg' /tmp/publish/
+cp /tmp/speedup_vv_over_N__inf_nan_amd.svg /tmp/publish/
+cp /tmp/speedup_vv_over_N__fxpot_amd_rvv.svg /tmp/publish/
     """)
