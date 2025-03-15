@@ -1,1 +1,0 @@
-../../scripts/build.amd64.00.sh
