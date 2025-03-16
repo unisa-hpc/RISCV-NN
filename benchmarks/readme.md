@@ -1,74 +1,118 @@
 # Benchmarks
 
-| BenchID | ISA/Platform | Matmul? | TypeA                      | TypeB                 | WordsPackedInB | CanHdlNeg? | NegMethod | Notes                          |
-|---------|--------------|---------|----------------------------|-----------------------|----------------|------------|-----------|--------------------------------|
-| 00      | AVX2         | N       | -                          | -                     | -              | -          | -         | Inline Assembly, MUL vs. Shift |
-| 01      | RVV-1.0      | Y       | Int32                      | Int32                 | 1              | N          | -         |                                |
-| 02      | AVX512      | Y       | Int32                      | Int32                 | 1              | N          | -         |                                |
-| 03      | AVX2         | N       | -                          | -                     | -              | N          | -         | Conv2D, Int32, NoPack          |
-| 04      | CUDA         | Y       | Float32, Float32 as Uint32 | Float32, Uint16 Uint8 | Mixed          | Y          | Directly  | -                              |
-| 05      | RVV-1.0      | Y       | Float32                    | Uint8                 | 1              | Y          | MagicNum  | -                              |
-| 06      | RVV-1.0      | Y       | Float32                    | Uint8                 | 2              | Y          | MagicNum  | -                              |
-| 07      | AVX512       | Y       | Float32                    | Uint8                 | 1              | Y          | MagicNum  | -                              |
-| 08      | AVX512       | Y       | Float32                    | Uint8                 | 1              | Y          | Directly  | -                              |
+| BenchID | ISA/Platform | Type                           | Negative<br/>Handling | Notes |
+|---------|--------------|--------------------------------|-----------------------|-------|
+| 01      | RVV-1.0      | I32:U32:E31:P1                 | Y                     | FXPoT |
+| 02      | AVX512       | I32:U32:E31:P1                 | N                     | FXPoT |
+| 05      | RVV-1.0      | F32:U8:E5:P1                   | Y                     | FPoT  |
+| 06      | RVV-1.0      | F32:U8:E3:P2                   | Y                     | FPoT  |
+| 07      | AVX512       | F32:U8:E5:P1                   | Y                     | FPoT  |
+| 08      | AVX512       | F32:U16:E8:P1                  | Y                     | FPoT  |
+| 09      | AVX512       | F32:U8:E3:P2<br/> F32:U8:E1:P4 | Y                     | FPoT  |
+| 10      | AVX512       | F32:U8:E5:P1 + InfNan          | Y                     | FPoT  |
 
-## Naming Convention
+## How to use
 
-> **Example**: avx512_matmul_floatbitmanipu_nopack_float_uint8_no_magic
-- **ISA**: avx512
-- **Workload**: matmul
-- **Approach**: Float Bit Manipulation
-- **Is B Packed**: No
-- **Type A**: Float
-- **Type B**: Uint8
-- **Can Handle Negatives**: Yes
-- **Negatives Handling Method**: Directly (no magic number)
----
-> **Example**: PoT4
-- **Exponent Bits**: 3
-- **Sign Bit**: 1
----
-> **Example**: Uint16, NoPack, PoT9
-This means that we have enough bits to have full 8 bit exponent.
-- **Exponent Bits**: 8
-- **Sign Bit**: 1
----
-> **Example**: Uint8, NoPack, PoT8
-Since we have 1 sign bit, we can only have a maximum of 7 exponent bits.
-- **Exponent Bits**: 7
-- **Sign Bit**: 1
----
-> **Example**: Uint8, Packed2, PoT4
-Two words of 4 bits (3 exponent bits and 1 sign bit) that are packed into a single 8 bit word.
-- **Exponent Bits**: 3 * 2
-- **Sign Bit**: 1 * 2
----
-> **Example**: Uint8, Packed4, PoT2
-Four words of 2 bits (1 exponent bit and 1 sign bit) that are packed into a single 8 bit word.
-- **Exponent Bits**: 1 * 4
-- **Sign Bit**: 1 * 4
----
-# Rules
+### Dependencies
 
-1. Each benchmark should:
-    - Be a separate file in the `benchmarks` directory.
-    - not depend on any other benchmark.
-    - repeat the same operation multiple times.
-    - have a readme explaining the benchmark.
-    - have a unique benchmark ID.
-    - have `main.cpp`, `scalar.cpp`, `vectorized.cpp`, and `defs.h`.
-    - The function in `scalar.cpp` should be defined as `T FUNCTION_NAME(foo_bar) {}`.
-2. No cmake. Just custom commands calling the compiler directly.
-3. The compiler and its version should be printed in the benchmark output, by the bash script or by the program itself.
-4. The compiler flags should be printed in the benchmark output, by the bash script or by the program itself.
-5. The build scripts should be located in the script directory. Any benchmark should have a relative symlink to a build
-   script.
-6. The build scripts should also run the compiled program.
+To automatically install the required dependencies on any AMD64 linux machine, run:
 
-## Dumps Directory
-The build scripts will create a text file at the dumps directory, named `bechId*.txt`. All the sub dump directories of
-all the runs of the current bench ID will be appended into this text file. 
+```bash
+cd scripts
+bash deps.amd64.sh
+```
 
-# How to replicate the results
-1. For each benchmark, run the run-me bash script.
-2. TODO
+Make sure you have enough disk space at `~`. Be patient, it will take a while.
+If for any reason the script fails, you need to manually delete `~/riscvnn_rootdir` and try again.
+The script has some options to skip Spack or Conda steps, you can configure them in the code.
+
+### Setting the CPU autotuning ranges
+
+Modify the file at:
+
+```bash
+benchmarks/common/ranges.matmul.sh
+```
+
+Don't run it. Just save your changes. This only affects the CPU (AMD64, RISCV64) benchmarks.
+
+### Running the AMD64 benchmarks
+
+Before running the benchmarks, you need to activate the environment:
+
+```bash
+source ~/riscvnn_rootdir/activate_env.sh
+```
+
+Then, you can start the script to run all the benchmarks in the same terminal:
+
+```bash
+bash benchmarks/amd64/run_all.sh <MachineName>
+```
+
+Use `-h` to see the available options.
+
+### Running the RISCV64 benchmarks
+
+Since Conda is not available for RISCV64, you only need to make sure you have the required packages for
+`GCC 14.2, LLVM 17, and LLVM 18`.
+Then, you can start the script to run all the benchmarks with:
+
+```bash
+bash benchmarks/riscv/run_all.sh <MachineName>
+```
+
+### Running the NVIDIA benchmarks
+
+You can either use the CMake project to evaluate the code manually or use the provided Python script for autotuning with
+`kernel_tuner`.
+To initiate the autotuning process, run:
+
+```bash
+cd gpu_cuda/9
+python autotuner.py --maxiter=50000 --time=7200 --reps 7 <CUDA CAPABILITY>
+```
+
+The script will use `nvrtc` to compile the kernels. Make sure to use the correct CUDA capability for your GPU.
+Like the AMD64 benchmarks, the raw data is stored in `benchmarks/dumps` directory.
+
+### Plotting the GPU results
+
+Use the provided Python script to generate the plots for the GPU benchmarks:
+
+```bash
+python benchmarks/gpu_cuda/9/autotuner_convergence.py --subdump=benchmarks/dumps/<THE CUDA RUN SUBDUMP DIR>
+```
+
+The generated plots are stored in `/tmp`.
+
+### Gathering Raw Data
+
+All the profiled data is stored in `benchmarks/dumps` directory. You can back them up manually if needed.
+
+### How to reproduce the plots
+
+The Python scripts to automatically parse the JSON files from multiple `dumps` directories and generate the plots are
+provided in `benchmarks/common/python/plot.speedups.py` directory.
+This script accepts multiple instances of `--dumps=<path>` arguments and is able to concatenate bench-runs from multiple
+compilers and machines autonomously.
+Furthermore, you can request caching the parse data to save time on subsequent runs with `--s-from=<path>` and
+`--s-to=<path>` arguments. If the provided `--s-from` path does not exist, the script will fall back to parsing the data
+from scratch. If `--s-to` is provided, the script will cache the parsed data to the specified path before terminating.
+All the generated plots are stored at `/tmp`.
+
+### SLURM?
+
+Yes, you can run the benchmarks on a SLURM cluster as well.
+You can find the SLURM sbatch file at `benchmarks/amd64/amd64/run_all_amd64.sbatch`.
+Depending on you permissions, you might have a 24 hours limit for SLURM jobs. In that case, you have to modify
+`benchamrks/amd64/run_all.sh` to split the benchmarks into smaller chunks manually.
+The sbatch file will request a single CPU node reserving all the CPU cores for a socket to prevent other processes using
+the cache. Therefore, depending on how many cores your cluster has per CPU, you need to modify the sbatch file. The
+script is configured for Xeon8260. Don't forget to modify job name, partition, and account fields.
+
+# Something broke?
+Feel free to open an issue on GitHub, we would be happy to help you out.
+
+
+
