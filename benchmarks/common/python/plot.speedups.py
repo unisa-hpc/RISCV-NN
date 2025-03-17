@@ -4,7 +4,9 @@ import pathlib
 import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.stats import gmean
 import pandas as pd
+import numpy as np
 from IPython.core.pylabtools import figsize
 from click import style
 from matplotlib.lines import Line2D
@@ -575,12 +577,16 @@ class PlotSpeedUps:
 
         unique_n_list = self.proc_data_speedup['N'].unique()
         for n in unique_n_list:
-            if len(hw)>1:
-                self.plotgen_speedups_type2_one_multi(n, compilers[0], reversed_text_order, hw=hw, y_axis_range=y_range, hide_legend=True)
-                self.plotgen_speedups_type2_one_multi(n, compilers[1], reversed_text_order, hw=hw, y_axis_range=y_range, hide_legend=False)
+            if len(hw) > 1:
+                self.plotgen_speedups_type2_one_multi(n, compilers[0], reversed_text_order, hw=hw, y_axis_range=y_range,
+                                                      hide_legend=True)
+                self.plotgen_speedups_type2_one_multi(n, compilers[1], reversed_text_order, hw=hw, y_axis_range=y_range,
+                                                      hide_legend=False)
             else:
-                self.plotgen_speedups_type2_one_single(n, compilers[0], reversed_text_order, hw=hw, y_axis_range=y_range, hide_legend=True)
-                self.plotgen_speedups_type2_one_single(n, compilers[1], reversed_text_order, hw=hw, y_axis_range=y_range, hide_legend=False)
+                self.plotgen_speedups_type2_one_single(n, compilers[0], reversed_text_order, hw=hw,
+                                                       y_axis_range=y_range, hide_legend=True)
+                self.plotgen_speedups_type2_one_single(n, compilers[1], reversed_text_order, hw=hw,
+                                                       y_axis_range=y_range, hide_legend=False)
 
     def plotgen_speedups_all_per_n_subplots(self, reversed_text_order=False, per_hw=False):
         """
@@ -705,7 +711,7 @@ class PlotSpeedUps:
                 self.proc_data_speedup['hw'].isin(hw))
 
         # Sort hw
-        #hw = sorted(hw)
+        # hw = sorted(hw)
 
         # Extract the filtered data
         masked_data = self.proc_data_speedup[cond]
@@ -748,13 +754,12 @@ class PlotSpeedUps:
             catplot.set(ylim=y_axis_range)
 
         # Adjust the legend position outside the plot
-        catplot._legend.set_bbox_to_anchor((0,0,1.4,1.4)) # (left, bottom, right, top)
+        catplot._legend.set_bbox_to_anchor((0, 0, 1.4, 1.4))  # (left, bottom, right, top)
         catplot._legend.set_loc("upper right")
         catplot._legend.set
 
         catplot._legend.set_title("Speedup Type")
         catplot._legend.set_frame_on(True)  # Enable legend box
-
 
         # Rotate x-ticks labels for each subplot
         for ax in catplot.axes.flat:
@@ -776,13 +781,13 @@ class PlotSpeedUps:
                                 fontsize=9, rotation=90)  # Rotate 90 degrees
 
         # Set title for the entire plot
-        catplot.fig.set_size_inches(FIG_WIDTH/2, FIG_HEIGHT1)
+        catplot.fig.set_size_inches(FIG_WIDTH / 2, FIG_HEIGHT1)
         catplot.fig.suptitle(f"Speedup for N={fixed_N} and Compiler={fixed_compiler}", fontsize=10, y=1.15)
 
         # Move "hw=xxxx" titles higher
         catplot.set_titles("{col_name}", size=9, y=1.10)
         # Adjust layout using tight_layout to leave space for suptitle
-        catplot.fig.tight_layout(rect=[0, 0, 1.5, 1.2]) # (left, bottom, right, top) # does not affect the legend pos
+        catplot.fig.tight_layout(rect=[0, 0, 1.5, 1.2])  # (left, bottom, right, top) # does not affect the legend pos
         # set y-label
         catplot.set_ylabels("Speedup")
 
@@ -855,7 +860,7 @@ class PlotSpeedUps:
             y="data_point",
             col="hw",
             hue="speedup_type",
-            height=FIG_HEIGHT1/3 * 2,
+            height=FIG_HEIGHT1 / 3 * 2,
             aspect=1,
         )
 
@@ -864,13 +869,12 @@ class PlotSpeedUps:
             catplot.set(ylim=y_axis_range)
 
         # Adjust the legend position outside the plot
-        catplot._legend.set_bbox_to_anchor((0,0,1.3,0.9)) # (left, bottom, right, top)
+        catplot._legend.set_bbox_to_anchor((0, 0, 1.3, 0.9))  # (left, bottom, right, top)
         catplot._legend.set_loc("upper right")
         catplot._legend.set
 
         catplot._legend.set_title("Speedup Type")
         catplot._legend.set_frame_on(True)  # Enable legend box
-
 
         # Rotate x-ticks labels for each subplot
         for ax in catplot.axes.flat:
@@ -892,13 +896,14 @@ class PlotSpeedUps:
                                 fontsize=9, rotation=90)  # Rotate 90 degrees
 
         # Set title for the entire plot
-        catplot.fig.set_size_inches(FIG_WIDTH/4, FIG_HEIGHT1)
-        catplot.fig.suptitle(f"Speedup for N={fixed_N} and\nCompiler={fixed_compiler}", fontsize=10, x=0.25 , y=1.15, ha='left')
+        catplot.fig.set_size_inches(FIG_WIDTH / 4, FIG_HEIGHT1)
+        catplot.fig.suptitle(f"Speedup for N={fixed_N} and\nCompiler={fixed_compiler}", fontsize=10, x=0.25, y=1.15,
+                             ha='left')
 
         # Move "hw=xxxx" titles higher
         catplot.set_titles("{col_name}", size=9, y=1.10)
         # Adjust layout using tight_layout to leave space for suptitle
-        catplot.fig.tight_layout(rect=[0, 0, 1.5, 1.2]) # (left, bottom, right, top) # does not affect the legend pos
+        catplot.fig.tight_layout(rect=[0, 0, 1.5, 1.2])  # (left, bottom, right, top) # does not affect the legend pos
         # set y-label
         catplot.set_ylabels("Speedup")
 
@@ -1079,7 +1084,8 @@ class PlotSpeedUps:
             if not just_one_legend:
                 handles, labels = axs[i].get_legend_handles_labels()
                 lgd = axs[i].legend(handles,
-                                    [omit_hw(label) if label not in new_labels else new_labels[label] for label in labels],
+                                    [omit_hw(label) if label not in new_labels else new_labels[label] for label in
+                                     labels],
                                     bbox_to_anchor=(1.05, 1), loc='upper left')
 
             # Add bold text to bottom right corner of each subplot to indicate the hardware
@@ -1106,10 +1112,10 @@ class PlotSpeedUps:
         masked_data = self.proc_data_speedup[
             (self.proc_data_speedup['benchId'] == translate_str_benchId_to(10, self.STYLE_BENCHID)) &
             (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
-        ]
+            ]
 
         # Create a figure, just one plot is enough
-        fig, ax = plt.subplots(figsize=(FIG_WIDTH/2, FIG_HEIGHT1))
+        fig, ax = plt.subplots(figsize=(FIG_WIDTH / 2, FIG_HEIGHT1))
         fig.subplots_adjust(bottom=0.5, right=0.8)
 
         # Create the seaborn lineplot
@@ -1149,7 +1155,7 @@ class PlotSpeedUps:
             ]
 
         # Create a figure, just one plot is enough
-        fig, ax = plt.subplots(figsize=(FIG_WIDTH/2, FIG_HEIGHT1))
+        fig, ax = plt.subplots(figsize=(FIG_WIDTH / 2, FIG_HEIGHT1))
         fig.subplots_adjust(bottom=0.5, right=0.8)
 
         # Create the seaborn lineplot
@@ -1177,6 +1183,58 @@ class PlotSpeedUps:
         # Save the figure
         plt.savefig(f"{self.dir_out}/speedup_vv_over_N__fxpot_amd_rvv.{FORMAT}", bbox_extra_artists=(lgd,),
                     bbox_inches='tight', dpi=300)
+
+    def numeric_result_speedup_vv_benchA_over_benchB_geomean(
+            self,
+            nominator_hw_list: [str],
+            nominator_compiler_list: [str],
+            nominator_benchId: str,
+            denominator_hw_list: [str],
+            denominator_compiler_list: [str],
+            denominator_benchId: str
+    ):
+        """
+        Calculate the geometric mean of speedup_vv_intel_unpack1 over speedup_vv_intel_unpack2
+        We use geometric mean because we are comparing ratios (two speedups).
+        """
+
+        # Extract the rows that are speedup_vv_intel_unpack1
+        masked_data_nominator = self.proc_data_speedup[
+            (self.proc_data_speedup['hw'].isin(nominator_hw_list)) &
+            (self.proc_data_speedup['compiler'].isin(nominator_compiler_list)) &
+            (self.proc_data_speedup['benchId'] == nominator_benchId) &
+            (self.proc_data_speedup['run_type'] == 'best') &
+            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
+        ]
+
+        # Extract the rows that are speedup_vv_intel_unpack2
+        masked_data_denominator = self.proc_data_speedup[
+            (self.proc_data_speedup['hw'].isin(denominator_hw_list)) &
+            (self.proc_data_speedup['compiler'].isin(denominator_compiler_list)) &
+            (self.proc_data_speedup['benchId'] == denominator_benchId) &
+            (self.proc_data_speedup['run_type'] == 'best')&
+            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
+        ]
+
+        unique_n_nominator = masked_data_nominator['N'].unique()
+        unique_n_denominator = masked_data_denominator['N'].unique()
+        assert np.array_equal(unique_n_nominator, unique_n_denominator), "Unique Ns must be equal."
+
+        ratio_of_speedups_all_n = []
+        for n in unique_n_nominator:
+            masked_data_nominator_n = masked_data_nominator[masked_data_nominator['N'] == n]
+            masked_data_denominator_n = masked_data_denominator[masked_data_denominator['N'] == n]
+
+            nominator_data = masked_data_nominator_n['data_point'].to_numpy()
+            denominator_data = masked_data_denominator_n['data_point'].to_numpy()
+
+            assert len(nominator_data) == len(denominator_data), "Length of nominator and denominator data must be equal."
+
+            ratio_of_speedups = nominator_data / denominator_data
+            ratio_of_speedups_all_n.extend(ratio_of_speedups)
+
+        geometric_mean = gmean(ratio_of_speedups_all_n)
+        return geometric_mean
 
 
 if __name__ == '__main__':
@@ -1221,61 +1279,86 @@ if __name__ == '__main__':
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']) # or hw=['cpu1', 'cpu2']
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['SpacemitK1']) # or hw=['cpu1', 'cpu2']
     """
-    obj.plotgen_speedups_type2_all(
-        reversed_text_order=False,
-        hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']
-    )
+    skip_tmp = False
 
-    obj.plotgen_speedups_type2_all(
-        reversed_text_order=False,
-        hw=['SpacemitK1']
-    )
+    if not skip_tmp:
+        obj.plotgen_speedups_type2_all(
+            reversed_text_order=False,
+            hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']
+        )
 
-    obj.plotgen_speedups_type2_sidebysidecompilers_for_all_N(
-        reversed_text_order=False,
-        hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X'],
-        compilers=['LLVM18', 'GCC14.2'],
-        y_range=(0, 12)
-    )
+        obj.plotgen_speedups_type2_all(
+            reversed_text_order=False,
+            hw=['SpacemitK1']
+        )
 
-    obj.plotgen_speedups_type2_sidebysidecompilers_for_all_N(
-        reversed_text_order=False,
-        hw=['SpacemitK1'],
-        compilers=['LLVM18', 'GCC14.2'],
-        y_range=(0, 12)
-    )
+        obj.plotgen_speedups_type2_sidebysidecompilers_for_all_N(
+            reversed_text_order=False,
+            hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X'],
+            compilers=['LLVM18', 'GCC14.2'],
+            y_range=(0, 12)
+        )
 
-    """
-    # These work, but we dont need them anymore.
-    
-    obj.plotgen_speedups_over_N_all_multilines_in_single_plot()
-    # 'Xeon5218' 'Xeon8260' 'Xeon8358' 'SpacemitK1'
-    obj.plotgen_speedups_over_N_all_multilines_in_single_plot(
+        obj.plotgen_speedups_type2_sidebysidecompilers_for_all_N(
+            reversed_text_order=False,
+            hw=['SpacemitK1'],
+            compilers=['LLVM18', 'GCC14.2'],
+            y_range=(0, 12)
+        )
+
+        """
+        # These work, but we dont need them anymore.
+        
+        obj.plotgen_speedups_over_N_all_multilines_in_single_plot()
+        # 'Xeon5218' 'Xeon8260' 'Xeon8358' 'SpacemitK1'
+        obj.plotgen_speedups_over_N_all_multilines_in_single_plot(
+            [
+                ['SpacemitK1'],             # SpacemitK1
+                ['Ryzen97950X'],            # Pagamp
+                ['Xeon8260'],               # G100
+                ['Xeon5218'],               # Furore
+                ['Xeon5218', 'Xeon8260'],   # Furore, G100
+            ]
+        )
+        """
+
+        obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
         [
-            ['SpacemitK1'],             # SpacemitK1
-            ['Ryzen97950X'],            # Pagamp
-            ['Xeon8260'],               # G100
-            ['Xeon5218'],               # Furore
-            ['Xeon5218', 'Xeon8260'],   # Furore, G100
+            'Xeon5218',
+            'Xeon8260',
+            'Ryzen97950X'
         ]
-    )
-    """
+        )
+        obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
+        [
+            'SpacemitK1',
+        ]
+        )
 
-    obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
-    [
-        'Xeon5218',
-        'Xeon8260',
-        'Ryzen97950X'
-    ]
-    )
-    obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
-    [
-        'SpacemitK1',
-    ]
-    )
+        obj.plotgen_fpot_inf_nan_handling()
+        obj.plotgen_fxpot()
 
-    obj.plotgen_fpot_inf_nan_handling()
-    obj.plotgen_fxpot()
+    for hw in [['Xeon5218'], ['Xeon8260'], ['Ryzen97950X'], ['SpacemitK1'], ['Xeon5218', 'Xeon8260']]:
+        bid_nominator = 7 if hw[0] != 'SpacemitK1' else 5 # 7 for avx is unpack1, 5 for riscv is U4:P2
+        bid_denominator = 8 if hw[0] != 'SpacemitK1' else 6 # 8 for avx is unpack2, 6 for riscv is U8:P4
+        gmean_unpack1_over_unpack2_hw_llvms = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
+            nominator_hw_list=hw,
+            nominator_compiler_list=['LLVM18', 'LLVM17'],
+            nominator_benchId=translate_str_benchId_to(7, obj.STYLE_BENCHID),
+            denominator_hw_list=hw,
+            denominator_compiler_list=['LLVM18', 'LLVM17'],
+            denominator_benchId=translate_str_benchId_to(8, obj.STYLE_BENCHID)
+        )
+        gmean_unpack1_over_unpack2_hw_gccs = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
+            nominator_hw_list=hw,
+            nominator_compiler_list=['GCC14.2', 'GCC13.3'],
+            nominator_benchId=translate_str_benchId_to(7, obj.STYLE_BENCHID),
+            denominator_hw_list=hw,
+            denominator_compiler_list=['GCC14.2', 'GCC13.3'],
+            denominator_benchId=translate_str_benchId_to(8, obj.STYLE_BENCHID)
+        )
+        print(f"Geometric mean of unpack1 over unpack2 for {hw} with LLVMs: {gmean_unpack1_over_unpack2_hw_llvms}")
+        print(f"Geometric mean of unpack1 over unpack2 for {hw} with GCCs: {gmean_unpack1_over_unpack2_hw_gccs}")
 
     if args.s_to is not None:
         obj.serialize(args.s_to)
