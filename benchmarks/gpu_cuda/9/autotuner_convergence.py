@@ -307,9 +307,11 @@ class GpuAutotunerConvergencePlotter:
                 if label.find('Base') != -1:
                     labels[i] = 'BaseMatmul'
                 if label.find('Packed2') != -1:
-                    labels[i] = 'FPoT F32:U8:Pack2'
+                    labels[i] = 'FPoT F32:U8:P2'
                 if label.find('Packed4') != -1:
-                    labels[i] = 'FPoT F32:U8:Pack4'
+                    labels[i] = 'FPoT F32:U8:P4'
+            if label.find('firefly') != -1:
+                labels[i] = 'FireFly Algorithm'
         fig.legend(handles, labels, loc='upper center', ncol=3, fontsize='small')
 
         # remove x axis label from the first subplot
@@ -385,9 +387,11 @@ class GpuAutotunerConvergencePlotter:
                 if label.find('Base') != -1:
                     labels[i] = 'BaseMatmul'
                 if label.find('Packed2') != -1:
-                    labels[i] = 'FPoT F32:U8:Pack2'
+                    labels[i] = 'FPoT F32:U8:P2'
                 if label.find('Packed4') != -1:
-                    labels[i] = 'FPoT F32:U8:Pack4'
+                    labels[i] = 'FPoT F32:U8:P4'
+            if label.find('firefly') != -1:
+                labels[i] = 'FireFly Algorithm'
         fig.legend(handles, labels, loc='upper center', ncol=3, fontsize='small')
 
         # remove x axis label from the first subplot
@@ -451,9 +455,11 @@ class GpuAutotunerConvergencePlotter:
                 if label.find('Base') != -1:
                     labels[i] = 'BaseMatmul'
                 if label.find('Packed2') != -1:
-                    labels[i] = 'FPoT F32:U8:Pack2'
+                    labels[i] = 'FPoT F32:U8:P2'
                 if label.find('Packed4') != -1:
-                    labels[i] = 'FPoT F32:U8:Pack4'
+                    labels[i] = 'FPoT F32:U8:P4'
+            if label.find('firefly') != -1:
+                labels[i] = 'FireFly Algorithm'
         fig.legend(handles, labels, loc='upper center', ncol=3, fontsize='small')
 
         # remove x axis label from the first subplot
