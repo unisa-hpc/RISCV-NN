@@ -231,8 +231,8 @@ def translate_str_benchId_to(benchId: str, to_style: str, reverse=False) -> str:
                 "FPoT Unpack2" if benchId == 8 else \
                 "FPoT+InfNan" if benchId == 10 else \
                 "FXPoT AVX512" if benchId == 2 else \
-                "FPoT U8:P2" if benchId == 5 else \
-                "FPoT U8:P4" if benchId == 6 else \
+                "FPoT U8:P1" if benchId == 5 else \
+                "FPoT U8:P2" if benchId == 6 else \
                 "FXPoT RVV" if benchId == 1 else \
                 None
         else:
@@ -241,8 +241,8 @@ def translate_str_benchId_to(benchId: str, to_style: str, reverse=False) -> str:
                 8 if benchId == "FPoT Unpack2" else \
                 10 if benchId == "FPoT+InfNan" else \
                 2 if benchId == "FXPoT AVX512" else \
-                5 if benchId == "FPoT U8:P2" else \
-                6 if benchId == "FPoT U8:P4" else \
+                5 if benchId == "FPoT U8:P1" else \
+                6 if benchId == "FPoT U8:P2" else \
                 1 if benchId == "FXPoT RVV" else \
                 None
 
