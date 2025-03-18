@@ -766,7 +766,14 @@ class PlotSpeedUps:
             ax.set_xlabel("")  # Remove x-axis label
             x_lbls = ax.get_xticklabels()
             # change the strings of the Text objects
-            x_lbls_short = [x.get_text().split(',')[0].replace('FPoT', '') for x in x_lbls]
+            if 'SpacemitK1' in hw:
+                assert len(hw) == 1 # at the moment, only support one hw when there is SpacemitK1
+                x_lbls_short = [x.get_text().split(',')[0].replace('F32:', '').replace('Unpack 1', '') for x in x_lbls]
+            else:
+                try:
+                    x_lbls_short = [x.get_text().split(',')[0].split(' ')[1] for x in x_lbls]
+                except:
+                    x_lbls_short = [x.get_text() for x in x_lbls]
             ax.set_xticklabels(x_lbls_short, rotation=90, fontsize=9)
 
         for ax in catplot.axes.flat:  # Loop through all subplots
@@ -881,7 +888,11 @@ class PlotSpeedUps:
             ax.set_xlabel("")  # Remove x-axis label
             x_lbls = ax.get_xticklabels()
             # change the strings of the Text objects
-            x_lbls_short = [x.get_text().split(',')[0].replace('FPoT', '') for x in x_lbls]
+            if 'SpacemitK1' in hw:
+                assert len(hw) == 1 # at the moment, only support one hw when there is SpacemitK1
+                x_lbls_short = [x.get_text().split(',')[0].replace('F32:', '').replace('Unpack 1', '') for x in x_lbls]
+            else:
+                x_lbls_short = [x.get_text().split(',')[0].split(' ')[1] for x in x_lbls]
             ax.set_xticklabels(x_lbls_short, rotation=90, fontsize=9)
 
         for ax in catplot.axes.flat:  # Loop through all subplots
@@ -1279,7 +1290,7 @@ if __name__ == '__main__':
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']) # or hw=['cpu1', 'cpu2']
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['SpacemitK1']) # or hw=['cpu1', 'cpu2']
     """
-    skip_tmp = False
+    skip_tmp = True
 
     if not skip_tmp:
         obj.plotgen_speedups_type2_all(

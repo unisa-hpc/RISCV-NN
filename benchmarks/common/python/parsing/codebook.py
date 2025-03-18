@@ -227,22 +227,22 @@ def translate_str_benchId_to(benchId: str, to_style: str, reverse=False) -> str:
     if to_style == 'brief1':
         if not reverse:
             ret_val = \
-                "FPoT Unpack1" if benchId == 7 else \
-                "FPoT Unpack2" if benchId == 8 else \
-                "FPoT+InfNan" if benchId == 10 else \
+                "F32:U8:E5:P1 Unpack1" if benchId == 7 else \
+                "F32:U16:E8:P1 Unpack2" if benchId == 8 else \
+                "F32:U8:E5:P1 Unpack1+InfNan" if benchId == 10 else \
                 "FXPoT AVX512" if benchId == 2 else \
-                "FPoT U8:P1" if benchId == 5 else \
-                "FPoT U8:P2" if benchId == 6 else \
+                "F32:U8:E5:P1 Unpack 1" if benchId == 5 else \
+                "F32:U8:E3:P2 Unpack 1" if benchId == 6 else \
                 "FXPoT RVV" if benchId == 1 else \
                 None
         else:
             ret_val = \
-                7 if benchId == "FPoT Unpack1" else \
-                8 if benchId == "FPoT Unpack2" else \
-                10 if benchId == "FPoT+InfNan" else \
+                7 if benchId == "F32:U8:E5:P1 Unpack1" else \
+                8 if benchId == "F32:U16:E8:P1 Unpack2" else \
+                10 if benchId == "F32:U8:E5:P1 Unpack1+InfNan" else \
                 2 if benchId == "FXPoT AVX512" else \
-                5 if benchId == "FPoT U8:P1" else \
-                6 if benchId == "FPoT U8:P2" else \
+                5 if benchId == "F32:U8:E5:P1 Unpack 1" else \
+                6 if benchId == "F32:U8:E3:P2 Unpack 1" else \
                 1 if benchId == "FXPoT RVV" else \
                 None
 
