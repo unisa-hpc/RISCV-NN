@@ -1197,6 +1197,7 @@ class PlotSpeedUps:
 
     def numeric_result_speedup_vv_benchA_over_benchB_geomean(
             self,
+            speedup_type_all: str,
             nominator_hw_list: [str],
             nominator_compiler_list: [str],
             nominator_benchId: str,
@@ -1208,14 +1209,13 @@ class PlotSpeedUps:
         Calculate the geometric mean of speedup_vv_intel_unpack1 over speedup_vv_intel_unpack2
         We use geometric mean because we are comparing ratios (two speedups).
         """
-
         # Extract the rows that are speedup_vv_intel_unpack1
         masked_data_nominator = self.proc_data_speedup[
             (self.proc_data_speedup['hw'].isin(nominator_hw_list)) &
             (self.proc_data_speedup['compiler'].isin(nominator_compiler_list)) &
             (self.proc_data_speedup['benchId'] == nominator_benchId) &
             (self.proc_data_speedup['run_type'] == 'best') &
-            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
+            (self.proc_data_speedup['speedup_type'] == speedup_type_all)
         ]
 
         # Extract the rows that are speedup_vv_intel_unpack2
@@ -1224,7 +1224,7 @@ class PlotSpeedUps:
             (self.proc_data_speedup['compiler'].isin(denominator_compiler_list)) &
             (self.proc_data_speedup['benchId'] == denominator_benchId) &
             (self.proc_data_speedup['run_type'] == 'best')&
-            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
+            (self.proc_data_speedup['speedup_type'] == speedup_type_all)
         ]
 
         unique_n_nominator = masked_data_nominator['N'].unique()
@@ -1246,6 +1246,53 @@ class PlotSpeedUps:
 
         geometric_mean = gmean(ratio_of_speedups_all_n)
         return geometric_mean
+
+    def numeric_result_speedup_bench_geomean(
+            self,
+            speedup_type_all: str,
+            hw_list: [str],
+            compiler_list: [str],
+            benchId_list: [str],
+    ):
+        """
+        Calculate the geometric mean of speedup_vv_intel_unpack1 over speedup_vv_intel_unpack2
+        We use geometric mean because we are comparing ratios (two speedups).
+        """
+        # Extract the rows that are speedup_vv_intel_unpack1
+        masked_data = self.proc_data_speedup[
+            (self.proc_data_speedup['hw'].isin(hw_list)) &
+            (self.proc_data_speedup['compiler'].isin(compiler_list)) &
+            (self.proc_data_speedup['benchId'].isin(benchId_list)) &
+            (self.proc_data_speedup['run_type'] == 'best') &
+            (self.proc_data_speedup['speedup_type'] == speedup_type_all)
+        ]
+        data = masked_data['data_point'].to_numpy()
+        geometric_mean = gmean(data)
+        return geometric_mean
+
+    def numeric_result_speedup_bench_max(
+            self,
+            speedup_type_all: str,
+            hw_list: [str],
+            compiler_list: [str],
+            benchId_list: [str],
+    ):
+        """
+        Calculate the maximum of speedup_vv_intel_unpack1 over speedup_vv_intel_unpack2
+        """
+        # Extract the rows that are speedup_vv_intel_unpack1
+        masked_data = self.proc_data_speedup[
+            (self.proc_data_speedup['hw'].isin(hw_list)) &
+            (self.proc_data_speedup['compiler'].isin(compiler_list)) &
+            (self.proc_data_speedup['benchId'].isin(benchId_list)) &
+            (self.proc_data_speedup['run_type'] == 'best') &
+            (self.proc_data_speedup['speedup_type'] == speedup_type_all)
+        ]
+        data = masked_data['data_point'].to_numpy()
+        if len(data) == 0:
+            return 0
+        max_value = np.max(data)
+        return max_value
 
 
 if __name__ == '__main__':
@@ -1290,7 +1337,7 @@ if __name__ == '__main__':
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']) # or hw=['cpu1', 'cpu2']
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['SpacemitK1']) # or hw=['cpu1', 'cpu2']
     """
-    skip_tmp = True
+    skip_tmp = False
 
     if not skip_tmp:
         obj.plotgen_speedups_type2_all(
@@ -1307,14 +1354,14 @@ if __name__ == '__main__':
             reversed_text_order=False,
             hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X'],
             compilers=['LLVM18', 'GCC14.2'],
-            y_range=(0, 12)
+            y_range=(0, 20)
         )
 
         obj.plotgen_speedups_type2_sidebysidecompilers_for_all_N(
             reversed_text_order=False,
             hw=['SpacemitK1'],
             compilers=['LLVM18', 'GCC14.2'],
-            y_range=(0, 12)
+            y_range=(0, 20)
         )
 
         """
@@ -1349,27 +1396,171 @@ if __name__ == '__main__':
         obj.plotgen_fpot_inf_nan_handling()
         obj.plotgen_fxpot()
 
-    for hw in [['Xeon5218'], ['Xeon8260'], ['Ryzen97950X'], ['SpacemitK1'], ['Xeon5218', 'Xeon8260']]:
-        bid_nominator = 7 if hw[0] != 'SpacemitK1' else 5 # 7 for avx is unpack1, 5 for riscv is U4:P2
-        bid_denominator = 8 if hw[0] != 'SpacemitK1' else 6 # 8 for avx is unpack2, 6 for riscv is U8:P4
-        gmean_unpack1_over_unpack2_hw_llvms = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
-            nominator_hw_list=hw,
-            nominator_compiler_list=['LLVM18', 'LLVM17'],
-            nominator_benchId=translate_str_benchId_to(7, obj.STYLE_BENCHID),
-            denominator_hw_list=hw,
-            denominator_compiler_list=['LLVM18', 'LLVM17'],
-            denominator_benchId=translate_str_benchId_to(8, obj.STYLE_BENCHID)
-        )
-        gmean_unpack1_over_unpack2_hw_gccs = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
-            nominator_hw_list=hw,
-            nominator_compiler_list=['GCC14.2', 'GCC13.3'],
-            nominator_benchId=translate_str_benchId_to(7, obj.STYLE_BENCHID),
-            denominator_hw_list=hw,
-            denominator_compiler_list=['GCC14.2', 'GCC13.3'],
-            denominator_benchId=translate_str_benchId_to(8, obj.STYLE_BENCHID)
-        )
-        print(f"Geometric mean of unpack1 over unpack2 for {hw} with LLVMs: {gmean_unpack1_over_unpack2_hw_llvms}")
-        print(f"Geometric mean of unpack1 over unpack2 for {hw} with GCCs: {gmean_unpack1_over_unpack2_hw_gccs}")
+    for spd_type in ['speedup_vv']: #'speedup_ss', 'speedup_vs',
+        for hw in [['Xeon5218'], ['Xeon8260'], ['Ryzen97950X'], ['SpacemitK1'], ['Xeon5218', 'Xeon8260']]:
+            bid_nominator = 7 if hw[0] != 'SpacemitK1' else 5 # 7 for avx is unpack1, 5 for riscv is U4:P2
+            bid_denominator = 8 if hw[0] != 'SpacemitK1' else 6 # 8 for avx is unpack2, 6 for riscv is U8:P4
+            bid_nominator = translate_str_benchId_to(bid_nominator, obj.STYLE_BENCHID)
+            bid_denominator = translate_str_benchId_to(bid_denominator, obj.STYLE_BENCHID)
+            gmean_nom_over_denom_hw_llvms = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
+                speedup_type_all=spd_type,
+                nominator_hw_list=hw,
+                nominator_compiler_list=['LLVM18', 'LLVM17'],
+                nominator_benchId=bid_nominator,
+                denominator_hw_list=hw,
+                denominator_compiler_list=['LLVM18', 'LLVM17'],
+                denominator_benchId=bid_denominator
+            )
+            gmean_nom_over_denom_hw_llvm17 = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
+                speedup_type_all=spd_type,
+                nominator_hw_list=hw,
+                nominator_compiler_list=['LLVM17'],
+                nominator_benchId=bid_nominator,
+                denominator_hw_list=hw,
+                denominator_compiler_list=['LLVM17'],
+                denominator_benchId=bid_denominator
+            )
+            gmean_nom_over_denom_hw_llvm18 = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
+                speedup_type_all=spd_type,
+                nominator_hw_list=hw,
+                nominator_compiler_list=['LLVM18'],
+                nominator_benchId=bid_nominator,
+                denominator_hw_list=hw,
+                denominator_compiler_list=['LLVM18'],
+                denominator_benchId=bid_denominator
+            )
+            gmean_nom_over_denom_hw_gccs = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
+                speedup_type_all=spd_type,
+                nominator_hw_list=hw,
+                nominator_compiler_list=['GCC14.2', 'GCC13.3'],
+                nominator_benchId=bid_nominator,
+                denominator_hw_list=hw,
+                denominator_compiler_list=['GCC14.2', 'GCC13.3'],
+                denominator_benchId=bid_denominator
+            )
+            gmean_nom_over_denom_hw_gcc14 = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
+                speedup_type_all=spd_type,
+                nominator_hw_list=hw,
+                nominator_compiler_list=['GCC14.2'],
+                nominator_benchId=bid_nominator,
+                denominator_hw_list=hw,
+                denominator_compiler_list=['GCC14.2'],
+                denominator_benchId=bid_denominator
+            )
+            gmean_nom_over_denom_hw_gcc13 = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
+                speedup_type_all=spd_type,
+                nominator_hw_list=hw,
+                nominator_compiler_list=['GCC13.3'],
+                nominator_benchId=bid_nominator,
+                denominator_hw_list=hw,
+                denominator_compiler_list=['GCC13.3'],
+                denominator_benchId=bid_denominator
+            )
+            print("===============================")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVMs: {gmean_nom_over_denom_hw_llvms}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVM17: {gmean_nom_over_denom_hw_llvm17}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVM18: {gmean_nom_over_denom_hw_llvm18}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCCs: {gmean_nom_over_denom_hw_gccs}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCC14: {gmean_nom_over_denom_hw_gcc14}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCC13: {gmean_nom_over_denom_hw_gcc13}")
+            print("===============================")
+
+    for spd_type in ['speedup_vv', 'speedup_ss', 'speedup_vs']:
+        for hw in [['Xeon5218'], ['Xeon8260'], ['Ryzen97950X'], ['SpacemitK1'], ['Xeon5218', 'Xeon8260']]:
+            bid_nominator = 7 if hw[0] != 'SpacemitK1' else 5 # 7 for avx is unpack1, 5 for riscv is U4:P2
+            bid_denominator = 8 if hw[0] != 'SpacemitK1' else 6 # 8 for avx is unpack2, 6 for riscv is U8:P4
+            bid_nominator = translate_str_benchId_to(bid_nominator, obj.STYLE_BENCHID)
+            bid_denominator = translate_str_benchId_to(bid_denominator, obj.STYLE_BENCHID)
+
+            geomean_spd_llvms = obj.numeric_result_speedup_bench_geomean(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['LLVM18', 'LLVM17'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            geomean_spd_llvm17 = obj.numeric_result_speedup_bench_geomean(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['LLVM17'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            geomean_spd_llvm18 = obj.numeric_result_speedup_bench_geomean(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['LLVM18'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            geomean_spd_gccs = obj.numeric_result_speedup_bench_geomean(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['GCC14.2', 'GCC13.3'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            geomean_spd_gcc14 = obj.numeric_result_speedup_bench_geomean(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['GCC14.2'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            geomean_spd_gcc13 = obj.numeric_result_speedup_bench_geomean(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['GCC13.3'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            print("*******************************")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVMs: {geomean_spd_llvms}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVM17: {geomean_spd_llvm17}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVM18: {geomean_spd_llvm18}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCCs: {geomean_spd_gccs}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCC14: {geomean_spd_gcc14}")
+            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCC13: {geomean_spd_gcc13}")
+            print("*******************************")
+
+            max_spd_llvms = obj.numeric_result_speedup_bench_max(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['LLVM18', 'LLVM17'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            max_spd_llvm17 = obj.numeric_result_speedup_bench_max(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['LLVM17'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            max_spd_llvm18 = obj.numeric_result_speedup_bench_max(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['LLVM18'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            max_spd_gccs = obj.numeric_result_speedup_bench_max(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['GCC14.2', 'GCC13.3'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            max_spd_gcc14 = obj.numeric_result_speedup_bench_max(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['GCC14.2'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            max_spd_gcc13 = obj.numeric_result_speedup_bench_max(
+                speedup_type_all=spd_type,
+                hw_list=hw,
+                compiler_list=['GCC13.3'],
+                benchId_list=[bid_nominator, bid_denominator]
+            )
+            print("*******************************")
+            print(f"Max f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVMs: {max_spd_llvms}")
+            print(f"Max f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVM17: {max_spd_llvm17}")
+            print(f"Max f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVM18: {max_spd_llvm18}")
+            print(f"Max f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCCs: {max_spd_gccs}")
+            print(f"Max f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCC14: {max_spd_gcc14}")
+            print(f"Max f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCC13: {max_spd_gcc13}")
+            print("*******************************")
 
     if args.s_to is not None:
         obj.serialize(args.s_to)
