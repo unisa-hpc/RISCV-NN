@@ -1354,14 +1354,14 @@ if __name__ == '__main__':
             reversed_text_order=False,
             hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X'],
             compilers=['LLVM18', 'GCC14.2'],
-            y_range=(0, 20)
+            y_range=(0, 12)
         )
 
         obj.plotgen_speedups_type2_sidebysidecompilers_for_all_N(
             reversed_text_order=False,
             hw=['SpacemitK1'],
             compilers=['LLVM18', 'GCC14.2'],
-            y_range=(0, 20)
+            y_range=(0, 12)
         )
 
         """
