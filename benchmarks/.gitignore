@@ -3,3 +3,5 @@ compress_and_send*
 dumps-backups
 vtune_furore.sh
 advisor_furore.sh
+.idea
+__pycache__
