@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#
+# Copyright (c) 2025 University of Salerno
+# SPDX-License-Identifier: Apache-2.0
+#
+
 # Configuration options
 SKIP_SPACK_INSTALL=false  # Set to true to skip Spack installation
 SKIP_CONDA_INSTALL=false  # Set to true to skip Conda/Miniforge installation

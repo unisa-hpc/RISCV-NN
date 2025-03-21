@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2025 University of Salerno
+* SPDX-License-Identifier: Apache-2.0
+*/
+
 //
 // Created by saleh on 10/1/23.
 //

@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2025 University of Salerno
+* SPDX-License-Identifier: Apache-2.0
+*/
+
 #include "defs.h"
 
 constexpr int VECTOR_ELEMENTS = 16;
@@ -11,15 +16,12 @@ void vector_matmul_avx(
     constexpr int FACTOR1 = UNROLL_FACTOR1_BASELINE;
     constexpr int FACTOR2 = UNROLL_FACTOR2_BASELINE;
 #pragma GCC unroll FACTOR0
-    for (int j = 0; j < N; ++j)
-    {
+    for (int j = 0; j < N; ++j) {
 #pragma GCC unroll FACTOR1
-        for (int i = 0; i < N; ++i)
-        {
+        for (int i = 0; i < N; ++i) {
             __m512i vec_s = _mm512_setzero_si512();
 #pragma GCC unroll FACTOR2
-            for (int k = 0; k < N; k += VECTOR_ELEMENTS)
-            {
+            for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
                 auto *ptr_a = a + j * N + k; // `a` is row major
                 auto *ptr_b = b + i * N + k; // `b` is col major
                 __m512i vec_a = _mm512_load_si512((__m512i *)ptr_a);
@@ -42,15 +44,12 @@ void vector_matmul_shift(
     constexpr int FACTOR1 = UNROLL_FACTOR1;
     constexpr int FACTOR2 = UNROLL_FACTOR2;
 #pragma GCC unroll FACTOR0
-    for (int j = 0; j < N; ++j)
-    {
+    for (int j = 0; j < N; ++j) {
 #pragma GCC unroll FACTOR1
-        for (int i = 0; i < N; ++i)
-        {
+        for (int i = 0; i < N; ++i) {
             __m512i vec_s = _mm512_setzero_si512();
 #pragma GCC unroll FACTOR2
-            for (int k = 0; k < N; k += VECTOR_ELEMENTS)
-            {
+            for (int k = 0; k < N; k += VECTOR_ELEMENTS) {
                 auto *ptr_a = a + j * N + k; // `a` is row major
                 auto *ptr_b = b + i * N + k; // `b` is col major
                 __m512i vec_a = _mm512_load_si512((__m512i *)ptr_a);

@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2025 University of Salerno
+# SPDX-License-Identifier: Apache-2.0
+#
+
 from matplotlib import pyplot as plt
 import argparse
 import json

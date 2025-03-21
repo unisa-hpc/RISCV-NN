@@ -1,3 +1,13 @@
+/*
+* Copyright (c) 2025 University of Salerno
+* SPDX-License-Identifier: Apache-2.0
+*/
+
+//
+// Created by saleh
+// The Unpacking1 kernels with Inf+NaN handling are written by G. Pagano, based on benchId 07.
+//
+
 #include "defs.h"
 
 // Helper function: Horizontal reduction of __m256 vector to a single float

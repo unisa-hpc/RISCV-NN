@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2025 University of Salerno
+# SPDX-License-Identifier: Apache-2.0
+#
+
 def get_tunable_params_list(bench_id: int):
     # 0X, 1MM, 2MM, 3CONV, 4CUDA, 5MM, 6MM, 7MM, 8MM
     if not isinstance(bench_id, int):

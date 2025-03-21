@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#
+# Copyright (c) 2025 University of Salerno
+# SPDX-License-Identifier: Apache-2.0
+#
+
 cleanup_directories() {
   local input_file="$1"
   local machine="$2"

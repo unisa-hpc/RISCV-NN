@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#
+# Copyright (c) 2025 University of Salerno
+# SPDX-License-Identifier: Apache-2.0
+#
+
 set -e
 
 # setup_autotuner_args - Parses command-line arguments for the autotuner setup

@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2025 University of Salerno
+# SPDX-License-Identifier: Apache-2.0
+#
+
 # This file should be in sync with codebook.h .
 # Any modification here should be reflected in codebook.h
 
