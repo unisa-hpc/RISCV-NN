@@ -15,6 +15,7 @@ benchmarks (2)
 .Python
 .idea/
 private_data/
+private_works/
 iree/
 dump/
 data/
