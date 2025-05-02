@@ -22,6 +22,18 @@ FIG_HEIGHT1 = 3.5
 FIG_HEIGHT2 = 2
 
 
+def set_plot_style(enforce_font_scale=False):
+    rc_dict = {
+        'axes.facecolor': 'white',  # White plot background
+        'grid.color': (0.5, 0.5, 0.5, 0.3),  # RGB with alpha = 0.3 for faded grey
+        'grid.linewidth': 0.8,  # Optional: thinner grid lines
+    }
+    if not enforce_font_scale:
+        sns.set_theme(style="whitegrid", rc=rc_dict)
+    else:
+        sns.set_theme(font_scale=1, style="whitegrid", rc=rc_dict)
+
+
 class PlotSpeedUps:
     """
     So the idea of this plot is to:
@@ -41,7 +53,7 @@ class PlotSpeedUps:
         self.proc_data = None
         self.proc_data_speedup = None
         self.dir_out = dir_out
-        sns.set_theme(style="whitegrid")
+        set_plot_style()
         sns.color_palette("hls", 8)
         self.is_preprocessed = False
         self.STYLE_BENCHID = "brief1"
@@ -768,7 +780,7 @@ class PlotSpeedUps:
             x_lbls = ax.get_xticklabels()
             # change the strings of the Text objects
             if 'SpacemitK1' in hw:
-                assert len(hw) == 1 # at the moment, only support one hw when there is SpacemitK1
+                assert len(hw) == 1  # at the moment, only support one hw when there is SpacemitK1
                 x_lbls_short = [x.get_text().split(',')[0].replace('F32:', '').replace('Unpack 1', '') for x in x_lbls]
             else:
                 try:
@@ -890,7 +902,7 @@ class PlotSpeedUps:
             x_lbls = ax.get_xticklabels()
             # change the strings of the Text objects
             if 'SpacemitK1' in hw:
-                assert len(hw) == 1 # at the moment, only support one hw when there is SpacemitK1
+                assert len(hw) == 1  # at the moment, only support one hw when there is SpacemitK1
                 x_lbls_short = [x.get_text().split(',')[0].replace('F32:', '').replace('Unpack 1', '') for x in x_lbls]
             else:
                 x_lbls_short = [x.get_text().split(',')[0].split(' ')[1] for x in x_lbls]
@@ -1217,16 +1229,16 @@ class PlotSpeedUps:
             (self.proc_data_speedup['benchId'] == nominator_benchId) &
             (self.proc_data_speedup['run_type'] == 'best') &
             (self.proc_data_speedup['speedup_type'] == speedup_type_all)
-        ]
+            ]
 
         # Extract the rows that are speedup_vv_intel_unpack2
         masked_data_denominator = self.proc_data_speedup[
             (self.proc_data_speedup['hw'].isin(denominator_hw_list)) &
             (self.proc_data_speedup['compiler'].isin(denominator_compiler_list)) &
             (self.proc_data_speedup['benchId'] == denominator_benchId) &
-            (self.proc_data_speedup['run_type'] == 'best')&
+            (self.proc_data_speedup['run_type'] == 'best') &
             (self.proc_data_speedup['speedup_type'] == speedup_type_all)
-        ]
+            ]
 
         unique_n_nominator = masked_data_nominator['N'].unique()
         unique_n_denominator = masked_data_denominator['N'].unique()
@@ -1240,7 +1252,8 @@ class PlotSpeedUps:
             nominator_data = masked_data_nominator_n['data_point'].to_numpy()
             denominator_data = masked_data_denominator_n['data_point'].to_numpy()
 
-            assert len(nominator_data) == len(denominator_data), "Length of nominator and denominator data must be equal."
+            assert len(nominator_data) == len(
+                denominator_data), "Length of nominator and denominator data must be equal."
 
             ratio_of_speedups = nominator_data / denominator_data
             ratio_of_speedups_all_n.extend(ratio_of_speedups)
@@ -1266,7 +1279,7 @@ class PlotSpeedUps:
             (self.proc_data_speedup['benchId'].isin(benchId_list)) &
             (self.proc_data_speedup['run_type'] == 'best') &
             (self.proc_data_speedup['speedup_type'] == speedup_type_all)
-        ]
+            ]
         data = masked_data['data_point'].to_numpy()
         geometric_mean = gmean(data)
         return geometric_mean
@@ -1288,7 +1301,7 @@ class PlotSpeedUps:
             (self.proc_data_speedup['benchId'].isin(benchId_list)) &
             (self.proc_data_speedup['run_type'] == 'best') &
             (self.proc_data_speedup['speedup_type'] == speedup_type_all)
-        ]
+            ]
         data = masked_data['data_point'].to_numpy()
         if len(data) == 0:
             return 0
@@ -1305,7 +1318,7 @@ if __name__ == '__main__':
     parser.add_argument('--s-to', type=str, required=False, help='Save the class state to a pickle file.')
 
     args = parser.parse_args()
-    sns.set_theme(font_scale=1)
+    set_plot_style(enforce_font_scale=True)
 
     # dumps and s-from are mutually exclusive
     if args.dumps is None and args.s_from is None:
@@ -1397,10 +1410,10 @@ if __name__ == '__main__':
         obj.plotgen_fpot_inf_nan_handling()
         obj.plotgen_fxpot()
 
-    for spd_type in ['speedup_vv']: #'speedup_ss', 'speedup_vs',
+    for spd_type in ['speedup_vv']:  # 'speedup_ss', 'speedup_vs',
         for hw in [['Xeon5218'], ['Xeon8260'], ['Ryzen97950X'], ['SpacemitK1'], ['Xeon5218', 'Xeon8260']]:
-            bid_nominator = 7 if hw[0] != 'SpacemitK1' else 5 # 7 for avx is unpack1, 5 for riscv is U4:P2
-            bid_denominator = 8 if hw[0] != 'SpacemitK1' else 6 # 8 for avx is unpack2, 6 for riscv is U8:P4
+            bid_nominator = 7 if hw[0] != 'SpacemitK1' else 5  # 7 for avx is unpack1, 5 for riscv is U4:P2
+            bid_denominator = 8 if hw[0] != 'SpacemitK1' else 6  # 8 for avx is unpack2, 6 for riscv is U8:P4
             bid_nominator = translate_str_benchId_to(bid_nominator, obj.STYLE_BENCHID)
             bid_denominator = translate_str_benchId_to(bid_denominator, obj.STYLE_BENCHID)
             gmean_nom_over_denom_hw_llvms = obj.numeric_result_speedup_vv_benchA_over_benchB_geomean(
@@ -1458,18 +1471,24 @@ if __name__ == '__main__':
                 denominator_benchId=bid_denominator
             )
             print("===============================")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVMs: {gmean_nom_over_denom_hw_llvms}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVM17: {gmean_nom_over_denom_hw_llvm17}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVM18: {gmean_nom_over_denom_hw_llvm18}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCCs: {gmean_nom_over_denom_hw_gccs}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCC14: {gmean_nom_over_denom_hw_gcc14}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCC13: {gmean_nom_over_denom_hw_gcc13}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVMs: {gmean_nom_over_denom_hw_llvms}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVM17: {gmean_nom_over_denom_hw_llvm17}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with LLVM18: {gmean_nom_over_denom_hw_llvm18}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCCs: {gmean_nom_over_denom_hw_gccs}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCC14: {gmean_nom_over_denom_hw_gcc14}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator}## OVER ## {bid_denominator}## for {hw} with GCC13: {gmean_nom_over_denom_hw_gcc13}")
             print("===============================")
 
     for spd_type in ['speedup_vv', 'speedup_ss', 'speedup_vs']:
         for hw in [['Xeon5218'], ['Xeon8260'], ['Ryzen97950X'], ['SpacemitK1'], ['Xeon5218', 'Xeon8260']]:
-            bid_nominator = 7 if hw[0] != 'SpacemitK1' else 5 # 7 for avx is unpack1, 5 for riscv is U4:P2
-            bid_denominator = 8 if hw[0] != 'SpacemitK1' else 6 # 8 for avx is unpack2, 6 for riscv is U8:P4
+            bid_nominator = 7 if hw[0] != 'SpacemitK1' else 5  # 7 for avx is unpack1, 5 for riscv is U4:P2
+            bid_denominator = 8 if hw[0] != 'SpacemitK1' else 6  # 8 for avx is unpack2, 6 for riscv is U8:P4
             bid_nominator = translate_str_benchId_to(bid_nominator, obj.STYLE_BENCHID)
             bid_denominator = translate_str_benchId_to(bid_denominator, obj.STYLE_BENCHID)
 
@@ -1510,12 +1529,18 @@ if __name__ == '__main__':
                 benchId_list=[bid_nominator, bid_denominator]
             )
             print("*******************************")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVMs: {geomean_spd_llvms}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVM17: {geomean_spd_llvm17}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVM18: {geomean_spd_llvm18}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCCs: {geomean_spd_gccs}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCC14: {geomean_spd_gcc14}")
-            print(f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCC13: {geomean_spd_gcc13}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVMs: {geomean_spd_llvms}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVM17: {geomean_spd_llvm17}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with LLVM18: {geomean_spd_llvm18}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCCs: {geomean_spd_gccs}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCC14: {geomean_spd_gcc14}")
+            print(
+                f"Geometric mean f{spd_type} of ## {bid_nominator, bid_denominator}## for {hw} with GCC13: {geomean_spd_gcc13}")
             print("*******************************")
 
             max_spd_llvms = obj.numeric_result_speedup_bench_max(
