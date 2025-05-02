@@ -17,9 +17,9 @@ import pandas as pd
 import matplotlib as mpl
 
 FORMAT = 'svg'
-FIG_WIDTH = 8.27  # inches, A4 width=8.27
+FIG_WIDTH = 5  # inches, A4 width=8.27
 FIG_HEIGHT1 = 3.5
-FIG_HEIGHT2 = 2
+FIG_HEIGHT2 = 1.3
 
 
 def set_plot_style(enforce_font_scale=False):
@@ -1121,9 +1121,12 @@ class PlotSpeedUps:
             # remove all legends and add a single legend at the bottom
             for ax in axs:
                 ax.get_legend().remove()
-            # Add only one legend at the top of the first subplot, wide, with multiple legend columns
             handles, labels = axs[0].get_legend_handles_labels()
-            lgd = axs[0].legend(handles, labels, bbox_to_anchor=(0.5, 1.7), loc='upper center', ncol=3)
+            new_labels = [omit_hw(label) if label not in new_labels else new_labels[label] for label in labels]
+            lgd = axs[0].legend(handles, new_labels, bbox_to_anchor=(0.5, 1.7), loc='upper center', ncol=3)
+            # set font size of legend text
+            for text in lgd.get_texts():
+                text.set_fontsize(8)
 
         fig.savefig(
             f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}",
@@ -1352,7 +1355,23 @@ if __name__ == '__main__':
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X']) # or hw=['cpu1', 'cpu2']
         obj.plotgen_speedups_type2_all(reversed_text_order=order, hw=['SpacemitK1']) # or hw=['cpu1', 'cpu2']
     """
-    skip_tmp = False
+    skip_tmp = True
+
+    obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
+    [
+        'Xeon5218',
+        'Xeon8260',
+        'Ryzen97950X'
+    ]
+    )
+    obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
+    [
+        'SpacemitK1',
+    ]
+    )
+
+    obj.plotgen_fpot_inf_nan_handling()
+    obj.plotgen_fxpot()
 
     if not skip_tmp:
         obj.plotgen_speedups_type2_all(
@@ -1394,22 +1413,6 @@ if __name__ == '__main__':
             ]
         )
         """
-
-        obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
-        [
-            'Xeon5218',
-            'Xeon8260',
-            'Ryzen97950X'
-        ]
-        )
-        obj.plotgen_speedups_over_N_all_as_subfigures(hw_list=
-        [
-            'SpacemitK1',
-        ]
-        )
-
-        obj.plotgen_fpot_inf_nan_handling()
-        obj.plotgen_fxpot()
 
     for spd_type in ['speedup_vv']:  # 'speedup_ss', 'speedup_vs',
         for hw in [['Xeon5218'], ['Xeon8260'], ['Ryzen97950X'], ['SpacemitK1'], ['Xeon5218', 'Xeon8260']]:
