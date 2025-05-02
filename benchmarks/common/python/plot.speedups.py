@@ -10,14 +10,11 @@ import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import gmean
-import pandas as pd
 import numpy as np
-from IPython.core.pylabtools import figsize
-from click import style
-from matplotlib.lines import Line2D
 from parsing.parse import DumpsParser
 from parsing.codebook import *
 from parsing.lamda_funcs import *
+import pandas as pd
 import matplotlib as mpl
 
 FORMAT = 'svg'
