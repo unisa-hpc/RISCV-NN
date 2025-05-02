@@ -135,9 +135,9 @@ class PlotSpeedUps:
         unique_bids = [translate_str_benchId_to(e, self.STYLE_BENCHID, reverse=True) for e in
                        self.proc_data['benchId'].unique()]
         for bench_id in unique_bids:
-            if bench_id == 0 or bench_id == 2 or bench_id == 3:
+            if bench_id == 0 or bench_id == 3:
                 print(f"NYI: Preprocessing data for benchID={bench_id}")
-            elif bench_id == 7 or bench_id == 8 or bench_id == 10:
+            elif bench_id == 7 or bench_id == 8 or bench_id == 10 or bench_id == 2:
                 print(f"Preprocessing data for benchID={bench_id}")
                 cols = list(self.proc_data.columns)
                 cols.append('speedup_type')
@@ -1143,7 +1143,7 @@ class PlotSpeedUps:
             ]
 
         # Create a figure, just one plot is enough
-        fig, ax = plt.subplots(figsize=(FIG_WIDTH / 2, FIG_HEIGHT1))
+        fig, ax = plt.subplots(figsize=(FIG_WIDTH, FIG_HEIGHT1 * 0.75))
         fig.subplots_adjust(bottom=0.5, right=0.8)
 
         # Create the seaborn lineplot
@@ -1157,19 +1157,23 @@ class PlotSpeedUps:
             ci="sd",  # Show std-deviation confidence intervals
             markers=False,
             dashes=True,
-            legend='full'
+            #legend='full'
         )
 
-        # Add legend
+        # remove legend
         lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
+        lgd.remove()
+
+        # add x-axis ticks with all the unique N values
+        plt.xticks(masked_data['N'].unique(), rotation=90, fontsize=7)
 
         # x-axis and y-axis labels
-        plt.xlabel("N")
+        plt.xlabel("Square Matrix Size (N)")
         plt.xticks(rotation=90, fontsize=7)
         plt.ylabel("Speedup_vv")
 
         # Save the figure
-        plt.savefig(f"{self.dir_out}/speedup_vv_over_N__inf_nan_amd.{FORMAT}", bbox_extra_artists=(lgd,),
+        plt.savefig(f"{self.dir_out}/speedup_vv_over_N__inf_nan_amd.{FORMAT}",# bbox_extra_artists=(lgd,),
                     bbox_inches='tight', dpi=300)
 
     def plotgen_fxpot(self):
@@ -1183,8 +1187,8 @@ class PlotSpeedUps:
             ]
 
         # Create a figure, just one plot is enough
-        fig, ax = plt.subplots(figsize=(FIG_WIDTH / 2, FIG_HEIGHT1))
-        fig.subplots_adjust(bottom=0.5, right=0.8)
+        fig, ax = plt.subplots(figsize=(FIG_WIDTH, FIG_HEIGHT2 * 0.95))
+        #fig.subplots_adjust(bottom=0.5, right=0.8)
 
         # Create the seaborn lineplot
         lineplot = sns.lineplot(
@@ -1201,12 +1205,19 @@ class PlotSpeedUps:
         )
 
         # Add legend
-        lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
+        lgd = plt.legend(title="FXPoT", bbox_to_anchor=(0.5, 1.9), loc='upper center', ncol=2)
+
+
+        # add x-axis ticks with all the unique N values
+        plt.xticks(masked_data['N'].unique(), rotation=90, fontsize=7)
 
         # x-axis and y-axis labels
-        plt.xlabel("N")
+        plt.xlabel("Square Matrix Size (N)")
         plt.xticks(rotation=90, fontsize=7)
         plt.ylabel("Speedup_vv")
+
+        # show plot
+        plt.show()
 
         # Save the figure
         plt.savefig(f"{self.dir_out}/speedup_vv_over_N__fxpot_amd_rvv.{FORMAT}", bbox_extra_artists=(lgd,),
