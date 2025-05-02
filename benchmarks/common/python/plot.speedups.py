@@ -4,7 +4,6 @@
 #
 
 import argparse
-import inspect
 import pathlib
 import pickle
 import matplotlib.pyplot as plt
