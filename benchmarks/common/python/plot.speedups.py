@@ -27,6 +27,7 @@ def set_plot_style(enforce_font_scale=False):
         'axes.facecolor': 'white',  # White plot background
         'grid.color': (0.5, 0.5, 0.5, 0.3),  # RGB with alpha = 0.3 for faded grey
         'grid.linewidth': 0.8,  # Optional: thinner grid lines
+        'legend.fontsize': 'small',
     }
     if not enforce_font_scale:
         sns.set_theme(style="whitegrid", rc=rc_dict)
