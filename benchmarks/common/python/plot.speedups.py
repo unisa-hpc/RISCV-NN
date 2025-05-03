@@ -17,9 +17,9 @@ import pandas as pd
 import matplotlib as mpl
 
 FORMAT = 'svg'
-FIG_WIDTH = 5  # inches, A4 width=8.27
+FIG_WIDTH = 8.27  # inches, A4 width=8.27
 FIG_HEIGHT1 = 3.5
-FIG_HEIGHT2 = 1.3
+FIG_HEIGHT2 = 2.5
 
 
 def set_plot_style(enforce_font_scale=False):
@@ -1128,6 +1128,7 @@ class PlotSpeedUps:
             for text in lgd.get_texts():
                 text.set_fontsize(8)
 
+        #plt.show()
         fig.savefig(
             f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}",
             bbox_extra_artists=(lgd,),
@@ -1143,7 +1144,7 @@ class PlotSpeedUps:
             ]
 
         # Create a figure, just one plot is enough
-        fig, ax = plt.subplots(figsize=(FIG_WIDTH, FIG_HEIGHT1 * 0.75))
+        fig, ax = plt.subplots(figsize=(FIG_WIDTH, FIG_HEIGHT1))
         fig.subplots_adjust(bottom=0.5, right=0.8)
 
         # Create the seaborn lineplot
@@ -1217,7 +1218,7 @@ class PlotSpeedUps:
         plt.ylabel("Speedup_vv")
 
         # show plot
-        plt.show()
+        #plt.show()
 
         # Save the figure
         plt.savefig(f"{self.dir_out}/speedup_vv_over_N__fxpot_amd_rvv.{FORMAT}", bbox_extra_artists=(lgd,),
@@ -1323,6 +1324,51 @@ class PlotSpeedUps:
         max_value = np.max(data)
         return max_value
 
+    """"
+    def max_speedup_for_specific_bid_N_compiler_hw(
+            self,
+            bid,
+            hw,
+            N,
+            compiler,
+       ):
+        self.is_preprocessed = False
+        self.preprocess_data()
+        self.proc_data_speedup = self.proc_data_speedup[
+            (self.proc_data_speedup['benchId'] == bid) &
+            (self.proc_data_speedup['hw'] == hw) &
+            #(self.proc_data_speedup['N'] == N) &
+            (self.proc_data_speedup['run_type'] == 'best') &
+            (self.proc_data_speedup['compiler'] == compiler) &
+            # speedup_vv only
+            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
+        ]
+        data = self.proc_data_speedup['data_point'].to_numpy()
+        if len(data) == 0:
+            return 0
+        max_value = np.median(data)
+        return max_value
+
+    def stats_fpot_with_inf_nan(self):
+        # To get max speedup of FPoT with Inf and NaN handling
+        max_fpot_10_inf_hdl = \
+            obj.max_speedup_for_specific_bid_N_compiler_hw(
+                bid=translate_str_benchId_to(10, obj.STYLE_BENCHID),
+                hw='Xeon5218',
+                N=2048,
+                compiler='LLVM18'
+            )
+        # To get max speedup of FPoT with Inf and NaN handling
+        max_fpot_7 = \
+            obj.max_speedup_for_specific_bid_N_compiler_hw(
+                bid=translate_str_benchId_to(7, obj.STYLE_BENCHID),
+                hw='Xeon5218',
+                N=2048,
+                compiler='LLVM18'
+            )
+        print(f"Max speedup of FPoT BID 10 Xeon5218 LLVM18 with Inf and NaN handling: {max_fpot_10_inf_hdl}")
+        print(f"Max speedup of FPoT BID 7 Xeon5218 LLVM18: {max_fpot_7}")
+    """
 
 if __name__ == '__main__':
     # accept multiple instances of --dumps arguments
@@ -1383,6 +1429,7 @@ if __name__ == '__main__':
 
     obj.plotgen_fpot_inf_nan_handling()
     obj.plotgen_fxpot()
+    #obj.stats_fpot_with_inf_nan()
 
     if not skip_tmp:
         obj.plotgen_speedups_type2_all(
