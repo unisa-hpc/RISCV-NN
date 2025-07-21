@@ -1128,7 +1128,7 @@ class PlotSpeedUps:
             for text in lgd.get_texts():
                 text.set_fontsize(8)
 
-        #plt.show()
+        # plt.show()
         fig.savefig(
             f"{self.dir_out}/speedup_vv_over_N_subfig__{str(hw_list)}.{FORMAT}",
             bbox_extra_artists=(lgd,),
@@ -1158,7 +1158,7 @@ class PlotSpeedUps:
             ci="sd",  # Show std-deviation confidence intervals
             markers=False,
             dashes=True,
-            #legend='full'
+            # legend='full'
         )
 
         # remove legend
@@ -1174,7 +1174,7 @@ class PlotSpeedUps:
         plt.ylabel("Speedup_vv")
 
         # Save the figure
-        plt.savefig(f"{self.dir_out}/speedup_vv_over_N__inf_nan_amd.{FORMAT}",# bbox_extra_artists=(lgd,),
+        plt.savefig(f"{self.dir_out}/speedup_vv_over_N__inf_nan_amd.{FORMAT}",  # bbox_extra_artists=(lgd,),
                     bbox_inches='tight', dpi=300)
 
     def plotgen_fxpot(self):
@@ -1189,7 +1189,7 @@ class PlotSpeedUps:
 
         # Create a figure, just one plot is enough
         fig, ax = plt.subplots(figsize=(FIG_WIDTH, FIG_HEIGHT2 * 0.95))
-        #fig.subplots_adjust(bottom=0.5, right=0.8)
+        # fig.subplots_adjust(bottom=0.5, right=0.8)
 
         # Create the seaborn lineplot
         lineplot = sns.lineplot(
@@ -1208,7 +1208,6 @@ class PlotSpeedUps:
         # Add legend
         lgd = plt.legend(title="FXPoT", bbox_to_anchor=(0.5, 1.9), loc='upper center', ncol=2)
 
-
         # add x-axis ticks with all the unique N values
         plt.xticks(masked_data['N'].unique(), rotation=90, fontsize=7)
 
@@ -1218,11 +1217,172 @@ class PlotSpeedUps:
         plt.ylabel("Speedup_vv")
 
         # show plot
-        #plt.show()
+        # plt.show()
 
         # Save the figure
         plt.savefig(f"{self.dir_out}/speedup_vv_over_N__fxpot_amd_rvv.{FORMAT}", bbox_extra_artists=(lgd,),
                     bbox_inches='tight', dpi=300)
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    def plotgen_speedup_runtime_fixed_N_compiler(
+            self,
+            fixed_N,
+            fixed_compiler,
+            hw: [str],
+            hide_legend=True
+    ):
+        # Mask data
+        masked_data_speedup = self.proc_data_speedup[
+            (self.proc_data_speedup['N'] == fixed_N) &
+            (self.proc_data_speedup['compiler'] == fixed_compiler) &
+            (self.proc_data_speedup['hw'].isin(hw)) &
+            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
+            ]
+
+        masked_data_runtime = self.proc_data[
+            (self.proc_data['N'] == fixed_N) &
+            (self.proc_data['compiler'] == fixed_compiler) &
+            (self.proc_data['hw'].isin(hw)) &
+            (self.proc_data['run_type'] == 'best')
+            ]
+
+        # Containers
+        runtime_base = {}
+        runtime_unpack1 = {}
+        runtime_unpack2 = {}
+        speedup_vv_unpack1 = {}
+        speedup_vv_unpack2 = {}
+
+        has_unpack2 = {}
+
+        for one_hw in hw:
+            is_spacemit = one_hw == "SpacemitK1"
+
+            tmp_base = masked_data_runtime[
+                (masked_data_runtime['name'].str.contains('base_AVX512' if not is_spacemit else 'base_RVV')) &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+            runtime_base[one_hw] = tmp_base['data_point'].median()
+
+            tmp_u1 = masked_data_runtime[
+                (masked_data_runtime['benchId'].str.contains('Unpack1' if not is_spacemit else 'Unpack 1')) &
+                (masked_data_runtime['name'].str.contains('ours_AVX512' if not is_spacemit else 'ours_RVV')) &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+            runtime_unpack1[one_hw] = tmp_u1['data_point'].median()
+            speedup_vv_unpack1[one_hw] = runtime_base[one_hw] / runtime_unpack1[one_hw]
+
+            if not is_spacemit:
+                tmp_u2 = masked_data_runtime[
+                    (masked_data_runtime['benchId'].str.contains('Unpack2')) &
+                    (masked_data_runtime['name'].str.contains('ours_AVX512')) &
+                    (masked_data_runtime['hw'] == one_hw)
+                    ]
+                runtime_unpack2[one_hw] = tmp_u2['data_point'].median()
+                speedup_vv_unpack2[one_hw] = runtime_base[one_hw] / runtime_unpack2[one_hw]
+                has_unpack2[one_hw] = True
+            else:
+                has_unpack2[one_hw] = False
+
+        # Plotting
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Patch
+
+        bar_width = 0.15
+        gap_within_group = 0.1
+        gap_between_groups = 0.2
+
+        fig, ax = plt.subplots(figsize=(1.5 * len(hw) + 3, 4.5))
+        ax2 = ax.twinx()
+
+        x_ticks = []
+        x_labels = []
+        x_pos = 0
+
+        for hw_i, one_hw in enumerate(hw):
+            offset = 0
+
+            # Runtime bars
+            ax.bar(x_pos + offset, runtime_base[one_hw], width=bar_width,
+                   label='Baseline SIMD' if hw_i == 0 else "", color='gray')
+            offset += bar_width
+
+            ax.bar(x_pos + offset, runtime_unpack1[one_hw], width=bar_width,
+                   label='Unpack1 Runtime' if hw_i == 0 else "", color='tab:blue')
+            offset += bar_width
+
+            if has_unpack2[one_hw]:
+                ax.bar(x_pos + offset, runtime_unpack2[one_hw], width=bar_width,
+                       label='Unpack2 Runtime' if hw_i == 0 else "", color='tab:orange')
+                offset += bar_width
+
+            offset += gap_within_group
+
+            # Speedup bars
+            ax2.bar(x_pos + offset, speedup_vv_unpack1[one_hw], width=bar_width,
+                    label='Unpack1 Speedup' if hw_i == 0 else "", color='tab:green')
+            offset += bar_width
+
+            if has_unpack2[one_hw]:
+                ax2.bar(x_pos + offset, speedup_vv_unpack2[one_hw], width=bar_width,
+                        label='Unpack2 Speedup' if hw_i == 0 else "", color='tab:red')
+                offset += bar_width
+
+            # Add value labels
+            for bar_group in ax.containers + ax2.containers:
+                for rect in bar_group:
+                    height = rect.get_height()
+                    if height == 0 or not rect.get_y() == 0:
+                        continue
+                    label_y = height + (1000 if rect.axes == ax else 0.05)
+                    rect.axes.text(rect.get_x() + rect.get_width() / 2., label_y,
+                                   f'{height:.2f}', ha='center', va='bottom', fontsize=8, rotation=90)
+
+            # Label x-axis
+            x_ticks.append(x_pos + offset / 2)
+            x_labels.append(one_hw)
+            x_pos += offset + gap_between_groups
+
+        # Axes formatting
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.set_ylabel("Runtime (ms)")
+        ax2.set_ylabel("Speedup")
+        ax.set_title(f"N={fixed_N}, Compiler={fixed_compiler}")
+        ax.grid(True, axis='y', linestyle='--', alpha=0.5)
+
+        # Y axis limits
+        all_runtimes = list(runtime_base.values()) + list(runtime_unpack1.values())
+        all_speedups = list(speedup_vv_unpack1.values())
+        if any(has_unpack2.values()):
+            all_runtimes += list(runtime_unpack2.values())
+            all_speedups += list(speedup_vv_unpack2.values())
+
+        ax.set_ylim(0, max(all_runtimes) * 1.3)
+        ax2.set_ylim(min(all_speedups) * 0.9, max(all_speedups) * 1.3)
+
+        # Legend
+        if not hide_legend:
+            legend_elements = [
+                Patch(facecolor='gray', label='Baseline SIMD'),
+                Patch(facecolor='tab:blue', label='FPoT Unpack1 Runtime'),
+                Patch(facecolor='tab:green', label='FPoT Unpack1 Speedup'),
+            ]
+            if any(has_unpack2.values()):
+                legend_elements += [
+                    Patch(facecolor='tab:orange', label='FPoT Unpack2 Runtime'),
+                    Patch(facecolor='tab:red', label='FPoT Unpack2 Speedup'),
+                ]
+            ax.legend(handles=legend_elements, loc='upper left', fontsize='small', ncol=2)
+
+        plt.tight_layout()
+        plt.savefig(
+            f"{self.dir_out}/plotgen_speedup_runtime_fixed_N{fixed_N}_compiler{fixed_compiler}_hw{str(hw)}.{FORMAT}",
+            bbox_inches='tight',
+            dpi=300
+        )
 
     def numeric_result_speedup_vv_benchA_over_benchB_geomean(
             self,
@@ -1277,6 +1437,7 @@ class PlotSpeedUps:
         geometric_mean = gmean(ratio_of_speedups_all_n)
         return geometric_mean
 
+
     def numeric_result_speedup_bench_geomean(
             self,
             speedup_type_all: str,
@@ -1299,6 +1460,7 @@ class PlotSpeedUps:
         data = masked_data['data_point'].to_numpy()
         geometric_mean = gmean(data)
         return geometric_mean
+
 
     def numeric_result_speedup_bench_max(
             self,
@@ -1324,6 +1486,7 @@ class PlotSpeedUps:
         max_value = np.max(data)
         return max_value
 
+
     """"
     def max_speedup_for_specific_bid_N_compiler_hw(
             self,
@@ -1348,7 +1511,7 @@ class PlotSpeedUps:
             return 0
         max_value = np.median(data)
         return max_value
-
+    
     def stats_fpot_with_inf_nan(self):
         # To get max speedup of FPoT with Inf and NaN handling
         max_fpot_10_inf_hdl = \
@@ -1429,7 +1592,14 @@ if __name__ == '__main__':
 
     obj.plotgen_fpot_inf_nan_handling()
     obj.plotgen_fxpot()
-    #obj.stats_fpot_with_inf_nan()
+    # obj.stats_fpot_with_inf_nan()
+
+    obj.plotgen_speedup_runtime_fixed_N_compiler(
+        fixed_N=5120,
+        fixed_compiler='LLVM18',
+        hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X', 'SpacemitK1'],
+        hide_legend=False
+    )
 
     if not skip_tmp:
         obj.plotgen_speedups_type2_all(
