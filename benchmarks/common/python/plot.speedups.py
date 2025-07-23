@@ -17,7 +17,7 @@ import pandas as pd
 import matplotlib as mpl
 
 FORMAT = 'svg'
-FIG_WIDTH = 8.27  # inches, A4 width=8.27
+FIG_WIDTH = 6.27  # inches, A4 width=8.27
 FIG_HEIGHT1 = 3.5
 FIG_HEIGHT2 = 2.5
 
@@ -1096,7 +1096,7 @@ class PlotSpeedUps:
             if i != len(hw_list) - 1:
                 # hide x-tick labels only, keep grid
                 axs[i].set_xticklabels([])
-            axs[i].tick_params(axis='x', rotation=90, labelsize=6)
+            axs[i].tick_params(axis='x', rotation=90, labelsize=10)
             axs[i].set_ylabel("Speedup")  # Explain in the caption of the figure that this is speedup_vv
             axs[i].grid(True)
 
@@ -1123,7 +1123,7 @@ class PlotSpeedUps:
                 ax.get_legend().remove()
             handles, labels = axs[0].get_legend_handles_labels()
             new_labels = [omit_hw(label) if label not in new_labels else new_labels[label] for label in labels]
-            lgd = axs[0].legend(handles, new_labels, bbox_to_anchor=(0.5, 1.7), loc='upper center', ncol=3)
+            lgd = axs[0].legend(handles, new_labels, bbox_to_anchor=(1, 1), loc='lower right', ncol=3)
             # set font size of legend text
             for text in lgd.get_texts():
                 text.set_fontsize(8)
@@ -1162,15 +1162,15 @@ class PlotSpeedUps:
         )
 
         # remove legend
-        lgd = plt.legend(title="Group", bbox_to_anchor=(1.05, 1), loc='upper left')
+        lgd = plt.legend(title="Group", bbox_to_anchor=(1, 1), loc='lower right')
         lgd.remove()
 
         # add x-axis ticks with all the unique N values
-        plt.xticks(masked_data['N'].unique(), rotation=90, fontsize=7)
+        plt.xticks(masked_data['N'].unique(), rotation=90, fontsize=10)
 
         # x-axis and y-axis labels
         plt.xlabel("Square Matrix Size (N)")
-        plt.xticks(rotation=90, fontsize=7)
+        plt.xticks(rotation=90, fontsize=10)
         plt.ylabel("Speedup_vv")
 
         # Save the figure
@@ -1206,14 +1206,14 @@ class PlotSpeedUps:
         )
 
         # Add legend
-        lgd = plt.legend(title="FXPoT", bbox_to_anchor=(0.5, 1.9), loc='upper center', ncol=2)
+        lgd = plt.legend(title="FXPoT", bbox_to_anchor=(1,1), loc='lower right', ncol=2)
 
         # add x-axis ticks with all the unique N values
-        plt.xticks(masked_data['N'].unique(), rotation=90, fontsize=7)
+        plt.xticks(masked_data['N'].unique(), rotation=90, fontsize=10)
 
         # x-axis and y-axis labels
         plt.xlabel("Square Matrix Size (N)")
-        plt.xticks(rotation=90, fontsize=7)
+        plt.xticks(rotation=90, fontsize=10)
         plt.ylabel("Speedup_vv")
 
         # show plot
@@ -1223,24 +1223,13 @@ class PlotSpeedUps:
         plt.savefig(f"{self.dir_out}/speedup_vv_over_N__fxpot_amd_rvv.{FORMAT}", bbox_extra_artists=(lgd,),
                     bbox_inches='tight', dpi=300)
 
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    def plotgen_speedup_runtime_fixed_N_compiler(
+    def plotgen_speedup_runtime_fixed_N_compiler_v07(
             self,
             fixed_N,
             fixed_compiler,
             hw: [str],
-            hide_legend=True
+            hide_legend=False
     ):
-        # Mask data
-        masked_data_speedup = self.proc_data_speedup[
-            (self.proc_data_speedup['N'] == fixed_N) &
-            (self.proc_data_speedup['compiler'] == fixed_compiler) &
-            (self.proc_data_speedup['hw'].isin(hw)) &
-            (self.proc_data_speedup['speedup_type'] == 'speedup_vv')
-            ]
-
         masked_data_runtime = self.proc_data[
             (self.proc_data['N'] == fixed_N) &
             (self.proc_data['compiler'] == fixed_compiler) &
@@ -1248,141 +1237,626 @@ class PlotSpeedUps:
             (self.proc_data['run_type'] == 'best')
             ]
 
-        # Containers
-        runtime_base = {}
-        runtime_unpack1 = {}
-        runtime_unpack2 = {}
-        speedup_vv_unpack1 = {}
-        speedup_vv_unpack2 = {}
-
-        has_unpack2 = {}
+        runtime_rows = []
+        speedup_rows = []
 
         for one_hw in hw:
             is_spacemit = one_hw == "SpacemitK1"
 
-            tmp_base = masked_data_runtime[
-                (masked_data_runtime['name'].str.contains('base_AVX512' if not is_spacemit else 'base_RVV')) &
+            base_query = 'base_RVV' if is_spacemit else 'base_AVX512'
+            ours_query = 'ours_RVV' if is_spacemit else 'ours_AVX512'
+
+            base_df = masked_data_runtime[
+                masked_data_runtime['name'].str.contains(base_query) &
                 (masked_data_runtime['hw'] == one_hw)
                 ]
-            runtime_base[one_hw] = tmp_base['data_point'].median()
-
-            tmp_u1 = masked_data_runtime[
-                (masked_data_runtime['benchId'].str.contains('Unpack1' if not is_spacemit else 'Unpack 1')) &
-                (masked_data_runtime['name'].str.contains('ours_AVX512' if not is_spacemit else 'ours_RVV')) &
+            unpack1_df = masked_data_runtime[
+                masked_data_runtime['benchId'].str.contains('Unpack 1' if is_spacemit else 'Unpack1') &
+                masked_data_runtime['name'].str.contains(ours_query) &
                 (masked_data_runtime['hw'] == one_hw)
                 ]
-            runtime_unpack1[one_hw] = tmp_u1['data_point'].median()
-            speedup_vv_unpack1[one_hw] = runtime_base[one_hw] / runtime_unpack1[one_hw]
+            unpack2_df = masked_data_runtime[
+                masked_data_runtime['benchId'].str.contains('Unpack2') &
+                masked_data_runtime['name'].str.contains('ours_AVX512') &
+                (masked_data_runtime['hw'] == one_hw)
+                ] if not is_spacemit else pd.DataFrame()
 
-            if not is_spacemit:
-                tmp_u2 = masked_data_runtime[
-                    (masked_data_runtime['benchId'].str.contains('Unpack2')) &
-                    (masked_data_runtime['name'].str.contains('ours_AVX512')) &
-                    (masked_data_runtime['hw'] == one_hw)
-                    ]
-                runtime_unpack2[one_hw] = tmp_u2['data_point'].median()
-                speedup_vv_unpack2[one_hw] = runtime_base[one_hw] / runtime_unpack2[one_hw]
-                has_unpack2[one_hw] = True
-            else:
-                has_unpack2[one_hw] = False
+            # Runtime
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'Baseline SIMD', 'data_point': v}
+                for v in base_df['data_point']
+            ])
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'Unpack1', 'data_point': v}
+                for v in unpack1_df['data_point']
+            ])
+            if not unpack2_df.empty:
+                runtime_rows.extend([
+                    {'hw': one_hw, 'label': 'Unpack2', 'data_point': v}
+                    for v in unpack2_df['data_point']
+                ])
 
-        # Plotting
-        import matplotlib.pyplot as plt
-        from matplotlib.patches import Patch
+            # Speedup
+            if not unpack1_df.empty:
+                s1 = base_df['data_point'].median() / unpack1_df['data_point']
+                speedup_rows.extend([
+                    {'hw': one_hw, 'label': 'Unpack1', 'speedup': v} for v in s1
+                ])
+            if not unpack2_df.empty:
+                s2 = base_df['data_point'].median() / unpack2_df['data_point']
+                speedup_rows.extend([
+                    {'hw': one_hw, 'label': 'Unpack2', 'speedup': v} for v in s2
+                ])
 
-        bar_width = 0.15
-        gap_within_group = 0.1
-        gap_between_groups = 0.2
+        runtime_df = pd.DataFrame(runtime_rows)
+        speedup_df = pd.DataFrame(speedup_rows)
 
-        fig, ax = plt.subplots(figsize=(1.5 * len(hw) + 3, 4.5))
-        ax2 = ax.twinx()
+        runtime_order = ['Baseline SIMD', 'Unpack1', 'Unpack2']
+        speedup_order = ['Unpack1', 'Unpack2']
 
-        x_ticks = []
-        x_labels = []
-        x_pos = 0
+        num_hw = len(hw)
+        fig, (ax_rt, ax_sp) = plt.subplots(1, 2, figsize=(num_hw * 2.8, 3.5), constrained_layout=True)
 
-        for hw_i, one_hw in enumerate(hw):
-            offset = 0
+        # Convert runtime data to seconds
+        runtime_df_seconds = runtime_df.copy()
+        runtime_df_seconds['data_point'] = runtime_df_seconds['data_point'] / 1000.0
 
-            # Runtime bars
-            ax.bar(x_pos + offset, runtime_base[one_hw], width=bar_width,
-                   label='Baseline SIMD' if hw_i == 0 else "", color='gray')
-            offset += bar_width
+        # Runtime
+        bars_rt = sns.barplot(data=runtime_df_seconds, x='hw', y='data_point', hue='label',
+                              hue_order=runtime_order, ax=ax_rt, errwidth=1, capsize=0.1, width=0.8)
+        #sns.stripplot(data=runtime_df_seconds, x='hw', y='data_point', hue='label',
+        #              hue_order=runtime_order, ax=ax_rt, dodge=True, jitter=True,
+        #              color='black', alpha=0.4, size=3, linewidth=0, legend=False)
 
-            ax.bar(x_pos + offset, runtime_unpack1[one_hw], width=bar_width,
-                   label='Unpack1 Runtime' if hw_i == 0 else "", color='tab:blue')
-            offset += bar_width
+        # Add value labels on runtime bars
+        for bar in ax_rt.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add label if bar has positive height
+                # Position text slightly to the right of bar center and above the bar
+                ax_rt.text(bar.get_x() + bar.get_width() / 2, height + height * 0.04,
+                           f'{height:.3f}', rotation=90, ha='center', va='bottom', fontsize=10)
 
-            if has_unpack2[one_hw]:
-                ax.bar(x_pos + offset, runtime_unpack2[one_hw], width=bar_width,
-                       label='Unpack2 Runtime' if hw_i == 0 else "", color='tab:orange')
-                offset += bar_width
+        ax_rt.set_ylabel("Runtime (s)")
+        ax_rt.set_title(f"N={fixed_N}, Compiler={fixed_compiler}")
+        ax_rt.grid(True, axis='y', linestyle='--', alpha=0.5)
+        plt.setp(ax_rt.get_xticklabels(), rotation=0)
 
-            offset += gap_within_group
+        # Extend y-axis range for runtime
+        y_min_rt, y_max_rt = ax_rt.get_ylim()
+        ax_rt.set_ylim(y_min_rt, y_max_rt * 1.15)
 
-            # Speedup bars
-            ax2.bar(x_pos + offset, speedup_vv_unpack1[one_hw], width=bar_width,
-                    label='Unpack1 Speedup' if hw_i == 0 else "", color='tab:green')
-            offset += bar_width
-
-            if has_unpack2[one_hw]:
-                ax2.bar(x_pos + offset, speedup_vv_unpack2[one_hw], width=bar_width,
-                        label='Unpack2 Speedup' if hw_i == 0 else "", color='tab:red')
-                offset += bar_width
-
-            # Add value labels
-            for bar_group in ax.containers + ax2.containers:
-                for rect in bar_group:
-                    height = rect.get_height()
-                    if height == 0 or not rect.get_y() == 0:
-                        continue
-                    label_y = height + (1000 if rect.axes == ax else 0.05)
-                    rect.axes.text(rect.get_x() + rect.get_width() / 2., label_y,
-                                   f'{height:.2f}', ha='center', va='bottom', fontsize=8, rotation=90)
-
-            # Label x-axis
-            x_ticks.append(x_pos + offset / 2)
-            x_labels.append(one_hw)
-            x_pos += offset + gap_between_groups
-
-        # Axes formatting
-        ax.set_xticks(x_ticks)
-        ax.set_xticklabels(x_labels)
-        ax.set_ylabel("Runtime (ms)")
-        ax2.set_ylabel("Speedup")
-        ax.set_title(f"N={fixed_N}, Compiler={fixed_compiler}")
-        ax.grid(True, axis='y', linestyle='--', alpha=0.5)
-
-        # Y axis limits
-        all_runtimes = list(runtime_base.values()) + list(runtime_unpack1.values())
-        all_speedups = list(speedup_vv_unpack1.values())
-        if any(has_unpack2.values()):
-            all_runtimes += list(runtime_unpack2.values())
-            all_speedups += list(speedup_vv_unpack2.values())
-
-        ax.set_ylim(0, max(all_runtimes) * 1.3)
-        ax2.set_ylim(min(all_speedups) * 0.9, max(all_speedups) * 1.3)
-
-        # Legend
+        # Runtime legend above
         if not hide_legend:
-            legend_elements = [
-                Patch(facecolor='gray', label='Baseline SIMD'),
-                Patch(facecolor='tab:blue', label='FPoT Unpack1 Runtime'),
-                Patch(facecolor='tab:green', label='FPoT Unpack1 Speedup'),
-            ]
-            if any(has_unpack2.values()):
-                legend_elements += [
-                    Patch(facecolor='tab:orange', label='FPoT Unpack2 Runtime'),
-                    Patch(facecolor='tab:red', label='FPoT Unpack2 Speedup'),
-                ]
-            ax.legend(handles=legend_elements, loc='upper left', fontsize='small', ncol=2)
+            handles_rt, labels_rt = ax_rt.get_legend_handles_labels()
+            by_label_rt = dict(zip(labels_rt, handles_rt))
+            ordered_rt = [by_label_rt[l] for l in runtime_order if l in by_label_rt]
+            ax_rt.legend(ordered_rt, runtime_order, title="Runtime", fontsize='small',
+                         loc='lower center', bbox_to_anchor=(0.5, 1.08), ncol=len(runtime_order))
+        else:
+            ax_rt.get_legend().remove()
 
-        plt.tight_layout()
+        # Speedup
+        # Create a custom palette to match runtime colors
+        runtime_palette = sns.color_palette()
+        speedup_palette = {'Unpack1': runtime_palette[1],
+                           'Unpack2': runtime_palette[2]}  # Orange and green from runtime plot
+
+        bars_sp = sns.barplot(data=speedup_df, x='hw', y='speedup', hue='label',
+                              hue_order=speedup_order, ax=ax_sp, errwidth=1, capsize=0.1,
+                              palette=speedup_palette, width=0.52)
+        ##sns.stripplot(data=speedup_df, x='hw', y='speedup', hue='label',
+        ##              hue_order=speedup_order, ax=ax_sp, dodge=True, jitter=True,
+        ##              color='black', alpha=0.4, size=3, linewidth=0, legend=False)
+
+        # Add value labels on speedup bars
+        for bar in ax_sp.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add label if bar has positive height
+                # Position text slightly to the right of bar center and above the bar
+                ax_sp.text(bar.get_x() + bar.get_width() * 0.5, height + height * 0.04,
+                           f'{height:.2f}', rotation=90, ha='center', va='bottom', fontsize=10)
+
+        ax_sp.set_ylabel("Speedup")
+        ax_sp.set_title("")
+        ax_sp.grid(True, axis='y', linestyle='--', alpha=0.5)
+        plt.setp(ax_sp.get_xticklabels(), rotation=0)
+
+        # Extend y-axis range for speedup
+        y_min_sp, y_max_sp = ax_sp.get_ylim()
+        ax_sp.set_ylim(y_min_sp, y_max_sp * 1.15)
+
+        # Speedup legend above
+        if not hide_legend:
+            handles_sp, labels_sp = ax_sp.get_legend_handles_labels()
+            by_label_sp = dict(zip(labels_sp, handles_sp))
+            ordered_sp = [by_label_sp[l] for l in speedup_order if l in by_label_sp]
+            ax_sp.legend(ordered_sp, speedup_order, title="Speedup", fontsize='small',
+                         loc='lower center', bbox_to_anchor=(0.5, 1.08), ncol=len(speedup_order))
+        else:
+            ax_sp.get_legend().remove()
+
         plt.savefig(
-            f"{self.dir_out}/plotgen_speedup_runtime_fixed_N{fixed_N}_compiler{fixed_compiler}_hw{str(hw)}.{FORMAT}",
+            f"{self.dir_out}/plotgen_dist_speedup_runtime_fixed_N{fixed_N}_compiler{fixed_compiler}_hw{str(hw)}.{FORMAT}",
             bbox_inches='tight',
             dpi=300
         )
+        plt.close()
+
+    def plotgen_speedup_runtime_fixed_N_compiler_v08(
+            self,
+            fixed_N,
+            fixed_compiler,
+            hw: [str],
+            hide_legend=False
+    ):
+        masked_data_runtime = self.proc_data[
+            (self.proc_data['N'] == fixed_N) &
+            (self.proc_data['compiler'] == fixed_compiler) &
+            (self.proc_data['hw'].isin(hw)) &
+            (self.proc_data['run_type'] == 'best')
+            ]
+
+        runtime_rows = []
+        speedup_rows = []
+
+        for one_hw in hw:
+            is_spacemit = one_hw == "SpacemitK1"
+
+            base_query = 'base_RVV' if is_spacemit else 'base_AVX512'
+            ours_query = 'ours_RVV' if is_spacemit else 'ours_AVX512'
+
+            base_df = masked_data_runtime[
+                masked_data_runtime['name'].str.contains(base_query) &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+            unpack1_df = masked_data_runtime[
+                masked_data_runtime['benchId'].str.contains('Unpack 1' if is_spacemit else 'Unpack1') &
+                masked_data_runtime['name'].str.contains(ours_query) &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+            unpack2_df = masked_data_runtime[
+                masked_data_runtime['benchId'].str.contains('Unpack2') &
+                masked_data_runtime['name'].str.contains('ours_AVX512') &
+                (masked_data_runtime['hw'] == one_hw)
+                ] if not is_spacemit else pd.DataFrame()
+
+            # Runtime
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'Baseline SIMD', 'data_point': v}
+                for v in base_df['data_point']
+            ])
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'Unpack1', 'data_point': v}
+                for v in unpack1_df['data_point']
+            ])
+            if not unpack2_df.empty:
+                runtime_rows.extend([
+                    {'hw': one_hw, 'label': 'Unpack2', 'data_point': v}
+                    for v in unpack2_df['data_point']
+                ])
+
+            # Speedup
+            if not unpack1_df.empty:
+                s1 = base_df['data_point'].median() / unpack1_df['data_point']
+                speedup_rows.extend([
+                    {'hw': one_hw, 'label': 'Unpack1', 'speedup': v} for v in s1
+                ])
+            if not unpack2_df.empty:
+                s2 = base_df['data_point'].median() / unpack2_df['data_point']
+                speedup_rows.extend([
+                    {'hw': one_hw, 'label': 'Unpack2', 'speedup': v} for v in s2
+                ])
+
+        runtime_df = pd.DataFrame(runtime_rows)
+        speedup_df = pd.DataFrame(speedup_rows)
+
+        runtime_order = ['Baseline SIMD', 'Unpack1', 'Unpack2']
+        speedup_order = ['Unpack1', 'Unpack2']
+
+        num_hw = len(hw)
+        # Changed from (1, 2) to (2, 1) for vertical layout, adjusted figsize
+        fig, (ax_rt, ax_sp) = plt.subplots(2, 1, figsize=(num_hw * 1.3, 7), constrained_layout=True)
+
+        # Convert runtime data to seconds
+        runtime_df_seconds = runtime_df.copy()
+        runtime_df_seconds['data_point'] = runtime_df_seconds['data_point'] / 1000.0
+
+        # Runtime (top subplot)
+        bars_rt = sns.barplot(data=runtime_df_seconds, x='hw', y='data_point', hue='label',
+                              hue_order=runtime_order, ax=ax_rt, errwidth=1, capsize=0.1, width=0.6)
+        # sns.stripplot(data=runtime_df_seconds, x='hw', y='data_point', hue='label',
+        #              hue_order=runtime_order, ax=ax_rt, dodge=True, jitter=True,
+        #              color='black', alpha=0.4, size=3, linewidth=0, legend=False)
+
+        # Add value labels on runtime bars
+        for bar in ax_rt.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add label if bar has positive height
+                # Position text slightly to the right of bar center and above the bar
+                ax_rt.text(bar.get_x() + bar.get_width() / 2, height + height * 0.04,
+                           f'{height:.3f}', rotation=90, ha='center', va='bottom', fontsize=10)
+
+        ax_rt.set_ylabel("Runtime (s)")
+        ax_rt.set_title(f"N={fixed_N}, Compiler={fixed_compiler}", loc='left')
+        ax_rt.grid(True, axis='y', linestyle='--', alpha=0.5)
+        plt.setp(ax_rt.get_xticklabels(), rotation=0)
+
+        # Extend y-axis range for runtime
+        y_min_rt, y_max_rt = ax_rt.get_ylim()
+        ax_rt.set_ylim(y_min_rt, y_max_rt * 1.15)
+
+        # Runtime legend above
+        if not hide_legend:
+            handles_rt, labels_rt = ax_rt.get_legend_handles_labels()
+            by_label_rt = dict(zip(labels_rt, handles_rt))
+            ordered_rt = [by_label_rt[l] for l in runtime_order if l in by_label_rt]
+            ax_rt.legend(ordered_rt, runtime_order, title="Runtime", fontsize='small',
+                         loc='lower right', bbox_to_anchor=(1.0, 1.08), ncol=len(runtime_order))
+        else:
+            ax_rt.get_legend().remove()
+
+        # Speedup (bottom subplot)
+        # Create a custom palette to match runtime colors
+        runtime_palette = sns.color_palette()
+        speedup_palette = {'Unpack1': runtime_palette[1],
+                           'Unpack2': runtime_palette[2]}  # Orange and green from runtime plot
+
+        bars_sp = sns.barplot(data=speedup_df, x='hw', y='speedup', hue='label',
+                              hue_order=speedup_order, ax=ax_sp, errwidth=1, capsize=0.1,
+                              palette=speedup_palette, width=0.42)
+        ##sns.stripplot(data=speedup_df, x='hw', y='speedup', hue='label',
+        ##              hue_order=speedup_order, ax=ax_sp, dodge=True, jitter=True,
+        ##              color='black', alpha=0.4, size=3, linewidth=0, legend=False)
+
+        # Add value labels on speedup bars
+        for bar in ax_sp.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add label if bar has positive height
+                # Position text slightly to the right of bar center and above the bar
+                ax_sp.text(bar.get_x() + bar.get_width() * 0.5, height + height * 0.04,
+                           f'{height:.2f}', rotation=90, ha='center', va='bottom', fontsize=10)
+
+        ax_sp.set_ylabel("Speedup")
+        ax_sp.set_title("")
+        ax_sp.grid(True, axis='y', linestyle='--', alpha=0.5)
+        plt.setp(ax_sp.get_xticklabels(), rotation=0)
+
+        # Extend y-axis range for speedup
+        y_min_sp, y_max_sp = ax_sp.get_ylim()
+        ax_sp.set_ylim(y_min_sp, y_max_sp * 1.15)
+
+        # Speedup legend above
+        if not hide_legend:
+            handles_sp, labels_sp = ax_sp.get_legend_handles_labels()
+            by_label_sp = dict(zip(labels_sp, handles_sp))
+            ordered_sp = [by_label_sp[l] for l in speedup_order if l in by_label_sp]
+            ax_sp.legend(ordered_sp, speedup_order, title="Speedup", fontsize='small',
+                         loc='lower right', bbox_to_anchor=(1.0, 1.05), ncol=len(speedup_order))
+        else:
+            ax_sp.get_legend().remove()
+
+        plt.savefig(
+            f"{self.dir_out}/plotgen_dist_speedup_runtime_fixed_N{fixed_N}_compiler{fixed_compiler}_hw{str(hw)}.{FORMAT}",
+            bbox_inches='tight',
+            dpi=300
+        )
+        plt.close()
+
+    def plotgen_speedup_runtime_fixed_N_compiler_SNA_SAV_v02(
+            self,
+            fixed_N,
+            fixed_compiler,
+            hw: [str],
+            hide_legend=False
+    ):
+        masked_data_runtime = self.proc_data[
+            (self.proc_data['N'] == fixed_N) &
+            (self.proc_data['compiler'] == fixed_compiler) &
+            (self.proc_data['hw'].isin(hw)) &
+            (self.proc_data['run_type'] == 'best')
+            ]
+
+        runtime_rows = []
+        speedup_rows = []
+
+        for one_hw in hw:
+            is_spacemit = one_hw == "SpacemitK1"
+
+            base_sna = masked_data_runtime[
+                masked_data_runtime['name'].str.contains('base_SNA') &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+            base_sav = masked_data_runtime[
+                masked_data_runtime['name'].str.contains('base_SAV') &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+
+            # Get SIMD baseline (same logic as original function)
+            simd_query = 'base_RVV' if is_spacemit else 'base_AVX512'
+            base_simd = masked_data_runtime[
+                masked_data_runtime['name'].str.contains(simd_query) &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+
+            # Runtime data
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'SNA', 'data_point': v}
+                for v in base_sna['data_point']
+            ])
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'SAV', 'data_point': v}
+                for v in base_sav['data_point']
+            ])
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'SIMD', 'data_point': v}
+                for v in base_simd['data_point']
+            ])
+
+            # Speedup calculations
+            if not base_sna.empty and not base_sav.empty:
+                # SS = tSNA/tSAV (Scalar over Scalar-Vectorized)
+                ss_speedup = base_sna['data_point'].median() / base_sav['data_point']
+                speedup_rows.extend([
+                    {'hw': one_hw, 'label': 'SS (SNA/SAV)', 'speedup': v} for v in ss_speedup
+                ])
+
+            if not base_sna.empty and not base_simd.empty:
+                # VS = tSNA/tSIMD (Vectorized over Scalar)
+                vs_speedup = base_sna['data_point'].median() / base_simd['data_point']
+                speedup_rows.extend([
+                    {'hw': one_hw, 'label': 'VS (SNA/SIMD)', 'speedup': v} for v in vs_speedup
+                ])
+
+        runtime_df = pd.DataFrame(runtime_rows)
+        speedup_df = pd.DataFrame(speedup_rows)
+
+        runtime_order = ['SNA', 'SAV', 'SIMD']
+        speedup_order = ['SS (SNA/SAV)', 'VS (SNA/SIMD)']
+
+        num_hw = len(hw)
+        fig, (ax_rt, ax_sp) = plt.subplots(1, 2, figsize=(num_hw * 2.8, 3.5), constrained_layout=True)
+
+        # Convert runtime data to seconds
+        runtime_df_seconds = runtime_df.copy()
+        runtime_df_seconds['data_point'] = runtime_df_seconds['data_point'] / 1000.0
+
+        # Runtime
+        bars_rt = sns.barplot(data=runtime_df_seconds, x='hw', y='data_point', hue='label',
+                              hue_order=runtime_order, ax=ax_rt, errorbar='ci', errwidth=1, capsize=0.1, width=0.8)
+        #sns.stripplot(data=runtime_df_seconds, x='hw', y='data_point', hue='label',
+        #              hue_order=runtime_order, ax=ax_rt, dodge=True, jitter=True,
+        #              color='black', alpha=0.4, size=3, linewidth=0, legend=False)
+
+        # Add value labels on runtime bars
+        for bar in ax_rt.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add label if bar has positive height
+                # Position text slightly to the right of bar center and above the bar
+                ax_rt.text(bar.get_x() + bar.get_width() * 0.6, height + height * 0.04,
+                           f'{height:.3f}', rotation=90, ha='left', va='bottom', fontsize=10)
+
+        ax_rt.set_ylabel("Runtime (s)")
+        ax_rt.set_title(f"N={fixed_N}, Compiler={fixed_compiler}")
+        ax_rt.grid(True, axis='y', linestyle='--', alpha=0.5)
+        plt.setp(ax_rt.get_xticklabels(), rotation=0)
+
+        # Extend y-axis range for runtime
+        y_min_rt, y_max_rt = ax_rt.get_ylim()
+        ax_rt.set_ylim(y_min_rt, y_max_rt * 1.15)
+
+        # Runtime legend above
+        if not hide_legend:
+            handles_rt, labels_rt = ax_rt.get_legend_handles_labels()
+            by_label_rt = dict(zip(labels_rt, handles_rt))
+            ordered_rt = [by_label_rt[l] for l in runtime_order if l in by_label_rt]
+            ax_rt.legend(ordered_rt, runtime_order, title="Runtime", fontsize='small',
+                         loc='lower center', bbox_to_anchor=(0.5, 1.08), ncol=len(runtime_order))
+        else:
+            ax_rt.get_legend().remove()
+
+        # Speedup
+        # Create a custom palette with different colors from runtime
+        runtime_palette = sns.color_palette()
+        # Skip the first 3 colors used in runtime (indices 0, 1, 2) and use the next colors
+        speedup_palette = {'SS (SNA/SAV)': runtime_palette[3], 'VS (SNA/SIMD)': runtime_palette[4]}
+
+        bars_sp = sns.barplot(data=speedup_df, x='hw', y='speedup', hue='label',
+                              hue_order=speedup_order, ax=ax_sp, errorbar='ci', errwidth=1, capsize=0.1,
+                              palette=speedup_palette, width=0.52)
+        #sns.stripplot(data=speedup_df, x='hw', y='speedup', hue='label',
+        #              hue_order=speedup_order, ax=ax_sp, dodge=True, jitter=True,
+        #              color='black', alpha=0.4, size=3, linewidth=0, legend=False)
+
+        # Add value labels on speedup bars
+        for bar in ax_sp.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add label if bar has positive height
+                # Position text slightly to the right of bar center and above the bar
+                ax_sp.text(bar.get_x() + bar.get_width() * 0.6, height + height * 0.04,
+                           f'{height:.2f}', rotation=90, ha='left', va='bottom', fontsize=10)
+
+        ax_sp.set_ylabel("Speedup")
+        #ax_sp.set_title("Speedup over SNA")
+        ax_sp.grid(True, axis='y', linestyle='--', alpha=0.5)
+        plt.setp(ax_sp.get_xticklabels(), rotation=0)
+
+        # Extend y-axis range for speedup
+        y_min_sp, y_max_sp = ax_sp.get_ylim()
+        ax_sp.set_ylim(y_min_sp, y_max_sp * 1.15)
+
+        # Speedup legend above
+        if not hide_legend:
+            handles_sp, labels_sp = ax_sp.get_legend_handles_labels()
+            by_label_sp = dict(zip(labels_sp, handles_sp))
+            ordered_sp = [by_label_sp[l] for l in speedup_order if l in by_label_sp]
+            ax_sp.legend(ordered_sp, speedup_order, title="Speedup", fontsize='small',
+                         loc='lower center', bbox_to_anchor=(0.5, 1.08), ncol=len(speedup_order))
+        else:
+            ax_sp.get_legend().remove()
+
+        plt.savefig(
+            f"{self.dir_out}/plotgen_SNA_SAV_speedup_runtime_fixed_N{fixed_N}_compiler{fixed_compiler}_hw{str(hw)}.{FORMAT}",
+            bbox_inches='tight',
+            dpi=300
+        )
+        plt.close()
+
+    def plotgen_speedup_runtime_fixed_N_compiler_SNA_SAV_v03(
+            self,
+            fixed_N,
+            fixed_compiler,
+            hw: [str],
+            hide_legend=False
+    ):
+        masked_data_runtime = self.proc_data[
+            (self.proc_data['N'] == fixed_N) &
+            (self.proc_data['compiler'] == fixed_compiler) &
+            (self.proc_data['hw'].isin(hw)) &
+            (self.proc_data['run_type'] == 'best')
+            ]
+
+        runtime_rows = []
+        speedup_rows = []
+
+        for one_hw in hw:
+            is_spacemit = one_hw == "SpacemitK1"
+
+            base_sna = masked_data_runtime[
+                masked_data_runtime['name'].str.contains('base_SNA') &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+            base_sav = masked_data_runtime[
+                masked_data_runtime['name'].str.contains('base_SAV') &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+
+            # Get SIMD baseline (same logic as original function)
+            simd_query = 'base_RVV' if is_spacemit else 'base_AVX512'
+            base_simd = masked_data_runtime[
+                masked_data_runtime['name'].str.contains(simd_query) &
+                (masked_data_runtime['hw'] == one_hw)
+                ]
+
+            # Runtime data
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'SNA', 'data_point': v}
+                for v in base_sna['data_point']
+            ])
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'SAV', 'data_point': v}
+                for v in base_sav['data_point']
+            ])
+            runtime_rows.extend([
+                {'hw': one_hw, 'label': 'SIMD', 'data_point': v}
+                for v in base_simd['data_point']
+            ])
+
+            # Speedup calculations
+            if not base_sna.empty and not base_sav.empty:
+                # SS = tSNA/tSAV (Scalar over Scalar-Vectorized)
+                ss_speedup = base_sna['data_point'].median() / base_sav['data_point']
+                speedup_rows.extend([
+                    {'hw': one_hw, 'label': 'SS (SNA/SAV)', 'speedup': v} for v in ss_speedup
+                ])
+
+            if not base_sna.empty and not base_simd.empty:
+                # VS = tSNA/tSIMD (Vectorized over Scalar)
+                vs_speedup = base_sna['data_point'].median() / base_simd['data_point']
+                speedup_rows.extend([
+                    {'hw': one_hw, 'label': 'VS (SNA/SIMD)', 'speedup': v} for v in vs_speedup
+                ])
+
+        runtime_df = pd.DataFrame(runtime_rows)
+        speedup_df = pd.DataFrame(speedup_rows)
+
+        runtime_order = ['SNA', 'SAV', 'SIMD']
+        speedup_order = ['SS (SNA/SAV)', 'VS (SNA/SIMD)']
+
+        num_hw = len(hw)
+        # Change subplots to 2 rows, 1 column for vertical arrangement
+        fig, (ax_rt, ax_sp) = plt.subplots(2, 1, figsize=(num_hw * 1.3, 7),
+                                           constrained_layout=True)  # Adjusted figsize for vertical layout
+
+        # Convert runtime data to seconds
+        runtime_df_seconds = runtime_df.copy()
+        runtime_df_seconds['data_point'] = runtime_df_seconds['data_point'] / 1000.0
+
+        # Runtime Plot (Top Subfigure)
+        bars_rt = sns.barplot(data=runtime_df_seconds, x='hw', y='data_point', hue='label',
+                              hue_order=runtime_order, ax=ax_rt, errorbar='ci', errwidth=1, capsize=0.1, width=0.6)
+
+        # Add value labels on runtime bars
+        for bar in ax_rt.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add label if bar has positive height
+                # Position text slightly to the right of bar center and above the bar
+                ax_rt.text(bar.get_x() + bar.get_width() * 0.6, height + height * 0.04,
+                           f'{height:.3f}', rotation=90, ha='left', va='bottom', fontsize=10)
+
+        ax_rt.set_ylabel("Runtime (s)")
+        # Align title text of the top subfigure to the left
+        ax_rt.set_title(f"N={fixed_N}, Compiler={fixed_compiler}", loc='left')
+        ax_rt.grid(True, axis='y', linestyle='--', alpha=0.5)
+        plt.setp(ax_rt.get_xticklabels(), rotation=0)
+
+        # Extend y-axis range for runtime
+        y_min_rt, y_max_rt = ax_rt.get_ylim()
+        ax_rt.set_ylim(y_min_rt, y_max_rt * 1.15)
+
+        # Runtime legend outside, above, aligned right
+        if not hide_legend:
+            handles_rt, labels_rt = ax_rt.get_legend_handles_labels()
+            by_label_rt = dict(zip(labels_rt, handles_rt))
+            ordered_rt = [by_label_rt[l] for l in runtime_order if l in by_label_rt]
+            ax_rt.legend(ordered_rt, runtime_order, title="Runtime", fontsize='small',
+                         loc='lower right', bbox_to_anchor=(1, 1.08),
+                         ncol=len(runtime_order))  # Changed loc and bbox_to_anchor
+        else:
+            ax_rt.get_legend().remove()
+
+        # Speedup Plot (Bottom Subfigure)
+        # Create a custom palette with different colors from runtime
+        runtime_palette = sns.color_palette()
+        # Skip the first 3 colors used in runtime (indices 0, 1, 2) and use the next colors
+        speedup_palette = {'SS (SNA/SAV)': runtime_palette[3], 'VS (SNA/SIMD)': runtime_palette[4]}
+
+        bars_sp = sns.barplot(data=speedup_df, x='hw', y='speedup', hue='label',
+                              hue_order=speedup_order, ax=ax_sp, errorbar='ci', errwidth=1, capsize=0.1,
+                              palette=speedup_palette, width=0.42)
+
+        # Add value labels on speedup bars
+        for bar in ax_sp.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add label if bar has positive height
+                # Position text slightly to the right of bar center and above the bar
+                ax_sp.text(bar.get_x() + bar.get_width() * 0.5, height + height * 0.04,
+                           f'{height:.2f}', rotation=90, ha='center', va='bottom', fontsize=10)
+
+        ax_sp.set_ylabel("Speedup")
+        ax_sp.grid(True, axis='y', linestyle='--', alpha=0.5)
+        plt.setp(ax_sp.get_xticklabels(), rotation=0)
+
+        # Extend y-axis range for speedup
+        y_min_sp, y_max_sp = ax_sp.get_ylim()
+        ax_sp.set_ylim(y_min_sp, y_max_sp * 1.15)
+
+        # Speedup legend outside, above, aligned right
+        if not hide_legend:
+            handles_sp, labels_sp = ax_sp.get_legend_handles_labels()
+            by_label_sp = dict(zip(labels_sp, handles_sp))
+            ordered_sp = [by_label_sp[l] for l in speedup_order if l in by_label_sp]
+            ax_sp.legend(ordered_sp, speedup_order, title="Speedup", fontsize='small',
+                         loc='lower right', bbox_to_anchor=(1, 1.08),
+                         ncol=len(speedup_order))  # Changed loc and bbox_to_anchor
+        else:
+            ax_sp.get_legend().remove()
+
+        plt.savefig(
+            f"{self.dir_out}/plotgen_SNA_SAV_speedup_runtime_fixed_N{fixed_N}_compiler{fixed_compiler}_hw{str(hw)}.{FORMAT}",
+            bbox_inches='tight',
+            dpi=300
+        )
+        plt.close()
 
     def numeric_result_speedup_vv_benchA_over_benchB_geomean(
             self,
@@ -1594,8 +2068,29 @@ if __name__ == '__main__':
     obj.plotgen_fxpot()
     # obj.stats_fpot_with_inf_nan()
 
-    obj.plotgen_speedup_runtime_fixed_N_compiler(
+    obj.plotgen_speedup_runtime_fixed_N_compiler_v08(
         fixed_N=5120,
+        fixed_compiler='LLVM18',
+        hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X', 'SpacemitK1'],
+        hide_legend=False
+    )
+
+    obj.plotgen_speedup_runtime_fixed_N_compiler_v08(
+        fixed_N=2048,
+        fixed_compiler='LLVM18',
+        hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X', 'SpacemitK1'],
+        hide_legend=False
+    )
+
+    obj.plotgen_speedup_runtime_fixed_N_compiler_SNA_SAV_v03(
+        fixed_N=5120,
+        fixed_compiler='LLVM18',
+        hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X', 'SpacemitK1'],
+        hide_legend=False
+    )
+
+    obj.plotgen_speedup_runtime_fixed_N_compiler_SNA_SAV_v03(
+        fixed_N=2048,
         fixed_compiler='LLVM18',
         hw=['Xeon5218', 'Xeon8260', 'Ryzen97950X', 'SpacemitK1'],
         hide_legend=False
